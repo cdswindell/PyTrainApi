@@ -1,0 +1,73 @@
+[build-system]
+requires = ["setuptools>=75.0", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pytrain-ogr-api"
+dynamic = ["version"]
+authors = [
+    { name = "Dave Swindell", email = "pytraininfo@gmail.com" },
+]
+description = "Control Lionel TMCC/Legacy engines, switches, and accesseries from a Raspberry Pi"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Other Audience",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
+    "Natural Language :: English",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+license = { file = "LICENSE" }
+
+dependencies = [
+    "Flask-RESTful >= 0.3.10",
+    "pytrain-ogr >= 0.9.55",
+]
+
+keywords = [
+    "api",
+    "rest",
+    "pytrain",
+    "legacy",
+    "lionel",
+    "o-gauge",
+    "raspberry pi",
+    "tmcc",
+    "trains",
+]
+
+[tool.setuptools_scm]
+version_file = "src/pytrain_api/_version.py"
+version_scheme = "only-version"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+install = ["*.template"]
+
+
+[project.scripts]
+pytrain = "pytrain:main"
+piconfig = "pytrain.cli.piconfig:main"
+make_service = "pytrain.cli.make_service:main"
+
+[project.urls]
+Homepage = "https://github.com/cdswindell/PyLegacy"
+Source = "https://github.com/cdswindell/PyLegacy"
+Issues = "https://github.com/cdswindell/PyLegacy/issues"
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = ["F403", "F405"]
+line-length = 120
+
+[tool.ruff]
+extend-exclude = ["test"]
