@@ -21,6 +21,7 @@ class PyTrainServer(Thread):
         super().__init__(daemon=True, name=f"{PROGRAM_NAME} Server")
         self._pytrain = None
         self._is_running = True
+        self._store = None
         self._ev = Event()
         self.start()
         self._ev.wait()
@@ -29,9 +30,10 @@ class PyTrainServer(Thread):
         self._is_running = False
 
     def run(self) -> None:
-        self._pytrain = PyTrain("-headless -client".split())
+        self._pytrain = PyTrain("-headless -client -api".split())
         print(f"PyTrain Server started: {self._pytrain}")
         self._ev.set()
+        self._store = self._pytrain.store
         while self._is_running:
             signal.pause()
 
@@ -42,4 +44,4 @@ class PyTrainServer(Thread):
     @property
     def store(self) -> ComponentStateStore:
         # noinspection PyProtectedMember
-        return self._pytrain._state_store()
+        return self._store

@@ -47,8 +47,10 @@ class Engine(Resource):
         else:
             return jsonify(
                 {
-                    "tmcc_id": "num",
+                    "tmcc_id": num,
                     "road_name": eng.road_name,
+                    "road_number": eng.road_number,
+                    "current_speed": eng.speed,
                 }
             )
 
