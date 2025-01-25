@@ -23,42 +23,69 @@ class Hello(Resource):
     # corresponds to the GET request.
     # this function is called whenever there
     # is a GET request for this resource
-    def get(self):
+    @staticmethod
+    def get():
         return jsonify({"message": "hello world"})
 
         # Corresponds to POST request
 
-    def post(self):
+    @staticmethod
+    def post():
         data = request.get_json()  # status code
         return jsonify({"data": data}), 201
 
 
 # another resource to calculate the square of a number
 class Square(Resource):
-    def get(self, num):
+    @staticmethod
+    def get(num):
         return jsonify({"square": num**2})
 
+class PyTrainComponent(Resource):
+    def __init__(self, scope: CommandScope):
+        super().__init__()
+        self._scope = scope
 
-class Engine(Resource):
-    def get(self, num):
-        eng = pytrain.store.query(CommandScope.ENGINE, num)
-        if eng is None:
-            abort(404, message=f"Engine {num} not found")
+    @property
+    def scope(self) -> CommandScope:
+        return self._scope
+
+    def get(self, tmcc_id: int):
+        state = pytrain.store.query(self.scope, tmcc_id)
+        if state is None:
+            abort(404, message=f"{self.scope.title} {tmcc_id} not found")
         else:
-            return jsonify(
-                {
-                    "tmcc_id": num,
-                    "road_name": eng.road_name,
-                    "road_number": eng.road_number,
-                    "current_speed": eng.speed,
-                }
-            )
+            return jsonify(state.as_dict())
+
+class Engine(PyTrainComponent):
+    def __init__(self):
+        super().__init__(CommandScope.ENGINE)
+
+class Train(PyTrainComponent):
+    def __init__(self):
+        super().__init__(CommandScope.TRAIN)
+
+class Switch(PyTrainComponent):
+    def __init__(self):
+        super().__init__(CommandScope.SWITCH)
+
+class Accessory(PyTrainComponent):
+    def __init__(self):
+        super().__init__(CommandScope.ACC)
+
+class SensorTrack(PyTrainComponent):
+    def __init__(self):
+        super().__init__(CommandScope.IRDA)
 
 
 # adding the defined resources along with their corresponding urls
 api.add_resource(Hello, "/")
-api.add_resource(Square, "/square/<int:num>")
-api.add_resource(Engine, "/engine/<int:num>")
+api.add_resource(Square, "/square/<int:tmcc_id>")
+api.add_resource(Engine, "/engine/<int:tmcc_id>")
+api.add_resource(Train, "/train/<int:tmcc_id>")
+api.add_resource(Switch, "/switch/<int:tmcc_id>")
+api.add_resource(Accessory, "/acc/<int:tmcc_id>")
+api.add_resource(SensorTrack, "/sensor_track/<int:tmcc_id>")
 
 # driver function
 if __name__ == "__main__":
