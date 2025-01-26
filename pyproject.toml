@@ -27,8 +27,9 @@ classifiers = [
 license = { file = "LICENSE" }
 
 dependencies = [
+    "flask >= 3.1.0",
     "Flask-RESTful >= 0.3.10",
-    "pytrain-ogr >= 0.9.55",
+    "pytrain-ogr >= 0.9.67",
 ]
 
 keywords = [
