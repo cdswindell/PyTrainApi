@@ -27,9 +27,10 @@ classifiers = [
 license = { file = "LICENSE" }
 
 dependencies = [
-    "flask >= 3.1.0",
-    "Flask-RESTful >= 0.3.10",
-    "pytrain-ogr >= 0.9.67",
+    "fastapi >= 0.115.7",
+    "fastapi-utils >= 0.8.0",
+    "typing-inspect >= 0.9.0",
+    "pytrain-ogr >= 0.9.70",
 ]
 
 keywords = [
