@@ -5,13 +5,16 @@
 #
 #  SPDX-License-Identifier: LPGL
 #
-from typing import List, Dict, Any
+from typing import TypeVar
 
 from fastapi import FastAPI, HTTPException, APIRouter
 from fastapi_utils.cbv import cbv
-from pytrain import CommandScope
+from pytrain import CommandScope, TMCC1SwitchCommandEnum, CommandReq, TMCC1HaltCommandEnum
 from pytrain.cli.pytrain import PyTrain
 from pytrain.db.component_state import ComponentState
+from pytrain.protocol.command_def import CommandDefEnum
+
+E = TypeVar("E", bound=CommandDefEnum)
 
 pytrain = PyTrain("-client -api -echo".split())
 app = FastAPI()
@@ -20,11 +23,14 @@ router = APIRouter()
 
 @app.get("/system/halt")
 async def halt():
-    pytrain.queue_command("halt")
-    return {"status": "Halt command sent"}
+    try:
+        CommandReq(TMCC1HaltCommandEnum.HALT).send()
+        return {"status": "HALT command sent"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
-@app.get("/system/stop")
+@app.post("/system/stop-req")
 async def stop():
     pytrain.queue_command("tr 99 -s")
     pytrain.queue_command("en 99 -s")
@@ -32,7 +38,7 @@ async def stop():
     return {"status": "Stop all engines and trains command sent"}
 
 
-@app.post("/system/echo")
+@app.post("/system/echo-req")
 async def echo(on: bool = True):
     pytrain.queue_command(f"echo {'on' if on else 'off'}")
     return {"status": f"Echo {'enabled' if on else 'disabled'}"}
@@ -43,7 +49,7 @@ def get_components(
     name: str = None,
     is_legacy: bool = None,
     is_tmcc: bool = None,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, any]]:
     states = pytrain.store.query(scope)
     if states is None:
         HTTPException(status_code=404, detail=f"No {scope} found")
@@ -54,6 +60,7 @@ def get_components(
                 continue
             if is_tmcc is not None and state.is_tmcc != is_tmcc:
                 continue
+            # noinspection PyUnresolvedReferences
             if name and state.name and name.lower() not in state.name.lower():
                 continue
             ret.append(state.as_dict())
@@ -100,6 +107,13 @@ class PyTrainComponent:
             raise HTTPException(status_code=404, detail=f"{self.scope.title} {tmcc_id} not found")
         else:
             return state.as_dict()
+
+    def send(self, request: E, tmcc_id: int, data: int = None) -> dict[str, any]:
+        try:
+            req = CommandReq(request, tmcc_id, data, self.scope).send()
+            return {"status": f"{self.scope.title} {req} sent"}
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
 
     @staticmethod
     def queue_command(cmd: str):
@@ -158,19 +172,19 @@ class Engine(PyTrainEngine):
     async def get_engine(self, tmcc_id: int):
         return super().get(tmcc_id)
 
-    @router.post("/engine/{tmcc_id:int}/speed/{speed:int}")
+    @router.post("/engine/{tmcc_id:int}/speed-req/{speed:int}")
     async def set_speed(self, tmcc_id: int, speed: int, immediate: bool = False, dialog: bool = False):
         return super().speed(tmcc_id, speed, immediate=immediate, dialog=dialog)
 
-    @router.post("/engine/{tmcc_id:int}/startup")
+    @router.post("/engine/{tmcc_id:int}/startup-req")
     async def startup(self, tmcc_id: int, dialog: bool = False):
         return super().startup(tmcc_id, dialog=dialog)
 
-    @router.post("/engine/{tmcc_id:int}/shutdown")
+    @router.post("/engine/{tmcc_id:int}/shutdown-req")
     async def shutdown(self, tmcc_id: int, dialog: bool = False):
         return super().shutdown(tmcc_id, dialog=dialog)
 
-    @router.post("/engine/{tmcc_id:int}/stop")
+    @router.post("/engine/{tmcc_id:int}/stop-req")
     async def stop(self, tmcc_id: int):
         return super().stop(tmcc_id)
 
@@ -184,19 +198,19 @@ class Train(PyTrainEngine):
     async def get_train(self, tmcc_id: int):
         return super().get(tmcc_id)
 
-    @router.post("/train/{tmcc_id:int}/speed/{speed:int}")
+    @router.post("/train/{tmcc_id:int}/speed-req/{speed:int}")
     async def set_speed(self, tmcc_id: int, speed: int, immediate: bool = False, dialog: bool = False):
         return super().speed(tmcc_id, speed, immediate=immediate, dialog=dialog)
 
-    @router.post("/train/{tmcc_id:int}/startup")
+    @router.post("/train/{tmcc_id:int}/startup-req")
     async def startup(self, tmcc_id: int, dialog: bool = False):
         return super().startup(tmcc_id, dialog=dialog)
 
-    @router.post("/train/{tmcc_id:int}/shutdown")
+    @router.post("/train/{tmcc_id:int}/shutdown-req")
     async def shutdown(self, tmcc_id: int, dialog: bool = False):
         return super().shutdown(tmcc_id, dialog=dialog)
 
-    @router.post("/train/{tmcc_id:int}/stop")
+    @router.post("/train/{tmcc_id:int}/stop-req")
     async def stop(self, tmcc_id: int):
         return super().stop(tmcc_id)
 
@@ -209,6 +223,14 @@ class Switch(PyTrainComponent):
     @router.get("/switch/{tmcc_id}")
     async def get_switch(self, tmcc_id: int):
         return super().get(tmcc_id)
+
+    @router.post("/switch/{tmcc_id}/thru-req")
+    async def thru(self, tmcc_id: int):
+        return self.send(TMCC1SwitchCommandEnum.THRU, tmcc_id)
+
+    @router.post("/switch/{tmcc_id}/out-req")
+    async def out(self, tmcc_id: int):
+        return self.send(TMCC1SwitchCommandEnum.OUT, tmcc_id)
 
 
 @cbv(router)
@@ -228,6 +250,10 @@ class Route(PyTrainComponent):
 
     @router.get("/route/{tmcc_id}")
     async def get_route(self, tmcc_id: int):
+        return super().get(tmcc_id)
+
+    @router.get("/route/{tmcc_id}/fire-req")
+    async def fire(self, tmcc_id: int):
         return super().get(tmcc_id)
 
 
