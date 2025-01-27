@@ -30,7 +30,8 @@ dependencies = [
     "fastapi >= 0.115.7",
     "fastapi-cli >= 0.0.7",
     "fastapi-utils >= 0.8.0",
-    "pytrain-ogr >= 0.9.70",
+    "pytrain-ogr >= 0.9.73",
+    "starlette >= 0.45.3",
     "typing-inspect >= 0.9.0",
 ]
 
