@@ -12,7 +12,7 @@ from typing import TypeVar, Annotated, Any
 
 from fastapi import FastAPI, HTTPException, APIRouter, Path, Query
 from fastapi_utils.cbv import cbv
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel, field_validator, model_validator, Field
 from pytrain import (
     CommandScope,
     TMCC1SwitchCommandEnum,
@@ -22,6 +22,7 @@ from pytrain import (
     TMCC1EngineCommandEnum,
     TMCC2EngineCommandEnum,
     TMCC1RouteCommandEnum,
+    SequenceCommandEnum,
 )
 from pytrain.cli.pytrain import PyTrain
 from pytrain.db.component_state import ComponentState
@@ -36,9 +37,17 @@ app = FastAPI()
 router = APIRouter()
 
 
-@app.get("/", summary=f"Redirect to {API_NAME} Documentation")
-def redirect_to_new_url():
-    return RedirectResponse(url="/docs")
+class BellOption(str, Enum):
+    OFF = "off"
+    ON = "on"
+    ONCE = "once"
+    TOGGLE = "toggle"
+
+
+class HornOption(str, Enum):
+    SOUND = "sound"
+    GRADE = "grade"
+    QUILLING = "quilling"
 
 
 class Component(str, Enum):
@@ -50,10 +59,15 @@ class Component(str, Enum):
 
 
 class ComponentInfo(BaseModel):
-    tmcc_id: int
-    road_name: str | None
-    road_number: str | None
+    tmcc_id: Annotated[int, Field(title="TMCC ID", description="Assigned TMCC ID", ge=1, le=99)]
+    road_name: Annotated[str, Field(description="Road Name assigned by user", max_length=32)]
+    road_number: Annotated[str, Field(description="Road Number assigned by user", max_length=4)]
     scope: Component
+
+
+class ComponentInfoIr(ComponentInfo):
+    road_name: Annotated[str, Field(description="Road Name assigned by user or read from Sensor Track", max_length=32)]
+    road_number: Annotated[str, Field(description="Road Name assigned by user or read from Sensor Track", max_length=4)]
 
 
 C = TypeVar("C", bound=ComponentInfo)
@@ -100,7 +114,7 @@ class AccessoryInfo(ComponentInfo):
     aux2: str | None
 
 
-class EngineInfo(ComponentInfo):
+class EngineInfo(ComponentInfoIr):
     scope: Component = Component.ENGINE
     control: str | None
     direction: str | None
@@ -118,8 +132,13 @@ class EngineInfo(ComponentInfo):
     year: int | None
 
 
-class TrainInfo(EngineInfo):
+class TrainInfo(ComponentInfoIr):
     scope: Component = Component.TRAIN
+
+
+@app.get("/", summary=f"Redirect to {API_NAME} Documentation")
+def redirect_to_new_url():
+    return RedirectResponse(url="/docs")
 
 
 @app.post("/{component}/{tmcc_id:int}/cli_req")
@@ -143,13 +162,12 @@ async def send_command(
         else:
             tmcc = ""
         cmd = f"{component.value} {tmcc_id}{tmcc} {command}"
-        parse_errors = pytrain.parse_cli(cmd)
-        if parse_errors:
-            raise HTTPException(status_code=422, detail=f"Command is invalid: {parse_errors}")
+        parse_response = pytrain.parse_cli(cmd)
+        if isinstance(parse_response, CommandReq):
+            parse_response.send()
+            return {"status": f"'{cmd}' command sent"}
         else:
-            # otherwise, send command
-            pytrain.queue_command(cmd)
-            return {"status": f"'{component.value} {tmcc_id} {command}' command sent"}
+            raise HTTPException(status_code=422, detail=f"Command is invalid: {parse_response}")
     except HTTPException as he:
         raise he
     except Exception as e:
@@ -326,6 +344,32 @@ class PyTrainEngine(PyTrainComponent):
             self.make_request(TMCC2EngineCommandEnum.REVERSE_DIRECTION, tmcc_id)
         return {"status": f"{self.scope.title} {tmcc_id} reverse..."}
 
+    def ring_bell(self, tmcc_id: int, option: BellOption):
+        if self.is_tmcc(tmcc_id):
+            self.make_request(TMCC1EngineCommandEnum.RING_BELL, tmcc_id)
+        else:
+            if option is None or option == BellOption.TOGGLE:
+                self.make_request(TMCC2EngineCommandEnum.RING_BELL, tmcc_id)
+            elif option == BellOption.ON:
+                self.make_request(TMCC2EngineCommandEnum.BELL_ON, tmcc_id)
+            elif option == BellOption.OFF:
+                self.make_request(TMCC2EngineCommandEnum.BELL_OFF, tmcc_id)
+            elif option == BellOption.ONCE:
+                self.make_request(TMCC2EngineCommandEnum.BELL_ONE_SHOT_DING, tmcc_id, 3)
+        return {"status": f"{self.scope.title} {tmcc_id} ringing bell..."}
+
+    def blow_horn(self, tmcc_id: int, option: HornOption, intensity: int = 10):
+        if self.is_tmcc(tmcc_id):
+            self.make_request(TMCC1EngineCommandEnum.BLOW_HORN_ONE, tmcc_id)
+        else:
+            if option is None or option == HornOption.SOUND:
+                self.make_request(TMCC2EngineCommandEnum.BLOW_HORN_ONE, tmcc_id)
+            elif option == HornOption.GRADE:
+                self.make_request(SequenceCommandEnum.GRADE_CROSSING_SEQ, tmcc_id)
+            elif option == HornOption.QUILLING:
+                self.make_request(TMCC2EngineCommandEnum.QUILLING_HORN, tmcc_id, intensity)
+        return {"status": f"{self.scope.title} {tmcc_id} blowing horn..."}
+
 
 @app.get("/engines", response_model=list[EngineInfo])
 async def get_engines(contains: str = None, is_legacy: bool = None, is_tmcc: bool = None):
@@ -349,9 +393,26 @@ class Engine(PyTrainEngine):
     async def get_engine(self, tmcc_id: Annotated[int, Engine.id_path()]):
         return EngineInfo(**super().get(tmcc_id))
 
+    @router.post("/engine/{tmcc_id:int}/bell_req")
+    async def ring_bell(
+        self,
+        tmcc_id: Annotated[int, Engine.id_path()],
+        option: Annotated[BellOption, Query(description="Bell effect")] = BellOption.TOGGLE,
+    ):
+        return super().ring_bell(tmcc_id, option)
+
     @router.post("/engine/{tmcc_id:int}/forward_req")
     async def forward(self, tmcc_id: Annotated[int, Engine.id_path()]):
         return super().forward(tmcc_id)
+
+    @router.post("/engine/{tmcc_id:int}/horn_req")
+    async def blow_horn(
+        self,
+        tmcc_id: Annotated[int, Engine.id_path()],
+        option: Annotated[HornOption, Query(description="Horn effect")] = HornOption.SOUND,
+        intensity: Annotated[int, Query(description="Quilling horn intensity (Legacy engines only)", ge=0, le=15)] = 10,
+    ):
+        return super().blow_horn(tmcc_id, option, intensity)
 
     @router.post("/engine/{tmcc_id:int}/reverse_req")
     async def reverse(self, tmcc_id: Annotated[int, Engine.id_path()]):
@@ -445,13 +506,30 @@ class Train(PyTrainEngine):
     async def get_train(self, tmcc_id: Annotated[int, Train.id_path()]):
         return TrainInfo(**super().get(tmcc_id))
 
+    @router.post("/train/{tmcc_id:int}/bell_req")
+    async def ring_bell(
+        self,
+        tmcc_id: Annotated[int, Train.id_path()],
+        option: Annotated[BellOption, Query(description="Bell effect")] = BellOption.TOGGLE,
+    ):
+        return super().ring_bell(tmcc_id, option)
+
     @router.post("/train/{tmcc_id:int}/forward_req")
-    async def forward(self, tmcc_id: Annotated[int, Engine.id_path()]):
+    async def forward(self, tmcc_id: Annotated[int, Train.id_path()]):
         return super().forward(tmcc_id)
 
     @router.post("/train/{tmcc_id:int}/reverse_req")
-    async def reverse(self, tmcc_id: Annotated[int, Engine.id_path()]):
+    async def reverse(self, tmcc_id: Annotated[int, Train.id_path()]):
         return super().reverse(tmcc_id)
+
+    @router.post("/train/{tmcc_id:int}/horn_req")
+    async def blow_horn(
+        self,
+        tmcc_id: Annotated[int, Train.id_path()],
+        option: Annotated[HornOption, Query(description="Horn effect")] = HornOption.SOUND,
+        intensity: Annotated[int, Query(description="Quilling horn intensity (Legacy engines only)", ge=0, le=15)] = 10,
+    ):
+        return super().blow_horn(tmcc_id, option, intensity)
 
     @router.post("/train/{tmcc_id:int}/speed_req/{speed:int}")
     async def set_speed(
