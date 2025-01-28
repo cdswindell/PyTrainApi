@@ -259,10 +259,17 @@ class PyTrainComponent:
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
 
-    def make_request(self, cmd_def: E, tmcc_id: int, data: int = None, submit: bool = True) -> CommandReq:
+    def do_request(
+        self,
+        cmd_def: E,
+        tmcc_id: int,
+        data: int = None,
+        submit: bool = True,
+        repeat: int = 1,
+    ) -> CommandReq:
         cmd_req = CommandReq.build(cmd_def, tmcc_id, data, self.scope)
         if submit is True:
-            cmd_req.send()
+            cmd_req.send(repeat=repeat)
         return cmd_req
 
     @staticmethod
@@ -332,42 +339,49 @@ class PyTrainEngine(PyTrainComponent):
 
     def forward(self, tmcc_id: int):
         if self.is_tmcc(tmcc_id):
-            self.make_request(TMCC1EngineCommandEnum.FORWARD_DIRECTION, tmcc_id)
+            self.do_request(TMCC1EngineCommandEnum.FORWARD_DIRECTION, tmcc_id)
         else:
-            self.make_request(TMCC2EngineCommandEnum.FORWARD_DIRECTION, tmcc_id)
+            self.do_request(TMCC2EngineCommandEnum.FORWARD_DIRECTION, tmcc_id)
         return {"status": f"{self.scope.title} {tmcc_id} forward..."}
+
+    def reset(self, tmcc_id: int, hold: bool = False):
+        if self.is_tmcc(tmcc_id):
+            self.do_request(TMCC1EngineCommandEnum.RESET, tmcc_id, repeat=30 if hold else 1)
+        else:
+            self.do_request(TMCC2EngineCommandEnum.RESET, tmcc_id, repeat=30 if hold else 1)
+        return {"status": f"{self.scope.title} {tmcc_id} {'reset and refueled' if hold else 'reset'}..."}
 
     def reverse(self, tmcc_id: int):
         if self.is_tmcc(tmcc_id):
-            self.make_request(TMCC1EngineCommandEnum.REVERSE_DIRECTION, tmcc_id)
+            self.do_request(TMCC1EngineCommandEnum.REVERSE_DIRECTION, tmcc_id)
         else:
-            self.make_request(TMCC2EngineCommandEnum.REVERSE_DIRECTION, tmcc_id)
+            self.do_request(TMCC2EngineCommandEnum.REVERSE_DIRECTION, tmcc_id)
         return {"status": f"{self.scope.title} {tmcc_id} reverse..."}
 
     def ring_bell(self, tmcc_id: int, option: BellOption):
         if self.is_tmcc(tmcc_id):
-            self.make_request(TMCC1EngineCommandEnum.RING_BELL, tmcc_id)
+            self.do_request(TMCC1EngineCommandEnum.RING_BELL, tmcc_id)
         else:
             if option is None or option == BellOption.TOGGLE:
-                self.make_request(TMCC2EngineCommandEnum.RING_BELL, tmcc_id)
+                self.do_request(TMCC2EngineCommandEnum.RING_BELL, tmcc_id)
             elif option == BellOption.ON:
-                self.make_request(TMCC2EngineCommandEnum.BELL_ON, tmcc_id)
+                self.do_request(TMCC2EngineCommandEnum.BELL_ON, tmcc_id)
             elif option == BellOption.OFF:
-                self.make_request(TMCC2EngineCommandEnum.BELL_OFF, tmcc_id)
+                self.do_request(TMCC2EngineCommandEnum.BELL_OFF, tmcc_id)
             elif option == BellOption.ONCE:
-                self.make_request(TMCC2EngineCommandEnum.BELL_ONE_SHOT_DING, tmcc_id, 3)
+                self.do_request(TMCC2EngineCommandEnum.BELL_ONE_SHOT_DING, tmcc_id, 3)
         return {"status": f"{self.scope.title} {tmcc_id} ringing bell..."}
 
     def blow_horn(self, tmcc_id: int, option: HornOption, intensity: int = 10):
         if self.is_tmcc(tmcc_id):
-            self.make_request(TMCC1EngineCommandEnum.BLOW_HORN_ONE, tmcc_id)
+            self.do_request(TMCC1EngineCommandEnum.BLOW_HORN_ONE, tmcc_id)
         else:
             if option is None or option == HornOption.SOUND:
-                self.make_request(TMCC2EngineCommandEnum.BLOW_HORN_ONE, tmcc_id)
+                self.do_request(TMCC2EngineCommandEnum.BLOW_HORN_ONE, tmcc_id)
             elif option == HornOption.GRADE:
-                self.make_request(SequenceCommandEnum.GRADE_CROSSING_SEQ, tmcc_id)
+                self.do_request(SequenceCommandEnum.GRADE_CROSSING_SEQ, tmcc_id)
             elif option == HornOption.QUILLING:
-                self.make_request(TMCC2EngineCommandEnum.QUILLING_HORN, tmcc_id, intensity)
+                self.do_request(TMCC2EngineCommandEnum.QUILLING_HORN, tmcc_id, intensity)
         return {"status": f"{self.scope.title} {tmcc_id} blowing horn..."}
 
 
@@ -414,6 +428,14 @@ class Engine(PyTrainEngine):
     ):
         return super().blow_horn(tmcc_id, option, intensity)
 
+    @router.post("/engine/{tmcc_id:int}/reset_req")
+    async def reset(
+        self,
+        tmcc_id: Annotated[int, Engine.id_path()],
+        hold: Annotated[bool, Query(title="refuel", description="If true, perform refuel operation")] = False,
+    ):
+        return super().reset(tmcc_id, hold=hold)
+
     @router.post("/engine/{tmcc_id:int}/reverse_req")
     async def reverse(self, tmcc_id: Annotated[int, Engine.id_path()]):
         return super().reverse(tmcc_id)
@@ -423,7 +445,7 @@ class Engine(PyTrainEngine):
         return super().shutdown(tmcc_id, dialog=dialog)
 
     @router.post("/engine/{tmcc_id:int}/speed_req/{speed:int}")
-    async def set_speed(
+    async def speed(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
         speed: Annotated[int, Path(description="New speed", ge=0, le=199)],
@@ -455,10 +477,10 @@ class Route(PyTrainComponent):
     async def get_route(self, tmcc_id: Annotated[int, Route.id_path()]):
         return RouteInfo(**super().get(tmcc_id))
 
-    @router.get("/route/{tmcc_id}/fire_req")
+    @router.post("/route/{tmcc_id}/fire_req")
     async def fire(self, tmcc_id: Annotated[int, Route.id_path()]):
-        self.make_request(TMCC1RouteCommandEnum.FIRE, tmcc_id)
-        return {"status": f"{self.scope.title} {tmcc_id}  fired"}
+        self.do_request(TMCC1RouteCommandEnum.FIRE, tmcc_id)
+        return {"status": f"{self.scope.title} {tmcc_id} fired"}
 
 
 @app.get("/switches", response_model=list[SwitchInfo])
@@ -518,6 +540,14 @@ class Train(PyTrainEngine):
     async def forward(self, tmcc_id: Annotated[int, Train.id_path()]):
         return super().forward(tmcc_id)
 
+    @router.post("/train/{tmcc_id:int}/reset_req")
+    async def reset(
+        self,
+        tmcc_id: Annotated[int, Train.id_path()],
+        hold: Annotated[bool, Query(title="refuel", description="If true, perform refuel operation")] = False,
+    ):
+        return super().reset(tmcc_id, hold=hold)
+
     @router.post("/train/{tmcc_id:int}/reverse_req")
     async def reverse(self, tmcc_id: Annotated[int, Train.id_path()]):
         return super().reverse(tmcc_id)
@@ -532,7 +562,7 @@ class Train(PyTrainEngine):
         return super().blow_horn(tmcc_id, option, intensity)
 
     @router.post("/train/{tmcc_id:int}/speed_req/{speed:int}")
-    async def set_speed(
+    async def speed(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
         speed: int,
