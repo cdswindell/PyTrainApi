@@ -540,6 +540,15 @@ class Train(PyTrainEngine):
     async def forward(self, tmcc_id: Annotated[int, Train.id_path()]):
         return super().forward(tmcc_id)
 
+    @router.post("/train/{tmcc_id:int}/horn_req")
+    async def blow_horn(
+        self,
+        tmcc_id: Annotated[int, Train.id_path()],
+        option: Annotated[HornOption, Query(description="Horn effect")] = HornOption.SOUND,
+        intensity: Annotated[int, Query(description="Quilling horn intensity (Legacy engines only)", ge=0, le=15)] = 10,
+    ):
+        return super().blow_horn(tmcc_id, option, intensity)
+
     @router.post("/train/{tmcc_id:int}/reset_req")
     async def reset(
         self,
@@ -552,14 +561,9 @@ class Train(PyTrainEngine):
     async def reverse(self, tmcc_id: Annotated[int, Train.id_path()]):
         return super().reverse(tmcc_id)
 
-    @router.post("/train/{tmcc_id:int}/horn_req")
-    async def blow_horn(
-        self,
-        tmcc_id: Annotated[int, Train.id_path()],
-        option: Annotated[HornOption, Query(description="Horn effect")] = HornOption.SOUND,
-        intensity: Annotated[int, Query(description="Quilling horn intensity (Legacy engines only)", ge=0, le=15)] = 10,
-    ):
-        return super().blow_horn(tmcc_id, option, intensity)
+    @router.post("/train/{tmcc_id:int}/shutdown_req")
+    async def shutdown(self, tmcc_id: Annotated[int, Train.id_path()], dialog: bool = False):
+        return super().shutdown(tmcc_id, dialog=dialog)
 
     @router.post("/train/{tmcc_id:int}/speed_req/{speed:int}")
     async def speed(
@@ -574,10 +578,6 @@ class Train(PyTrainEngine):
     @router.post("/train/{tmcc_id:int}/startup_req")
     async def startup(self, tmcc_id: Annotated[int, Train.id_path()], dialog: bool = False):
         return super().startup(tmcc_id, dialog=dialog)
-
-    @router.post("/train/{tmcc_id:int}/shutdown_req")
-    async def shutdown(self, tmcc_id: Annotated[int, Train.id_path()], dialog: bool = False):
-        return super().shutdown(tmcc_id, dialog=dialog)
 
     @router.post("/train/{tmcc_id:int}/stop_req")
     async def stop(self, tmcc_id: Annotated[int, Train.id_path()]):
