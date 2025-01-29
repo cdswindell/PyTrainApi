@@ -127,7 +127,6 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
-        print(f"********* username: {username} **********")
         if username is None:
             raise credentials_exception
         token_data = TokenData(username=username)
@@ -297,7 +296,11 @@ def redirect_to_doc():
     return RedirectResponse(url="/docs")
 
 
-@router.post("/{component}/{tmcc_id:int}/cli_req")
+@router.post(
+    "/{component}/{tmcc_id:int}/cli_req",
+    summary=f"Send {PROGRAM_NAME} CLI command",
+    description=f"Send a {PROGRAM_NAME} CLI command to control trains, switches, and accessories.",
+)
 async def send_command(
     component: Component,
     tmcc_id: Annotated[
@@ -333,7 +336,7 @@ async def send_command(
 @router.get(
     "/system/halt",
     summary="Emergency Stop",
-    description="Stops all engines and trains, in their tracks; turns off all power districts",
+    description="Stops all engines and trains, in their tracks; turns off all power districts.",
 )
 async def halt():
     try:
@@ -343,7 +346,11 @@ async def halt():
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/system/echo_req")
+@router.post(
+    "/system/echo_req",
+    summary="Enable/Disable Command Echoing",
+    description=f"Enable/disable echoing of {PROGRAM_NAME} commands to log file. ",
+)
 async def echo(on: bool = True):
     pytrain.queue_command(f"echo {'on' if on else 'off'}")
     return {"status": f"Echo {'enabled' if on else 'disabled'}"}
@@ -433,8 +440,8 @@ class PyTrainComponent:
         pytrain.queue_command(cmd)
 
 
-@router.get("/accessories", response_model=list[AccessoryInfo])
-async def get_accessories(contains: str = None):
+@router.get("/accessories")
+async def get_accessories(contains: str = None) -> list[AccessoryInfo]:
     return [AccessoryInfo(**d) for d in get_components(CommandScope.ACC, contains=contains)]
 
 
@@ -443,8 +450,8 @@ class Accessory(PyTrainComponent):
     def __init__(self):
         super().__init__(CommandScope.ACC)
 
-    @router.get("/accessory/{tmcc_id}", response_model=AccessoryInfo)
-    async def get_accessory(self, tmcc_id: Annotated[int, Accessory.id_path()]):
+    @router.get("/accessory/{tmcc_id}")
+    async def get_accessory(self, tmcc_id: Annotated[int, Accessory.id_path()]) -> AccessoryInfo:
         return AccessoryInfo(**super().get(tmcc_id))
 
 
@@ -541,8 +548,8 @@ class PyTrainEngine(PyTrainComponent):
         return {"status": f"{self.scope.title} {tmcc_id} blowing horn..."}
 
 
-@router.get("/engines", response_model=list[EngineInfo])
-async def get_engines(contains: str = None, is_legacy: bool = None, is_tmcc: bool = None):
+@router.get("/engines")
+async def get_engines(contains: str = None, is_legacy: bool = None, is_tmcc: bool = None) -> list[EngineInfo]:
     return [
         EngineInfo(**d)
         for d in get_components(
@@ -559,8 +566,8 @@ class Engine(PyTrainEngine):
     def __init__(self):
         super().__init__(CommandScope.ENGINE)
 
-    @router.get("/engine/{tmcc_id:int}", response_model=EngineInfo)
-    async def get_engine(self, tmcc_id: Annotated[int, Engine.id_path()]):
+    @router.get("/engine/{tmcc_id:int}")
+    async def get_engine(self, tmcc_id: Annotated[int, Engine.id_path()]) -> EngineInfo:
         return EngineInfo(**super().get(tmcc_id))
 
     @router.post("/engine/{tmcc_id:int}/bell_req")
