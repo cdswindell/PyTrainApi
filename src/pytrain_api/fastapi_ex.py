@@ -7,11 +7,16 @@
 #
 from __future__ import annotations
 
+from datetime import timedelta, datetime, timezone
 from enum import Enum
 from typing import TypeVar, Annotated, Any
 
-from fastapi import FastAPI, HTTPException, APIRouter, Path, Query
+import jwt
+from fastapi import HTTPException, APIRouter, Path, Query, Depends, status, FastAPI
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from fastapi_utils.cbv import cbv
+from jwt import InvalidTokenError
+from passlib.context import CryptContext
 from pydantic import BaseModel, field_validator, model_validator, Field
 from pytrain import (
     CommandScope,
@@ -32,9 +37,152 @@ from starlette.responses import RedirectResponse
 E = TypeVar("E", bound=CommandDefEnum)
 API_NAME = "PyTrainApi"
 
-pytrain = PyTrain("-client -api -echo".split())
+# to get a string like this run:
+# openssl rand -hex 32
+# TODO: Read key from env variable
+SECRET_KEY = "9b9cc80647ed32596c289ebc8a7e7b22a93259cbaaca96417532c271ced8f1fa"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+# password is:"secret" (without the quotes)
+fake_users_db = {
+    "cdswindell": {
+        "username": "cdswindell",
+        "full_name": "Dave Swindell",
+        "email": "pytraininfo@gmail.com",
+        "hashed_password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
+        "disabled": False,
+    },
+}
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    username: str | None = None
+
+
+class User(BaseModel):
+    username: str
+    email: str | None = None
+    full_name: str | None = None
+    disabled: bool | None = None
+
+
+class UserInDB(User):
+    hashed_password: str
+
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 app = FastAPI()
-router = APIRouter()
+
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+
+def get_user(db, username: str):
+    if username and username.startswith("pytrain:"):
+        username = username.split(":")[1]
+    if username in db:
+        user_dict = db[username]
+        return UserInDB(**user_dict)
+
+
+def authenticate_user(fake_db, username: str, password: str):
+    user = get_user(fake_db, username)
+    if not user:
+        return False
+    if not verify_password(password, user.hashed_password):
+        return False
+    return user
+
+
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        print(f"********* username: {username} **********")
+        if username is None:
+            raise credentials_exception
+        token_data = TokenData(username=username)
+    except InvalidTokenError:
+        raise credentials_exception
+    user = get_user(fake_users_db, username=token_data.username)
+    if user is None:
+        raise credentials_exception
+    return user
+
+
+async def get_current_active_user(
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    if current_user.disabled:
+        raise HTTPException(status_code=400, detail="Inactive user")
+    return current_user
+
+
+@app.post("/token")
+async def login_for_access_token(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+) -> Token:
+    user = authenticate_user(fake_users_db, form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(data={"sub": f"pytrain:{user.username}"}, expires_delta=access_token_expires)
+    return Token(access_token=access_token, token_type="bearer")
+
+
+@app.get("/users/me", response_model=User)
+async def read_users_me(
+    current_user: Annotated[User, Depends(get_current_active_user)],
+):
+    return current_user
+
+
+@app.get("/users/me/items")
+async def read_own_items(
+    current_user: Annotated[User, Depends(get_current_active_user)],
+):
+    return [{"item_id": "Foo", "owner": current_user.username}]
+
+
+@app.get("/items/")
+async def read_items(token: Annotated[str, Depends(oauth2_scheme)]):
+    return {"token": token}
+
+
+pytrain = PyTrain("-client -api -echo".split())
 
 
 class BellOption(str, Enum):
@@ -136,12 +284,20 @@ class TrainInfo(ComponentInfoIr):
     scope: Component = Component.TRAIN
 
 
+router = APIRouter(prefix="/pytrain/v1", dependencies=[Depends(get_current_active_user)])
+
+
 @app.get("/", summary=f"Redirect to {API_NAME} Documentation")
 def redirect_to_new_url():
     return RedirectResponse(url="/docs")
 
 
-@app.post("/{component}/{tmcc_id:int}/cli_req")
+@router.get("/", summary=f"Redirect to {API_NAME} Documentation")
+def redirect_to_doc():
+    return RedirectResponse(url="/docs")
+
+
+@router.post("/{component}/{tmcc_id:int}/cli_req")
 async def send_command(
     component: Component,
     tmcc_id: Annotated[
@@ -174,7 +330,7 @@ async def send_command(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@app.get(
+@router.get(
     "/system/halt",
     summary="Emergency Stop",
     description="Stops all engines and trains, in their tracks; turns off all power districts",
@@ -187,13 +343,13 @@ async def halt():
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@app.post("/system/echo_req")
+@router.post("/system/echo_req")
 async def echo(on: bool = True):
     pytrain.queue_command(f"echo {'on' if on else 'off'}")
     return {"status": f"Echo {'enabled' if on else 'disabled'}"}
 
 
-@app.post("/system/stop_req")
+@router.post("/system/stop_req")
 async def stop():
     pytrain.queue_command("tr 99 -s")
     pytrain.queue_command("en 99 -s")
@@ -277,7 +433,7 @@ class PyTrainComponent:
         pytrain.queue_command(cmd)
 
 
-@app.get("/accessories", response_model=list[AccessoryInfo])
+@router.get("/accessories", response_model=list[AccessoryInfo])
 async def get_accessories(contains: str = None):
     return [AccessoryInfo(**d) for d in get_components(CommandScope.ACC, contains=contains)]
 
@@ -385,7 +541,7 @@ class PyTrainEngine(PyTrainComponent):
         return {"status": f"{self.scope.title} {tmcc_id} blowing horn..."}
 
 
-@app.get("/engines", response_model=list[EngineInfo])
+@router.get("/engines", response_model=list[EngineInfo])
 async def get_engines(contains: str = None, is_legacy: bool = None, is_tmcc: bool = None):
     return [
         EngineInfo(**d)
@@ -463,7 +619,7 @@ class Engine(PyTrainEngine):
         return super().stop(tmcc_id)
 
 
-@app.get("/routes", response_model=list[RouteInfo])
+@router.get("/routes", response_model=list[RouteInfo])
 async def get_routes(contains: str = None):
     return [RouteInfo(**d) for d in get_components(CommandScope.ROUTE, contains=contains)]
 
@@ -483,7 +639,7 @@ class Route(PyTrainComponent):
         return {"status": f"{self.scope.title} {tmcc_id} fired"}
 
 
-@app.get("/switches", response_model=list[SwitchInfo])
+@router.get("/switches", response_model=list[SwitchInfo])
 async def get_switches(contains: str = None):
     return [SwitchInfo(**d) for d in get_components(CommandScope.SWITCH, contains=contains)]
 
@@ -506,7 +662,7 @@ class Switch(PyTrainComponent):
         return self.send(TMCC1SwitchCommandEnum.OUT, tmcc_id)
 
 
-@app.get("/trains", response_model=list[TrainInfo])
+@router.get("/trains", response_model=list[TrainInfo])
 async def get_trains(contains: str = None, is_legacy: bool = None, is_tmcc: bool = None):
     return [
         TrainInfo(**d)
