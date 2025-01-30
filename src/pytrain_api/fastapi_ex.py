@@ -13,8 +13,9 @@ from typing import TypeVar, Annotated, Any
 
 import jwt
 from ask_sdk_core.dispatch_components import AbstractRequestHandler
+from ask_sdk_core.handler_input import HandlerInput
 from ask_sdk_core.skill_builder import SkillBuilder
-from ask_sdk_core.utils import is_request_type
+from ask_sdk_core.utils import is_request_type, is_intent_name
 from ask_sdk_model.ui import SimpleCard
 from fastapi import HTTPException, APIRouter, Path, Query, Depends, status, FastAPI
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
@@ -96,14 +97,37 @@ class LaunchRequestHandler(AbstractRequestHandler):
         return handler_input.response_builder.speak(st).set_card(SimpleCard("Hello World", st)).response
 
 
+class HelloWorldIntentHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input: HandlerInput):
+        return is_intent_name("HelloWorldIntent")(handler_input)
+
+    def handle(self, handler_input: HandlerInput):
+        speech_text = "Hello World"
+        handler_input.response_builder.speak(speech_text).set_card(
+            SimpleCard("Hello World", speech_text)
+        ).set_should_end_session(True)
+        return handler_input.response_builder.response
+
+
+class SessionEndedRequestHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input: HandlerInput):
+        return is_request_type("SessionEndedRequest")(handler_input)
+
+    def handle(self, handler_input: HandlerInput):
+        # any cleanup logic goes here
+        return handler_input.response_builder.response
+
+
 sb.add_request_handler(LaunchRequestHandler())
-skill_adapter = sb.create()
+sb.add_request_handler(HelloWorldIntentHandler())
+sb.add_request_handler(SessionEndedRequestHandler())
+skill = sb.create()
 
 
-@app.post("/")
-async def alexa_endpoint(request: dict):
+@app.post("/alexa")
+async def alexa_endpoint(request):
     print("***", request)
-    return skill_adapter.request_dispatcher(request)
+    return skill.invoke(request.body)
 
 
 #
