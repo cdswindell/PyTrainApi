@@ -643,13 +643,13 @@ class Engine(PyTrainEngine):
         return super().ring_bell(tmcc_id, option)
 
     @router.post("/enginex/{tmcc_id:int}/bell_req")
-    async def ring_bellx(
+    def ring_bellx(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
         option: Annotated[BellOption, Query(description="Bell effect")] = BellOption.TOGGLE,
         request: Request = None,
     ):
-        print(request)
+        print(request.body())
         return super().ring_bell(tmcc_id, option)
 
     @router.post("/engine/{tmcc_id:int}/forward_req")
