@@ -19,7 +19,7 @@ from ask_sdk_core.utils import is_request_type, is_intent_name
 
 # from ask_sdk_model import Request
 from ask_sdk_model.ui import SimpleCard
-from fastapi import HTTPException, APIRouter, Path, Query, Depends, status, FastAPI, Request
+from fastapi import HTTPException, APIRouter, Path, Query, Depends, status, FastAPI, Request, Body
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from fastapi_utils.cbv import cbv
 from jwt import InvalidTokenError
@@ -645,8 +645,8 @@ class Engine(PyTrainEngine):
     @router.post("/enginex/{tmcc_id:int}/bell_req")
     async def ring_bellx(
         self,
-        tmcc_id: Annotated[int, Engine.id_path()],
-        option: Annotated[BellOption, Query(description="Bell effect")] = BellOption.TOGGLE,
+        tmcc_id: Annotated[int, Body()],
+        option: Annotated[BellOption, Body()] = BellOption.TOGGLE,
         request: Request = None,
     ):
         body = await request.json()
