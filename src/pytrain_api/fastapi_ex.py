@@ -12,7 +12,7 @@ from enum import Enum
 from typing import TypeVar, Annotated, Any
 
 import jwt
-from ask_sdk_core.dispatch_components import AbstractRequestHandler
+from ask_sdk_core.dispatch_components import AbstractRequestHandler, AbstractExceptionHandler
 from ask_sdk_core.handler_input import HandlerInput
 from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.utils import is_request_type, is_intent_name
@@ -90,6 +90,7 @@ sb = SkillBuilder()
 
 class LaunchRequestHandler(AbstractRequestHandler):
     def can_handle(self, handler_input):
+        print("LaunchRequestHandler", handler_input)
         return is_request_type("LaunchRequest")(handler_input)
 
     def handle(self, handler_input):
@@ -99,6 +100,7 @@ class LaunchRequestHandler(AbstractRequestHandler):
 
 class HelloWorldIntentHandler(AbstractRequestHandler):
     def can_handle(self, handler_input: HandlerInput):
+        print("HelloWorldIntentHandler", handler_input)
         return is_intent_name("HelloWorldIntent")(handler_input)
 
     def handle(self, handler_input: HandlerInput):
@@ -118,9 +120,24 @@ class SessionEndedRequestHandler(AbstractRequestHandler):
         return handler_input.response_builder.response
 
 
+class AllExceptionHandler(AbstractExceptionHandler):
+    def can_handle(self, handler_input, exception):
+        # type: (HandlerInput, Exception) -> bool
+        return True
+
+    def handle(self, handler_input, exception):
+        # Log the exception in CloudWatch Logs
+        print(exception)
+
+        speech = "Sorry, I didn't get it. Can you please say it again!!"
+        handler_input.response_builder.speak(speech).ask(speech)
+        return handler_input.response_builder.response
+
+
 sb.add_request_handler(LaunchRequestHandler())
 sb.add_request_handler(HelloWorldIntentHandler())
 sb.add_request_handler(SessionEndedRequestHandler())
+sb.add_exception_handler(AllExceptionHandler())
 skill = sb.create()
 
 
