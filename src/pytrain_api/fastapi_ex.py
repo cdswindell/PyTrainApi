@@ -645,8 +645,9 @@ class Engine(PyTrainEngine):
     @router.post("/enginex/{tmcc_id:int}/bell_req")
     async def ring_bellx(
         self,
-        tmcc_id: Annotated[int, Body()],
+        tmcc_id: Annotated[int, Engine.id_path()],
         option: Annotated[BellOption, Body()] = BellOption.TOGGLE,
+        cli: Annotated[str, Body()] = None,
         request: Request = None,
     ):
         body = await request.json()
