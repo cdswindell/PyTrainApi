@@ -12,6 +12,10 @@ from enum import Enum
 from typing import TypeVar, Annotated, Any
 
 import jwt
+from ask_sdk_core.dispatch_components import AbstractRequestHandler
+from ask_sdk_core.skill_builder import SkillBuilder
+from ask_sdk_core.utils import is_request_type
+from ask_sdk_model.ui import SimpleCard
 from fastapi import HTTPException, APIRouter, Path, Query, Depends, status, FastAPI
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from fastapi_utils.cbv import cbv
@@ -80,6 +84,26 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 app = FastAPI()
+sb = SkillBuilder()
+
+
+class LaunchRequestHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        return is_request_type("LaunchRequest")(handler_input)
+
+    def handle(self, handler_input):
+        st = "Welcome to my FastAPI Alexa skill!"
+        return handler_input.response_builder.speak(st).set_card(SimpleCard("Hello World", st)).response
+
+
+sb.add_request_handler(LaunchRequestHandler())
+skill_adapter = sb.create()
+
+
+@app.post("/")
+async def alexa_endpoint(request: dict):
+    print("***", request)
+    return skill_adapter.request_dispatcher(request)
 
 
 #
@@ -274,12 +298,13 @@ class TrainInfo(ComponentInfoIr):
     scope: Component = Component.TRAIN
 
 
-router = APIRouter(prefix="/pytrain/v1", dependencies=[Depends(get_current_active_user)])
+# router = APIRouter(prefix="/pytrain/v1", dependencies=[Depends(get_current_active_user)])
+router = APIRouter(prefix="/pytrain/v1")
 
 
-@app.get("/", summary=f"Redirect to {API_NAME} Documentation")
-def index_redirect():
-    return RedirectResponse(url="/docs")
+# @app.get("/", summary=f"Redirect to {API_NAME} Documentation")
+# def index_redirect():
+#     return RedirectResponse(url="/docs")
 
 
 @app.get("/pytrain", summary=f"Redirect to {API_NAME} Documentation")
