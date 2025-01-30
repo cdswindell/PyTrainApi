@@ -649,8 +649,8 @@ class Engine(PyTrainEngine):
         option: Annotated[BellOption, Query(description="Bell effect")] = BellOption.TOGGLE,
         request: Request = None,
     ):
-        print("*** Body: ", await request.body())
-        print("*** Json: ", await request.json())
+        body = await request.json()
+        print("*** Body: ", body)
         return super().ring_bell(tmcc_id, option)
 
     @router.post("/engine/{tmcc_id:int}/forward_req")
