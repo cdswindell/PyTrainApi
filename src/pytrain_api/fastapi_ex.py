@@ -143,8 +143,8 @@ skill = sb.create()
 
 @app.post("/alexa")
 def alexa_endpoint(request):
-    print("***", request, request.body)
-    return skill.invoke(request.body, None)
+    print("***", request)
+    return skill.invoke(request, None)
 
 
 #
