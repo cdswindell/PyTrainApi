@@ -643,14 +643,14 @@ class Engine(PyTrainEngine):
         return super().ring_bell(tmcc_id, option)
 
     @router.post("/enginex/{tmcc_id:int}/bell_req")
-    def ring_bellx(
+    async def ring_bellx(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
         option: Annotated[BellOption, Query(description="Bell effect")] = BellOption.TOGGLE,
         request: Request = None,
     ):
-        print("*** Body: ", request.body())
-        print("*** Json: ", request.json())
+        print("*** Body: ", await request.body())
+        print("*** Json: ", await request.json())
         return super().ring_bell(tmcc_id, option)
 
     @router.post("/engine/{tmcc_id:int}/forward_req")
