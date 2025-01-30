@@ -146,7 +146,7 @@ async def get_current_active_user(
     return current_user
 
 
-@app.post("/token")
+@app.post("/token", include_in_schema=False)
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> Token:
@@ -162,23 +162,11 @@ async def login_for_access_token(
     return Token(access_token=access_token, token_type="bearer")
 
 
-@app.get("/users/me", response_model=User)
+@app.get("/users/me", response_model=User, include_in_schema=False)
 async def read_users_me(
     current_user: Annotated[User, Depends(get_current_active_user)],
 ):
     return current_user
-
-
-@app.get("/users/me/items")
-async def read_own_items(
-    current_user: Annotated[User, Depends(get_current_active_user)],
-):
-    return [{"item_id": "Foo", "owner": current_user.username}]
-
-
-@app.get("/items/")
-async def read_items(token: Annotated[str, Depends(oauth2_scheme)]):
-    return {"token": token}
 
 
 pytrain = PyTrain("-client -api -echo".split())
@@ -287,7 +275,12 @@ router = APIRouter(prefix="/pytrain/v1", dependencies=[Depends(get_current_activ
 
 
 @app.get("/", summary=f"Redirect to {API_NAME} Documentation")
-def redirect_to_new_url():
+def index_redirect():
+    return RedirectResponse(url="/docs")
+
+
+@app.get("/pytrain", summary=f"Redirect to {API_NAME} Documentation")
+def pytrain_redirect():
     return RedirectResponse(url="/docs")
 
 
