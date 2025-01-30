@@ -16,8 +16,10 @@ from ask_sdk_core.dispatch_components import AbstractRequestHandler, AbstractExc
 from ask_sdk_core.handler_input import HandlerInput
 from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.utils import is_request_type, is_intent_name
+
+# from ask_sdk_model import Request
 from ask_sdk_model.ui import SimpleCard
-from fastapi import HTTPException, APIRouter, Path, Query, Depends, status, FastAPI
+from fastapi import HTTPException, APIRouter, Path, Query, Depends, status, FastAPI, Request
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from fastapi_utils.cbv import cbv
 from jwt import InvalidTokenError
@@ -639,6 +641,10 @@ class Engine(PyTrainEngine):
         option: Annotated[BellOption, Query(description="Bell effect")] = BellOption.TOGGLE,
     ):
         return super().ring_bell(tmcc_id, option)
+
+    @router.post("/enginex/{tmcc_id:int}/bell_req")
+    async def ring_bellx(self, request: Request):
+        return await request.json()
 
     @router.post("/engine/{tmcc_id:int}/forward_req")
     async def forward(self, tmcc_id: Annotated[int, Engine.id_path()]):
