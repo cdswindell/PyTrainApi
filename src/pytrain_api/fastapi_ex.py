@@ -82,6 +82,9 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 app = FastAPI()
 
 
+#
+# fastapi run src/pytrain_api/fastapi_ex.py
+#
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
