@@ -141,7 +141,7 @@ sb.add_exception_handler(AllExceptionHandler())
 skill = sb.create()
 
 
-@app.post("/alexa")
+@app.post("/")
 def alexa_endpoint(request):
     print("***", request)
     return skill.invoke(request, None)
