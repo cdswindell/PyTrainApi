@@ -12,13 +12,8 @@ from enum import Enum
 from typing import TypeVar, Annotated, Any
 
 import jwt
-from ask_sdk_core.dispatch_components import AbstractRequestHandler, AbstractExceptionHandler
-from ask_sdk_core.handler_input import HandlerInput
-from ask_sdk_core.skill_builder import SkillBuilder
-from ask_sdk_core.utils import is_request_type, is_intent_name
 
 # from ask_sdk_model import Request
-from ask_sdk_model.ui import SimpleCard
 from fastapi import HTTPException, APIRouter, Path, Query, Depends, status, FastAPI
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from fastapi_utils.cbv import cbv
@@ -87,66 +82,6 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 app = FastAPI()
-sb = SkillBuilder()
-
-
-class LaunchRequestHandler(AbstractRequestHandler):
-    def can_handle(self, handler_input):
-        print("LaunchRequestHandler", handler_input)
-        return is_request_type("LaunchRequest")(handler_input)
-
-    def handle(self, handler_input):
-        st = "Welcome to my FastAPI Alexa skill!"
-        return handler_input.response_builder.speak(st).set_card(SimpleCard("Hello World", st)).response
-
-
-class HelloWorldIntentHandler(AbstractRequestHandler):
-    def can_handle(self, handler_input: HandlerInput):
-        print("HelloWorldIntentHandler", handler_input)
-        return is_intent_name("HelloWorldIntent")(handler_input)
-
-    def handle(self, handler_input: HandlerInput):
-        speech_text = "Hello World"
-        handler_input.response_builder.speak(speech_text).set_card(
-            SimpleCard("Hello World", speech_text)
-        ).set_should_end_session(True)
-        return handler_input.response_builder.response
-
-
-class SessionEndedRequestHandler(AbstractRequestHandler):
-    def can_handle(self, handler_input: HandlerInput):
-        return is_request_type("SessionEndedRequest")(handler_input)
-
-    def handle(self, handler_input: HandlerInput):
-        # any cleanup logic goes here
-        return handler_input.response_builder.response
-
-
-class AllExceptionHandler(AbstractExceptionHandler):
-    def can_handle(self, handler_input, exception):
-        # type: (HandlerInput, Exception) -> bool
-        return True
-
-    def handle(self, handler_input, exception):
-        # Log the exception in CloudWatch Logs
-        print(exception)
-
-        speech = "Sorry, I didn't get it. Can you please say it again!!"
-        handler_input.response_builder.speak(speech).ask(speech)
-        return handler_input.response_builder.response
-
-
-sb.add_request_handler(LaunchRequestHandler())
-sb.add_request_handler(HelloWorldIntentHandler())
-sb.add_request_handler(SessionEndedRequestHandler())
-sb.add_exception_handler(AllExceptionHandler())
-skill = sb.create()
-
-
-@app.post("/")
-def alexa_endpoint(request):
-    print("***", request)
-    return skill.invoke(request, None)
 
 
 #
