@@ -475,6 +475,7 @@ class PyTrainEngine(PyTrainComponent):
             immediate = True
         cmd = f"{self.prefix} {tmcc_id}{tmcc} sp {speed}{' -i' if immediate is True else ''}"
         cmd += f"{' -d' if dialog is True else ''}"
+        print("*****", cmd)
         self.queue_command(cmd)
         return {"status": f"{self.scope.title} {tmcc_id} speed now {speed}"}
 
@@ -630,11 +631,11 @@ class Engine(PyTrainEngine):
     async def shutdown(self, tmcc_id: Annotated[int, Engine.id_path()], dialog: bool = False):
         return super().shutdown(tmcc_id, dialog=dialog)
 
-    @router.post("/engine/{tmcc_id:int}/speed_req/{speed:int|str}")
+    @router.post("/engine/{tmcc_id:int}/speed_req/{speed}")
     async def speed(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
-        speed: Annotated[int | str, Path(description="New speed", ge=0, le=199)],
+        speed: Annotated[int, Path(description="New speed", ge=0, le=199)],
         immediate: bool = None,
         dialog: bool = None,
     ):
@@ -759,7 +760,7 @@ class Train(PyTrainEngine):
     async def shutdown(self, tmcc_id: Annotated[int, Train.id_path()], dialog: bool = False):
         return super().shutdown(tmcc_id, dialog=dialog)
 
-    @router.post("/train/{tmcc_id:int}/speed_req/{speed:int}")
+    @router.post("/train/{tmcc_id:int}/speed_req/{speed}")
     async def speed(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
