@@ -473,9 +473,9 @@ class PyTrainEngine(PyTrainComponent):
         tmcc = self.tmcc(tmcc_id)
         if tmcc:
             immediate = True
-        self.queue_command(
-            f"{self.prefix} {tmcc_id}{tmcc} sp {speed}{' -i' if immediate else ''}{' -d' if dialog else ''}"
-        )
+        cmd = f"{self.prefix} {tmcc_id}{tmcc} sp {speed}{' -i' if immediate is True else ''}"
+        cmd += f"{' -d' if dialog is True else ''}"
+        self.queue_command(cmd)
         return {"status": f"{self.scope.title} {tmcc_id} speed now {speed}"}
 
     def startup(self, tmcc_id: int, dialog: bool = False):
@@ -635,8 +635,8 @@ class Engine(PyTrainEngine):
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
         speed: Annotated[int | str, Path(description="New speed", ge=0, le=199)],
-        immediate: bool = False,
-        dialog: bool = False,
+        immediate: bool = None,
+        dialog: bool = None,
     ):
         return super().speed(tmcc_id, speed, immediate=immediate, dialog=dialog)
 
@@ -764,8 +764,8 @@ class Train(PyTrainEngine):
         self,
         tmcc_id: Annotated[int, Train.id_path()],
         speed: int,
-        immediate: bool = False,
-        dialog: bool = False,
+        immediate: bool = None,
+        dialog: bool = None,
     ):
         return super().speed(tmcc_id, speed, immediate=immediate, dialog=dialog)
 
