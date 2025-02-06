@@ -508,6 +508,20 @@ class PyTrainEngine(PyTrainComponent):
             self.do_request(TMCC2EngineCommandEnum.FORWARD_DIRECTION, tmcc_id)
         return {"status": f"{self.scope.title} {tmcc_id} forward..."}
 
+    def front_coupler(self, tmcc_id: int):
+        if self.is_tmcc(tmcc_id):
+            self.do_request(TMCC1EngineCommandEnum.FRONT_COUPLER, tmcc_id)
+        else:
+            self.do_request(TMCC2EngineCommandEnum.FRONT_COUPLER, tmcc_id)
+        return {"status": f"{self.scope.title} {tmcc_id} front coupler..."}
+
+    def rear_coupler(self, tmcc_id: int):
+        if self.is_tmcc(tmcc_id):
+            self.do_request(TMCC1EngineCommandEnum.REAR_COUPLER, tmcc_id)
+        else:
+            self.do_request(TMCC2EngineCommandEnum.REAR_COUPLER, tmcc_id)
+        return {"status": f"{self.scope.title} {tmcc_id} rear coupler..."}
+
     def reset(self, tmcc_id: int, hold: bool = False):
         if self.is_tmcc(tmcc_id):
             self.do_request(TMCC1EngineCommandEnum.RESET, tmcc_id, repeat=30 if hold else 1)
@@ -582,6 +596,14 @@ class Engine(PyTrainEngine):
     @router.post("/engine/{tmcc_id:int}/forward_req")
     async def forward(self, tmcc_id: Annotated[int, Engine.id_path()]):
         return super().forward(tmcc_id)
+
+    @router.post("/engine/{tmcc_id:int}/front_coupler_req")
+    async def front_coupler(self, tmcc_id: Annotated[int, Engine.id_path()]):
+        return super().front_coupler(tmcc_id)
+
+    @router.post("/engine/{tmcc_id:int}/rear_coupler_req")
+    async def rear_coupler(self, tmcc_id: Annotated[int, Engine.id_path()]):
+        return super().rear_coupler(tmcc_id)
 
     @router.post("/engine/{tmcc_id:int}/horn_req")
     async def blow_horn(
@@ -703,6 +725,14 @@ class Train(PyTrainEngine):
     @router.post("/train/{tmcc_id:int}/forward_req")
     async def forward(self, tmcc_id: Annotated[int, Train.id_path()]):
         return super().forward(tmcc_id)
+
+    @router.post("/train/{tmcc_id:int}/front_coupler_req")
+    async def front_coupler(self, tmcc_id: Annotated[int, Train.id_path()]):
+        return super().front_coupler(tmcc_id)
+
+    @router.post("/train/{tmcc_id:int}/rear_coupler_req")
+    async def rear_coupler(self, tmcc_id: Annotated[int, Train.id_path()]):
+        return super().rear_coupler(tmcc_id)
 
     @router.post("/train/{tmcc_id:int}/horn_req")
     async def blow_horn(

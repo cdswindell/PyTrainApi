@@ -257,6 +257,37 @@
             "set the direction of engine {engine} to {direction}",
             "{direction} engine {engine}"
           ]
+        },
+        {
+          "name": "OpenCouplerIntent",
+          "slots": [
+            {
+              "name": "coupler",
+              "type": "coupler",
+              "samples": [
+                "{coupler}"
+              ]
+            },
+            {
+              "name": "engine",
+              "type": "AMAZON.NUMBER",
+              "samples": [
+                "{engine}",
+                "engine {engine}"
+              ]
+            }
+          ],
+          "samples": [
+            "Trigger {coupler} on {engine}",
+            "Release {coupler} on {engine}",
+            "Open {coupler} on {engine}",
+            "Release  {coupler} {engine}",
+            "Trigger {coupler} {engine}",
+            "Open {coupler} {engine}",
+            "Trigger {coupler} on engine {engine}",
+            "Release {coupler} on engine {engine}",
+            "Open {coupler} on engine {engine}"
+          ]
         }
       ],
       "types": [
@@ -406,6 +437,33 @@
                 "value": "forward",
                 "synonyms": [
                   "normal"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "coupler",
+          "values": [
+            {
+              "id": "1",
+              "name": {
+                "value": "rear coupler",
+                "synonyms": [
+                  "back coupler",
+                  "back",
+                  "rear"
+                ]
+              }
+            },
+            {
+              "id": "0",
+              "name": {
+                "value": "front coupler",
+                "synonyms": [
+                  "forward coupler",
+                  "forward",
+                  "front"
                 ]
               }
             }
@@ -709,6 +767,43 @@
               ]
             }
           ]
+        },
+        {
+          "name": "OpenCouplerIntent",
+          "confirmationRequired": false,
+          "prompts": {},
+          "slots": [
+            {
+              "name": "coupler",
+              "type": "coupler",
+              "confirmationRequired": false,
+              "elicitationRequired": true,
+              "prompts": {
+                "elicitation": "Elicit.Slot.1358337494406.338770774556"
+              }
+            },
+            {
+              "name": "engine",
+              "type": "AMAZON.NUMBER",
+              "confirmationRequired": false,
+              "elicitationRequired": true,
+              "prompts": {
+                "elicitation": "Elicit.Slot.1358337494406.86532759867"
+              },
+              "validations": [
+                {
+                  "type": "isGreaterThanOrEqualTo",
+                  "prompt": "Slot.Validation.1358337494406.86532759867.755026613231",
+                  "value": "1"
+                },
+                {
+                  "type": "isLessThanOrEqualTo",
+                  "prompt": "Slot.Validation.1358337494406.86532759867.317623550279",
+                  "value": "99"
+                }
+              ]
+            }
+          ]
         }
       ],
       "delegationStrategy": "ALWAYS"
@@ -719,7 +814,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "What is the TMCC ID of the engine you want to start?"
+            "value": "What is the Engine TMCC ID?"
           }
         ]
       },
@@ -728,7 +823,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "The TMCC ID must be between one and ninety nine"
+            "value": "TMCC ID's must be between one and ninety nine"
           }
         ]
       },
@@ -737,7 +832,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "The TMCC ID must be between one and ninety nine"
+            "value": "TMCC ID's must be between one and ninety nine"
           }
         ]
       },
@@ -746,7 +841,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "What is the TMCC ID of the engine to shut down?"
+            "value": "What is the Engine TMCC ID?"
           }
         ]
       },
@@ -755,7 +850,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "The TMCC ID must be between one and ninety nine"
+            "value": "TMCC ID's must be between one and ninety nine"
           }
         ]
       },
@@ -764,7 +859,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "The TMCC ID must be between one and ninety nine"
+            "value": "TMCC ID's must be between one and ninety nine"
           }
         ]
       },
@@ -782,7 +877,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "What is the TMCC ID of the switch?"
+            "value": "What is the Switch TMCC ID?"
           }
         ]
       },
@@ -809,7 +904,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "What is the TMCC ID of the engine?"
+            "value": "What is the Engine TMCC ID?"
           }
         ]
       },
@@ -827,7 +922,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "The TMCC ID must be between one and ninety nine"
+            "value": "TMCC ID's must be between one and ninety nine"
           }
         ]
       },
@@ -836,7 +931,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "The TMCC ID must be between one and ninety nine"
+            "value": "TMCC ID's must be between one and ninety nine"
           }
         ]
       },
@@ -863,7 +958,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "What is the TMCC ID of the engine to stop?"
+            "value": "What is the Engine TMCC ID?"
           }
         ]
       },
@@ -881,7 +976,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "What is the TMCC ID of the engine?"
+            "value": "What is the Engine TMCC ID?"
           }
         ]
       },
@@ -890,7 +985,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "What is the TMCC ID of the engine you want to reset?"
+            "value": "What is the Engine TMCC ID?"
           }
         ]
       },
@@ -899,7 +994,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "The TMCC ID must be between one and ninety nine"
+            "value": "TMCC ID's must be between one and ninety nine"
           }
         ]
       },
@@ -908,7 +1003,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "The TMCC ID must be between one and ninety nine"
+            "value": "TMCC ID's must be between one and ninety nine"
           }
         ]
       },
@@ -917,7 +1012,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "What is the TMCC ID of the engine to refuel?"
+            "value": "What is the Engine TMCC ID?"
           }
         ]
       },
@@ -926,7 +1021,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "The TMCC ID must be between one and ninety nine"
+            "value": "TMCC ID's must be between one and ninety nine"
           }
         ]
       },
@@ -935,7 +1030,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "The TMCC ID must be between one and ninety nine"
+            "value": "TMCC ID's must be between one and ninety nine"
           }
         ]
       },
@@ -953,7 +1048,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "What is the TMCC ID of the engine to change the direction of?"
+            "value": "What is the Engine TMCC ID?"
           }
         ]
       },
@@ -962,7 +1057,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "The TMCC ID must be between one and ninety nine"
+            "value": "TMCC ID's must be between one and ninety nine"
           }
         ]
       },
@@ -971,7 +1066,43 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "The TMCC ID must be between one and ninety nine"
+            "value": "TMCC ID's must be between one and ninety nine"
+          }
+        ]
+      },
+      {
+        "id": "Elicit.Slot.1358337494406.338770774556",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "Which coupler, front or back?"
+          }
+        ]
+      },
+      {
+        "id": "Elicit.Slot.1358337494406.86532759867",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "What is the Engine TMCC ID?"
+          }
+        ]
+      },
+      {
+        "id": "Slot.Validation.1358337494406.86532759867.755026613231",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "TMCC ID's must be between one and ninety nine"
+          }
+        ]
+      },
+      {
+        "id": "Slot.Validation.1358337494406.86532759867.317623550279",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "TMCC ID's must be between one and ninety nine"
           }
         ]
       }
