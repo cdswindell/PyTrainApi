@@ -469,7 +469,7 @@ class PyTrainEngine(PyTrainComponent):
     def tmcc(self, tmcc_id: int) -> str:
         return " -tmcc" if self.is_tmcc(tmcc_id) else ""
 
-    def speed(self, tmcc_id: int, speed: int, immediate: bool = False, dialog: bool = False):
+    def speed(self, tmcc_id: int, speed: int | str, immediate: bool = False, dialog: bool = False):
         tmcc = self.tmcc(tmcc_id)
         if tmcc:
             immediate = True
@@ -601,10 +601,6 @@ class Engine(PyTrainEngine):
     async def front_coupler(self, tmcc_id: Annotated[int, Engine.id_path()]):
         return super().front_coupler(tmcc_id)
 
-    @router.post("/engine/{tmcc_id:int}/rear_coupler_req")
-    async def rear_coupler(self, tmcc_id: Annotated[int, Engine.id_path()]):
-        return super().rear_coupler(tmcc_id)
-
     @router.post("/engine/{tmcc_id:int}/horn_req")
     async def blow_horn(
         self,
@@ -613,6 +609,10 @@ class Engine(PyTrainEngine):
         intensity: Annotated[int, Query(description="Quilling horn intensity (Legacy engines only)", ge=0, le=15)] = 10,
     ):
         return super().blow_horn(tmcc_id, option, intensity)
+
+    @router.post("/engine/{tmcc_id:int}/rear_coupler_req")
+    async def rear_coupler(self, tmcc_id: Annotated[int, Engine.id_path()]):
+        return super().rear_coupler(tmcc_id)
 
     @router.post("/engine/{tmcc_id:int}/reset_req")
     async def reset(
@@ -630,11 +630,11 @@ class Engine(PyTrainEngine):
     async def shutdown(self, tmcc_id: Annotated[int, Engine.id_path()], dialog: bool = False):
         return super().shutdown(tmcc_id, dialog=dialog)
 
-    @router.post("/engine/{tmcc_id:int}/speed_req/{speed:int}")
+    @router.post("/engine/{tmcc_id:int}/speed_req/{speed:int|str}")
     async def speed(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
-        speed: Annotated[int, Path(description="New speed", ge=0, le=199)],
+        speed: Annotated[int | str, Path(description="New speed", ge=0, le=199)],
         immediate: bool = False,
         dialog: bool = False,
     ):
