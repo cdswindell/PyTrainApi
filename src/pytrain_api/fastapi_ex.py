@@ -495,8 +495,10 @@ class PyTrainEngine(PyTrainComponent):
         return {"status": f"{self.scope.title} {tmcc_id} shutting down..."}
 
     def stop(self, tmcc_id: int):
-        tmcc = self.tmcc(tmcc_id)
-        self.queue_command(f"{self.prefix} {tmcc_id}{tmcc} -stop")
+        if self.is_tmcc(tmcc_id):
+            self.do_request(TMCC1EngineCommandEnum.STOP_IMMEDIATE, tmcc_id)
+        else:
+            self.do_request(TMCC2EngineCommandEnum.STOP_IMMEDIATE, tmcc_id)
         return {"status": f"{self.scope.title} {tmcc_id} stopping..."}
 
     def forward(self, tmcc_id: int):
