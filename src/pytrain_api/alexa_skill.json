@@ -37,6 +37,7 @@
               "name": "engine",
               "type": "AMAZON.NUMBER",
               "samples": [
+                "train {engine}",
                 "engine {engine}",
                 "{engine}"
               ]
@@ -44,14 +45,21 @@
             {
               "name": "dialogs",
               "type": "dialogs"
+            },
+            {
+              "name": "scope",
+              "type": "scope",
+              "samples": [
+                "{scope}"
+              ]
             }
           ],
           "samples": [
-            "Start up engine {engine} {dialogs}",
+            "Start up {scope} {engine} {dialogs}",
             "Start",
             "Start up",
-            "Power on engine {engine} {dialogs}",
-            "Power up engine {engine} {dialogs}",
+            "Power on {scope} {engine} {dialogs}",
+            "Power up {scope} {engine} {dialogs}",
             "start engine {engine} {dialogs}",
             "startup engine {engine} {dialogs}"
           ]
@@ -329,6 +337,25 @@
             "slow {engine} to {speed} {dialog}",
             "Slow engine {engine} to {speed} {dialog}"
           ]
+        },
+        {
+          "name": "FireRouteIntent",
+          "slots": [
+            {
+              "name": "route",
+              "type": "AMAZON.NUMBER",
+              "samples": [
+                "{route}",
+                "route {route}"
+              ]
+            }
+          ],
+          "samples": [
+            "acrivate route {route}",
+            "fire {route}",
+            "trigger route {route}",
+            "Fire route {route}"
+          ]
         }
       ],
       "types": [
@@ -340,11 +367,11 @@
               "name": {
                 "value": "immediate",
                 "synonyms": [
-                  "right away",
-                  "now",
-                  "immediately",
+                  "a. s. a. p.",
                   "ASAP",
-                  "a. s. a. p."
+                  "immediately",
+                  "right away",
+                  "now"
                 ]
               }
             },
@@ -1304,6 +1331,32 @@
               }
             }
           ]
+        },
+        {
+          "name": "scope",
+          "values": [
+            {
+              "id": "1",
+              "name": {
+                "value": "train",
+                "synonyms": [
+                  "lashup",
+                  "lash up",
+                  "consist"
+                ]
+              }
+            },
+            {
+              "id": "0",
+              "name": {
+                "value": "engine",
+                "synonyms": [
+                  "locomotive",
+                  "loco"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -1348,6 +1401,15 @@
                   "prompt": "Slot.Validation.446143357065.340185573145.1104912264856"
                 }
               ]
+            },
+            {
+              "name": "scope",
+              "type": "scope",
+              "confirmationRequired": false,
+              "elicitationRequired": true,
+              "prompts": {
+                "elicitation": "Elicit.Slot.1476602551302.1619159214572"
+              }
             }
           ]
         },
@@ -1672,6 +1734,34 @@
               "prompts": {}
             }
           ]
+        },
+        {
+          "name": "FireRouteIntent",
+          "confirmationRequired": false,
+          "prompts": {},
+          "slots": [
+            {
+              "name": "route",
+              "type": "AMAZON.NUMBER",
+              "confirmationRequired": false,
+              "elicitationRequired": true,
+              "prompts": {
+                "elicitation": "Elicit.Slot.223262448747.47417090794"
+              },
+              "validations": [
+                {
+                  "type": "isGreaterThanOrEqualTo",
+                  "prompt": "Slot.Validation.223262448747.47417090794.516677893122",
+                  "value": "1"
+                },
+                {
+                  "type": "isLessThanOrEqualTo",
+                  "prompt": "Slot.Validation.223262448747.47417090794.1127824902411",
+                  "value": "99"
+                }
+              ]
+            }
+          ]
         }
       ],
       "delegationStrategy": "ALWAYS"
@@ -1682,7 +1772,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "What is the Engine TMCC ID?"
+            "value": "What is the {scope} TMCC ID?"
           }
         ]
       },
@@ -1989,6 +2079,42 @@
           {
             "type": "PlainText",
             "value": "To what speed?"
+          }
+        ]
+      },
+      {
+        "id": "Elicit.Slot.223262448747.47417090794",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "What route do you want to fire?"
+          }
+        ]
+      },
+      {
+        "id": "Slot.Validation.223262448747.47417090794.516677893122",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "Routes must be between one and ninety nine"
+          }
+        ]
+      },
+      {
+        "id": "Slot.Validation.223262448747.47417090794.1127824902411",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "Routes must be between one and ninety nine"
+          }
+        ]
+      },
+      {
+        "id": "Elicit.Slot.1476602551302.1619159214572",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "Do you want to start up an engine or a train?"
           }
         ]
       }
