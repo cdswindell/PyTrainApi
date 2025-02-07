@@ -30,6 +30,8 @@ from pytrain import (
     TMCC2EngineCommandEnum,
     TMCC1RouteCommandEnum,
     SequenceCommandEnum,
+    TMCC2RRSpeedsEnum,
+    TMCC1RRSpeedsEnum,
 )
 from pytrain.cli.pytrain import PyTrain
 from pytrain.db.component_state import ComponentState
@@ -38,6 +40,27 @@ from starlette.responses import RedirectResponse
 
 E = TypeVar("E", bound=CommandDefEnum)
 API_NAME = "PyTrainApi"
+
+
+TMCC_RR_SPEED_MAP = {
+    201: TMCC1RRSpeedsEnum.ROLL,
+    202: TMCC1RRSpeedsEnum.RESTRICTED,
+    203: TMCC1RRSpeedsEnum.SLOW,
+    204: TMCC1RRSpeedsEnum.MEDIUM,
+    205: TMCC1RRSpeedsEnum.LIMITED,
+    206: TMCC1RRSpeedsEnum.NORMAL,
+    207: TMCC1RRSpeedsEnum.HIGHBALL,
+}
+
+LEGACY_RR_SPEED_MAP = {
+    201: TMCC2RRSpeedsEnum.ROLL,
+    202: TMCC2RRSpeedsEnum.RESTRICTED,
+    203: TMCC2RRSpeedsEnum.SLOW,
+    204: TMCC2RRSpeedsEnum.MEDIUM,
+    205: TMCC2RRSpeedsEnum.LIMITED,
+    206: TMCC2RRSpeedsEnum.NORMAL,
+    207: TMCC2RRSpeedsEnum.HIGHBALL,
+}
 
 # to get a string like this run:
 # openssl rand -hex 32
@@ -423,13 +446,16 @@ class PyTrainComponent:
 
     def do_request(
         self,
-        cmd_def: E,
-        tmcc_id: int,
+        cmd_def: E | CommandReq,
+        tmcc_id: int = None,
         data: int = None,
         submit: bool = True,
         repeat: int = 1,
     ) -> CommandReq:
-        cmd_req = CommandReq.build(cmd_def, tmcc_id, data, self.scope)
+        if isinstance(cmd_def, CommandReq):
+            cmd_req = cmd_def
+        else:
+            cmd_req = CommandReq.build(cmd_def, tmcc_id, data, self.scope)
         if submit is True:
             cmd_req.send(repeat=repeat)
         return cmd_req
@@ -470,14 +496,54 @@ class PyTrainEngine(PyTrainComponent):
         return " -tmcc" if self.is_tmcc(tmcc_id) else ""
 
     def speed(self, tmcc_id: int, speed: int | str, immediate: bool = False, dialog: bool = False):
+        # convert string numbers to ints
+        try:
+            if isinstance(speed, str) and speed.isdigit() is True:
+                speed = int(speed)
+        except ValueError:
+            pass
         tmcc = self.tmcc(tmcc_id)
+        if immediate is True:
+            cmd_def = TMCC1EngineCommandEnum.ABSOLUTE_SPEED if tmcc is True else TMCC2EngineCommandEnum.ABSOLUTE_SPEED
+        elif dialog is True:
+            cmd_def = SequenceCommandEnum.RAMPED_SPEED_DIALOG_SEQ
+        else:
+            cmd_def = SequenceCommandEnum.RAMPED_SPEED_SEQ
+        cmd = None
         if tmcc:
-            immediate = True
-        cmd = f"{self.prefix} {tmcc_id}{tmcc} sp {speed}{' -i' if immediate is True else ''}"
-        cmd += f"{' -d' if dialog is True else ''}"
-        print("*****", cmd)
-        self.queue_command(cmd)
-        return {"status": f"{self.scope.title} {tmcc_id} speed now {speed}"}
+            if isinstance(speed, int):
+                if speed in TMCC_RR_SPEED_MAP:
+                    speed = TMCC_RR_SPEED_MAP[speed].value[0]
+                    cmd = CommandReq.build(cmd_def, tmcc_id, data=speed, scope=self.scope)
+                elif 0 <= speed <= 31:
+                    cmd = CommandReq.build(cmd_def, tmcc_id, data=speed, scope=self.scope)
+            elif isinstance(speed, str):
+                cmd_def = TMCC1EngineCommandEnum.by_name(f"SPEED_{speed.upper()}", False)
+                if cmd_def:
+                    cmd = CommandReq.build(cmd_def, tmcc_id, scope=self.scope)
+            if cmd is None:
+                raise HTTPException(
+                    status_code=status.HTTP_406_NOT_ACCEPTABLE,
+                    detail=f"TMCC speeds must be between 0 and 31 inclusive: {speed}",
+                )
+        else:
+            if isinstance(speed, int):
+                if speed in LEGACY_RR_SPEED_MAP:
+                    speed = LEGACY_RR_SPEED_MAP[speed].value[0]
+                    cmd = CommandReq.build(cmd_def, tmcc_id, data=speed, scope=self.scope)
+                elif 0 <= speed <= 199:
+                    cmd = CommandReq.build(cmd_def, tmcc_id, data=speed, scope=self.scope)
+            elif isinstance(speed, str):
+                cmd_def = TMCC2EngineCommandEnum.by_name(f"SPEED_{speed.upper()}", False)
+                if cmd_def:
+                    cmd = CommandReq.build(cmd_def, tmcc_id, scope=self.scope)
+            if cmd is None:
+                raise HTTPException(
+                    status_code=status.HTTP_406_NOT_ACCEPTABLE,
+                    detail=f"Legacy speeds must be between 0 and 199 inclusive: {speed}",
+                )
+        self.do_request(cmd)
+        return {"status": f"{self.scope.title} {tmcc_id} speed now: {cmd.data}"}
 
     def startup(self, tmcc_id: int, dialog: bool = False):
         cmd = "-sui"
@@ -635,7 +701,10 @@ class Engine(PyTrainEngine):
     async def speed(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
-        speed: Annotated[int, Path(description="New speed", ge=0, le=199)],
+        speed: Annotated[
+            int | str,
+            Path(description="New speed (0 to 195, roll, restricted, slow, medium, limited, normal, highball"),
+        ],
         immediate: bool = None,
         dialog: bool = None,
     ):
@@ -764,7 +833,7 @@ class Train(PyTrainEngine):
     async def speed(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
-        speed: int,
+        speed: int | str,
         immediate: bool = None,
         dialog: bool = None,
     ):
