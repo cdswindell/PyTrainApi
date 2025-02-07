@@ -336,10 +336,21 @@
           "name": "dialogs",
           "values": [
             {
+              "id": "2",
+              "name": {
+                "value": "immediate",
+                "synonyms": [
+                  "right away",
+                  "now"
+                ]
+              }
+            },
+            {
               "id": "1",
               "name": {
                 "value": "dialog",
                 "synonyms": [
+                  "delay",
                   "with delay",
                   "with dialog",
                   "delayed"
@@ -351,11 +362,11 @@
               "name": {
                 "value": "no dialog",
                 "synonyms": [
+                  "no dialog",
+                  "no delay",
                   "silent",
                   "with no delay",
-                  "with no dialog",
-                  "immediate",
-                  "now"
+                  "with no dialog"
                 ]
               }
             }
@@ -510,6 +521,306 @@
         {
           "name": "rr_speed",
           "values": [
+            {
+              "id": "110",
+              "name": {
+                "value": "110"
+              }
+            },
+            {
+              "id": "109",
+              "name": {
+                "value": "109"
+              }
+            },
+            {
+              "id": "108",
+              "name": {
+                "value": "108"
+              }
+            },
+            {
+              "id": "107",
+              "name": {
+                "value": "107"
+              }
+            },
+            {
+              "id": "106",
+              "name": {
+                "value": "106"
+              }
+            },
+            {
+              "id": "105",
+              "name": {
+                "value": "105"
+              }
+            },
+            {
+              "id": "104",
+              "name": {
+                "value": "104"
+              }
+            },
+            {
+              "id": "103",
+              "name": {
+                "value": "103"
+              }
+            },
+            {
+              "id": "102",
+              "name": {
+                "value": "102"
+              }
+            },
+            {
+              "id": "101",
+              "name": {
+                "value": "101"
+              }
+            },
+            {
+              "id": "100",
+              "name": {
+                "value": "100"
+              }
+            },
+            {
+              "id": "99",
+              "name": {
+                "value": "99"
+              }
+            },
+            {
+              "id": "98",
+              "name": {
+                "value": "98"
+              }
+            },
+            {
+              "id": "97",
+              "name": {
+                "value": "97"
+              }
+            },
+            {
+              "id": "96",
+              "name": {
+                "value": "96"
+              }
+            },
+            {
+              "id": "95",
+              "name": {
+                "value": "95"
+              }
+            },
+            {
+              "id": "94",
+              "name": {
+                "value": "94"
+              }
+            },
+            {
+              "id": "93",
+              "name": {
+                "value": "93"
+              }
+            },
+            {
+              "id": "92",
+              "name": {
+                "value": "92"
+              }
+            },
+            {
+              "id": "91",
+              "name": {
+                "value": "91"
+              }
+            },
+            {
+              "id": "90",
+              "name": {
+                "value": "90"
+              }
+            },
+            {
+              "id": "89",
+              "name": {
+                "value": "89"
+              }
+            },
+            {
+              "id": "88",
+              "name": {
+                "value": "88"
+              }
+            },
+            {
+              "id": "87",
+              "name": {
+                "value": "87"
+              }
+            },
+            {
+              "id": "86",
+              "name": {
+                "value": "86"
+              }
+            },
+            {
+              "id": "85",
+              "name": {
+                "value": "85"
+              }
+            },
+            {
+              "id": "84",
+              "name": {
+                "value": "84"
+              }
+            },
+            {
+              "id": "83",
+              "name": {
+                "value": "83"
+              }
+            },
+            {
+              "id": "82",
+              "name": {
+                "value": "82"
+              }
+            },
+            {
+              "id": "81",
+              "name": {
+                "value": "81"
+              }
+            },
+            {
+              "id": "80",
+              "name": {
+                "value": "80"
+              }
+            },
+            {
+              "id": "79",
+              "name": {
+                "value": "79"
+              }
+            },
+            {
+              "id": "78",
+              "name": {
+                "value": "78"
+              }
+            },
+            {
+              "id": "77",
+              "name": {
+                "value": "77"
+              }
+            },
+            {
+              "id": "76",
+              "name": {
+                "value": "76"
+              }
+            },
+            {
+              "id": "75",
+              "name": {
+                "value": "75"
+              }
+            },
+            {
+              "id": "74",
+              "name": {
+                "value": "74"
+              }
+            },
+            {
+              "id": "73",
+              "name": {
+                "value": "73"
+              }
+            },
+            {
+              "id": "72",
+              "name": {
+                "value": "72"
+              }
+            },
+            {
+              "id": "71",
+              "name": {
+                "value": "71"
+              }
+            },
+            {
+              "id": "70",
+              "name": {
+                "value": "70"
+              }
+            },
+            {
+              "id": "69",
+              "name": {
+                "value": "69"
+              }
+            },
+            {
+              "id": "68",
+              "name": {
+                "value": "68"
+              }
+            },
+            {
+              "id": "67",
+              "name": {
+                "value": "67"
+              }
+            },
+            {
+              "id": "66",
+              "name": {
+                "value": "66"
+              }
+            },
+            {
+              "id": "65",
+              "name": {
+                "value": "65"
+              }
+            },
+            {
+              "id": "64",
+              "name": {
+                "value": "64"
+              }
+            },
+            {
+              "id": "63",
+              "name": {
+                "value": "63"
+              }
+            },
+            {
+              "id": "62",
+              "name": {
+                "value": "62"
+              }
+            },
+            {
+              "id": "61",
+              "name": {
+                "value": "61"
+              }
+            },
             {
               "id": "60",
               "name": {
