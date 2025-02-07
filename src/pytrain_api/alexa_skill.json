@@ -927,6 +927,7 @@
               "name": {
                 "value": "highball",
                 "synonyms": [
+                  "highball speed",
                   "zoom",
                   "really fast",
                   "max",
@@ -937,37 +938,55 @@
             {
               "id": "206",
               "name": {
-                "value": "normal"
+                "value": "normal",
+                "synonyms": [
+                  "normal speed"
+                ]
               }
             },
             {
               "id": "205",
               "name": {
-                "value": "limited"
+                "value": "limited",
+                "synonyms": [
+                  "limited speed"
+                ]
               }
             },
             {
               "id": "204",
               "name": {
-                "value": "medium"
+                "value": "medium",
+                "synonyms": [
+                  "medium speed"
+                ]
               }
             },
             {
               "id": "203",
               "name": {
-                "value": "slow"
+                "value": "slow",
+                "synonyms": [
+                  "slow speed"
+                ]
               }
             },
             {
               "id": "202",
               "name": {
-                "value": "restricted"
+                "value": "restricted",
+                "synonyms": [
+                  "restricted speed"
+                ]
               }
             },
             {
               "id": "201",
               "name": {
-                "value": "roll"
+                "value": "roll",
+                "synonyms": [
+                  "roll speed"
+                ]
               }
             }
           ]
