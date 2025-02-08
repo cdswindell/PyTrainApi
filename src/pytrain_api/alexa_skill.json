@@ -317,6 +317,8 @@
               "name": "engine",
               "type": "AMAZON.NUMBER",
               "samples": [
+                "train {engine}",
+                "engine {engine}",
                 "{engine}"
               ]
             },
@@ -333,22 +335,26 @@
             {
               "name": "dialog",
               "type": "dialogs"
+            },
+            {
+              "name": "scope",
+              "type": "scope"
             }
           ],
           "samples": [
-            "Slow engine {engine} to speed {speed} {dialog}",
-            "speed up engine {engine} to {speed} {dialog}",
+            "Slow {scope} {engine} to speed {speed} {dialog}",
+            "speed up {scope} {engine} to {speed} {dialog}",
             "Set the speed of {engine} to  {speed} {dialog}",
             "Set speed of {engine} to {speed} {dialog}",
-            "accelerate engine {engine} to {speed} {dialog}",
-            "decelerate engine {engine} to {speed} {dialog}",
-            "decelerate engine {engine} to speed {speed} {dialog}",
-            "accelerate engine {engine} to speed {speed} {dialog}",
+            "accelerate {scope} {engine} to {speed} {dialog}",
+            "decelerate {scope} {engine} to {speed} {dialog}",
+            "decelerate {scope} {engine} to speed {speed} {dialog}",
+            "accelerate {scope} {engine} to speed {speed} {dialog}",
             "Set speed of {engine} to speed {speed} {dialog}",
             "Set the speed of {engine} to speed  {speed} {dialog}",
             "speed up {engine} to {speed} {dialog}",
             "slow {engine} to {speed} {dialog}",
-            "Slow engine {engine} to {speed} {dialog}"
+            "Slow {scope} {engine} to {speed} {dialog}"
           ]
         },
         {
@@ -1763,6 +1769,13 @@
               "confirmationRequired": false,
               "elicitationRequired": false,
               "prompts": {}
+            },
+            {
+              "name": "scope",
+              "type": "scope",
+              "confirmationRequired": false,
+              "elicitationRequired": false,
+              "prompts": {}
             }
           ]
         },
@@ -2100,7 +2113,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "What is the Engine TMCC ID?"
+            "value": "Tell me the {scope} TMCC ID?"
           }
         ]
       },
