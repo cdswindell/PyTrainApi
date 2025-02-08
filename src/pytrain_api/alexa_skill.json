@@ -43,22 +43,22 @@
               ]
             },
             {
-              "name": "dialogs",
-              "type": "dialogs"
-            },
-            {
               "name": "scope",
               "type": "scope"
+            },
+            {
+              "name": "dialog",
+              "type": "dialogs"
             }
           ],
           "samples": [
-            "Start up {scope} {engine} {dialogs}",
+            "Start up {scope} {engine} {dialog}",
             "Start",
             "Start up",
-            "Power on {scope} {engine} {dialogs}",
-            "Power up {scope} {engine} {dialogs}",
-            "start {scope} {engine} {dialogs}",
-            "startup {scope} {engine} {dialogs}"
+            "Power on {scope} {engine} {dialog}",
+            "Power up {scope} {engine} {dialog}",
+            "start {scope} {engine} {dialog}",
+            "startup {scope} {engine} {dialog}"
           ]
         },
         {
@@ -74,22 +74,22 @@
               ]
             },
             {
-              "name": "dialogs",
-              "type": "dialogs"
-            },
-            {
               "name": "scope",
               "type": "scope"
+            },
+            {
+              "name": "dialog",
+              "type": "dialogs"
             }
           ],
           "samples": [
-            "Shut down {engine} {dialogs}",
-            "Power off  {engine} {dialogs}",
-            "Power down {engine} {dialogs}",
+            "Shut down {engine} {dialog}",
+            "Power off  {engine} {dialog}",
+            "Power down {engine} {dialog}",
             "Power off",
-            "Power off {scope} {engine} {dialogs}",
-            "Power down {scope} {engine} {dialogs}",
-            "Shut down {scope} {engine} {dialogs}"
+            "Power off {scope} {engine} {dialog}",
+            "Power down {scope} {engine} {dialog}",
+            "Shut down {scope} {engine} {dialog}"
           ]
         },
         {
@@ -1408,21 +1408,15 @@
               ]
             },
             {
-              "name": "dialogs",
-              "type": "dialogs",
-              "confirmationRequired": false,
-              "elicitationRequired": false,
-              "prompts": {},
-              "validations": [
-                {
-                  "type": "hasEntityResolutionMatch",
-                  "prompt": "Slot.Validation.446143357065.340185573145.1104912264856"
-                }
-              ]
-            },
-            {
               "name": "scope",
               "type": "scope",
+              "confirmationRequired": false,
+              "elicitationRequired": false,
+              "prompts": {}
+            },
+            {
+              "name": "dialog",
+              "type": "dialogs",
               "confirmationRequired": false,
               "elicitationRequired": false,
               "prompts": {}
@@ -1456,15 +1450,15 @@
               ]
             },
             {
-              "name": "dialogs",
-              "type": "dialogs",
+              "name": "scope",
+              "type": "scope",
               "confirmationRequired": false,
               "elicitationRequired": false,
               "prompts": {}
             },
             {
-              "name": "scope",
-              "type": "scope",
+              "name": "dialog",
+              "type": "dialogs",
               "confirmationRequired": false,
               "elicitationRequired": false,
               "prompts": {}
