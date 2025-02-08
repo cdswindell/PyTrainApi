@@ -425,6 +425,7 @@
               "name": "tmcc_id",
               "type": "AMAZON.NUMBER",
               "samples": [
+                "number {tmcc_id}",
                 "Accessory {tmcc_id}",
                 "Turnout {scope}",
                 "Switch {tmcc_id}",
@@ -435,6 +436,7 @@
             }
           ],
           "samples": [
+            "{scope} number {tmcc_id} status",
             "report on {scope} {tmcc_id}",
             "{scope} {tmcc_id} report",
             "{scope} {tmcc_id} status",
@@ -1437,7 +1439,13 @@
             {
               "id": "3",
               "name": {
-                "value": "accessory"
+                "value": "accessory",
+                "synonyms": [
+                  "sensor",
+                  "track",
+                  "sensor track",
+                  "power district"
+                ]
               }
             },
             {
