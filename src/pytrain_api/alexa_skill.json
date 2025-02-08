@@ -204,15 +204,20 @@
               "name": "engine",
               "type": "AMAZON.NUMBER",
               "samples": [
+                "train {engine}",
                 "{engine}",
                 "engine {engine}"
               ]
+            },
+            {
+              "name": "scope",
+              "type": "scope"
             }
           ],
           "samples": [
             "{ring} bell {engine}",
-            "{ring} bell on engine {engine}",
-            "{ring} the bell on engine {engine}"
+            "{ring} bell on {scope} {engine}",
+            "{ring} the bell on {scope} {engine}"
           ]
         },
         {
@@ -556,6 +561,7 @@
               "name": {
                 "value": "rear coupler",
                 "synonyms": [
+                  "rear connector",
                   "back coupler",
                   "back",
                   "rear"
@@ -567,6 +573,7 @@
               "name": {
                 "value": "front coupler",
                 "synonyms": [
+                  "front connector",
                   "forward coupler",
                   "forward",
                   "front"
@@ -1609,6 +1616,13 @@
               "prompts": {
                 "elicitation": "Elicit.Slot.1637281932431.214580969012"
               }
+            },
+            {
+              "name": "scope",
+              "type": "scope",
+              "confirmationRequired": false,
+              "elicitationRequired": false,
+              "prompts": {}
             }
           ]
         },
@@ -1987,7 +2001,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "What is the Engine TMCC ID?"
+            "value": "Tell me the {scope} TMCC ID?"
           }
         ]
       },
