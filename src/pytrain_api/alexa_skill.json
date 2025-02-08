@@ -410,6 +410,41 @@
             "trigger route {route}",
             "Fire route {route}"
           ]
+        },
+        {
+          "name": "GetStatusIntent",
+          "slots": [
+            {
+              "name": "scope",
+              "type": "scope",
+              "samples": [
+                "{scope}"
+              ]
+            },
+            {
+              "name": "tmcc_id",
+              "type": "AMAZON.NUMBER",
+              "samples": [
+                "Accessory {tmcc_id}",
+                "Turnout {scope}",
+                "Switch {tmcc_id}",
+                "Train {tmcc_id}",
+                "Engine {tmcc_id}",
+                "{tmcc_id}"
+              ]
+            }
+          ],
+          "samples": [
+            "report on {scope} {tmcc_id}",
+            "{scope} {tmcc_id} report",
+            "{scope} {tmcc_id} status",
+            "report {scope} {tmcc_id}",
+            "tell me the status of {scope} {tmcc_id}",
+            "Status of {scope} {tmcc_id}",
+            "Tell me about {scope} {tmcc_id}",
+            "status {scope} {tmcc_id}",
+            "Get the status of {scope} {tmcc_id}"
+          ]
         }
       ],
       "types": [
@@ -1394,6 +1429,27 @@
           "name": "scope",
           "values": [
             {
+              "id": "4",
+              "name": {
+                "value": "route"
+              }
+            },
+            {
+              "id": "3",
+              "name": {
+                "value": "accessory"
+              }
+            },
+            {
+              "id": "2",
+              "name": {
+                "value": "switch",
+                "synonyms": [
+                  "turnout"
+                ]
+              }
+            },
+            {
               "id": "1",
               "name": {
                 "value": "train",
@@ -1409,6 +1465,9 @@
               "name": {
                 "value": "engine",
                 "synonyms": [
+                  "big boy",
+                  "steamer",
+                  "switcher",
                   "locomotive",
                   "loco"
                 ]
@@ -1874,6 +1933,38 @@
               ]
             }
           ]
+        },
+        {
+          "name": "GetStatusIntent",
+          "confirmationRequired": false,
+          "prompts": {},
+          "slots": [
+            {
+              "name": "scope",
+              "type": "scope",
+              "confirmationRequired": false,
+              "elicitationRequired": true,
+              "prompts": {
+                "elicitation": "Elicit.Slot.352033256157.1183583677769"
+              }
+            },
+            {
+              "name": "tmcc_id",
+              "type": "AMAZON.NUMBER",
+              "confirmationRequired": false,
+              "elicitationRequired": true,
+              "prompts": {
+                "elicitation": "Elicit.Slot.352033256157.656353053770"
+              },
+              "validations": [
+                {
+                  "type": "isGreaterThanOrEqualTo",
+                  "prompt": "Slot.Validation.352033256157.656353053770.266418224017",
+                  "value": "1"
+                }
+              ]
+            }
+          ]
         }
       ],
       "delegationStrategy": "ALWAYS"
@@ -2236,6 +2327,33 @@
           {
             "type": "PlainText",
             "value": "What should I shut down, an Engine or a Train?"
+          }
+        ]
+      },
+      {
+        "id": "Elicit.Slot.352033256157.1183583677769",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "What layout element do you want the status of?"
+          }
+        ]
+      },
+      {
+        "id": "Elicit.Slot.352033256157.656353053770",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "Tell me the TMCC ID of the {scope} ?"
+          }
+        ]
+      },
+      {
+        "id": "Slot.Validation.352033256157.656353053770.266418224017",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "TMCC IDs must be equal to or greater than one"
           }
         ]
       }
