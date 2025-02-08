@@ -619,10 +619,10 @@ class PyTrainEngine(PyTrainComponent):
 
     def blow_horn(self, tmcc_id: int, option: HornOption, intensity: int = 10):
         if self.is_tmcc(tmcc_id):
-            self.do_request(TMCC1EngineCommandEnum.BLOW_HORN_ONE, tmcc_id)
+            self.do_request(TMCC1EngineCommandEnum.BLOW_HORN_ONE, tmcc_id, repeat=3)
         else:
             if option is None or option == HornOption.SOUND:
-                self.do_request(TMCC2EngineCommandEnum.BLOW_HORN_ONE, tmcc_id)
+                self.do_request(TMCC2EngineCommandEnum.BLOW_HORN_ONE, tmcc_id, repeat=3)
             elif option == HornOption.GRADE:
                 self.do_request(SequenceCommandEnum.GRADE_CROSSING_SEQ, tmcc_id)
             elif option == HornOption.QUILLING:
