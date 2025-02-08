@@ -293,21 +293,29 @@
               "name": "engine",
               "type": "AMAZON.NUMBER",
               "samples": [
+                "train {engine}",
                 "{engine}",
                 "engine {engine}"
               ]
+            },
+            {
+              "name": "scope",
+              "type": "scope"
             }
           ],
           "samples": [
+            "Open {coupler} {scope} {engine}",
+            "Trigger {coupler} {scope} {engine}",
+            "release {coupler} {scope} {engine}",
+            "Open {coupler} on {scope} {engine}",
+            "Release {coupler} on {scope} {engine}",
+            "Trigger {coupler} on {scope} {engine}",
             "Trigger {coupler} on {engine}",
             "Release {coupler} on {engine}",
             "Open {coupler} on {engine}",
             "Release  {coupler} {engine}",
             "Trigger {coupler} {engine}",
-            "Open {coupler} {engine}",
-            "Trigger {coupler} on engine {engine}",
-            "Release {coupler} on engine {engine}",
-            "Open {coupler} on engine {engine}"
+            "Open {coupler} {engine}"
           ]
         },
         {
@@ -1731,6 +1739,13 @@
                   "value": "99"
                 }
               ]
+            },
+            {
+              "name": "scope",
+              "type": "scope",
+              "confirmationRequired": false,
+              "elicitationRequired": false,
+              "prompts": {}
             }
           ]
         },
@@ -2080,7 +2095,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "What is the Engine TMCC ID?"
+            "value": "Tell me the {scope} TMCC ID?"
           }
         ]
       },
