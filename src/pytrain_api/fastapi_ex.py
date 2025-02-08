@@ -591,9 +591,9 @@ class PyTrainEngine(PyTrainComponent):
 
     def reset(self, tmcc_id: int, hold: bool = False):
         if self.is_tmcc(tmcc_id):
-            self.do_request(TMCC1EngineCommandEnum.RESET, tmcc_id, repeat=30 if hold else 1)
+            self.do_request(TMCC1EngineCommandEnum.RESET, tmcc_id, repeat=40 if hold else 1)
         else:
-            self.do_request(TMCC2EngineCommandEnum.RESET, tmcc_id, repeat=30 if hold else 1)
+            self.do_request(TMCC2EngineCommandEnum.RESET, tmcc_id, repeat=40 if hold else 1)
         return {"status": f"{self.scope.title} {tmcc_id} {'reset and refueled' if hold else 'reset'}..."}
 
     def reverse(self, tmcc_id: int):
