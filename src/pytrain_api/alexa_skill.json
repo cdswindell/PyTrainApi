@@ -228,14 +228,19 @@
               "name": "engine",
               "type": "AMAZON.NUMBER",
               "samples": [
+                "train {engine}",
                 "engine {engine}",
                 "{engine}"
               ]
+            },
+            {
+              "name": "scope",
+              "type": "scope"
             }
           ],
           "samples": [
             "Reset {engine}",
-            "Reset engine {engine}"
+            "Reset {scope} {engine}"
           ]
         },
         {
@@ -245,14 +250,19 @@
               "name": "engine",
               "type": "AMAZON.NUMBER",
               "samples": [
+                "train {engine}",
                 "engine {engine}",
                 "{engine}"
               ]
+            },
+            {
+              "name": "scope",
+              "type": "scope"
             }
           ],
           "samples": [
             "Refuel {engine}",
-            "Refuel engine {engine}"
+            "Refuel {scope} {engine}"
           ]
         },
         {
@@ -272,17 +282,23 @@
                 "engine {engine}",
                 "{engine}"
               ]
+            },
+            {
+              "name": "scope",
+              "type": "scope"
             }
           ],
           "samples": [
+            "change direction {scope} {engine} {direction}",
+            "change the direction of {scope} {engine} to {direction}",
+            "change the direction of {scope} {engine} {direction}",
+            "{direction} {scope} {engine}",
             "{direction} {engine}",
-            "set the direction of engine {engine} {direction}",
+            "set the direction of {scope} {engine} {direction}",
             "change direction {engine} {direction}",
-            "change direction of engine {engine} {direction}",
-            "change direction of engine {engine} to {direction}",
-            "set direction of engine {engine} to {direction}",
-            "set the direction of engine {engine} to {direction}",
-            "{direction} engine {engine}"
+            "change direction of {scope} {engine} {direction}",
+            "change direction of {scope} {engine} to {direction}",
+            "set direction of {scope} {engine} to {direction}"
           ]
         },
         {
@@ -1654,6 +1670,13 @@
                   "value": "99"
                 }
               ]
+            },
+            {
+              "name": "scope",
+              "type": "scope",
+              "confirmationRequired": false,
+              "elicitationRequired": false,
+              "prompts": {}
             }
           ]
         },
@@ -1682,6 +1705,13 @@
                   "value": "99"
                 }
               ]
+            },
+            {
+              "name": "scope",
+              "type": "scope",
+              "confirmationRequired": false,
+              "elicitationRequired": false,
+              "prompts": {}
             }
           ]
         },
@@ -1719,6 +1749,13 @@
                   "value": "99"
                 }
               ]
+            },
+            {
+              "name": "scope",
+              "type": "scope",
+              "confirmationRequired": false,
+              "elicitationRequired": false,
+              "prompts": {}
             }
           ]
         },
@@ -2013,7 +2050,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "What is the Engine TMCC ID?"
+            "value": "Tell me the {scope} TMCC ID?"
           }
         ]
       },
@@ -2040,7 +2077,7 @@
         "variations": [
           {
             "type": "PlainText",
-            "value": "What is the Engine TMCC ID?"
+            "value": "Tell me the {scope} TMCC ID?"
           }
         ]
       },
