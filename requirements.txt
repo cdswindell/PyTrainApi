@@ -1,5 +1,12 @@
-fastapi-utils>=0.8.0
-fastapi>=0.115.8
 fastapi-cli>=0.0.7
-pytrain-ogr>=0.9.78
+fastapi-utils>=0.8.0
+fastapi>=0.115.7
+pydantic>=2.10.6
+pytrain-ogr>=0.9.77
+starlette>=0.45.3
 typing-inspect>=0.9.0
+python_multipart>=0.0.20
+pyjwt>=2.10.1
+passlib>=1.7.4
+bcrypt>=4.2.1
+
