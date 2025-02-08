@@ -289,6 +289,11 @@
             }
           ],
           "samples": [
+            "tell {scope} {engine} move {direction}",
+            "tell {scope} {engine} to move {direction}",
+            "tell {scope} {engine} {direction}",
+            "tell {scope} {engine} go {direction}",
+            "tell {scope} {engine} to go {direction}",
             "change direction {scope} {engine} {direction}",
             "change the direction of {scope} {engine} to {direction}",
             "change the direction of {scope} {engine} {direction}",
