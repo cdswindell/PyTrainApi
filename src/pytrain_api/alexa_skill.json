@@ -215,6 +215,7 @@
             }
           ],
           "samples": [
+            "Bell {ring} {scope} {engine}",
             "{ring} bell {engine}",
             "{ring} bell on {scope} {engine}",
             "{ring} the bell on {scope} {engine}"
@@ -499,6 +500,7 @@
               "name": {
                 "value": "turn off",
                 "synonyms": [
+                  "off",
                   "quiet",
                   "silence",
                   "deactivate"
@@ -510,6 +512,7 @@
               "name": {
                 "value": "turn on",
                 "synonyms": [
+                  "on",
                   "sound",
                   "activate"
                 ]
