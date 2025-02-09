@@ -858,5 +858,9 @@ class Train(PyTrainEngine):
     async def stop(self, tmcc_id: Annotated[int, Train.id_path()]):
         return super().stop(tmcc_id)
 
+    @router.post("/train/{tmcc_id:int}/toggle_direction_req")
+    async def toggle_direction(self, tmcc_id: Annotated[int, Train.id_path()]):
+        return super().toggle_direction(tmcc_id)
+
 
 app.include_router(router)
