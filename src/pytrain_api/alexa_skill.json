@@ -6,6 +6,9 @@
         {
           "name": "AMAZON.CancelIntent",
           "samples": [
+            "Nothing",
+            "That's all",
+            "That's it",
             "close pie train",
             "close",
             "bye for now",
@@ -289,6 +292,9 @@
             }
           ],
           "samples": [
+            "{direction} direction {scope} {engine}",
+            "{direction} direction of {scope} {engine}",
+            "{direction} the direction of {scope} {engine}",
             "tell {scope} {engine} move {direction}",
             "tell {scope} {engine} to move {direction}",
             "tell {scope} {engine} {direction}",
@@ -630,6 +636,12 @@
         {
           "name": "direction",
           "values": [
+            {
+              "id": "2",
+              "name": {
+                "value": "toggle"
+              }
+            },
             {
               "id": "1",
               "name": {
