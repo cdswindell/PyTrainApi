@@ -447,6 +447,40 @@
             "status {scope} {tmcc_id}",
             "Get the status of {scope} {tmcc_id}"
           ]
+        },
+        {
+          "name": "SmokeLevelIntent",
+          "slots": [
+            {
+              "name": "scope",
+              "type": "scope"
+            },
+            {
+              "name": "engine",
+              "type": "AMAZON.NUMBER",
+              "samples": [
+                "train {engine}",
+                "engine {engine}",
+                "{engine}"
+              ]
+            },
+            {
+              "name": "smoke",
+              "type": "smoke_options",
+              "samples": [
+                "level {smoke}",
+                "{smoke} level",
+                "{smoke}"
+              ]
+            }
+          ],
+          "samples": [
+            "Smoke {scope} {engine} {smoke}",
+            "Set the smoke level of {scope} {engine} to {smoke}",
+            "Set smoke level {scope} {engine} {smoke}",
+            "Set smoke level {scope} {engine} to {smoke}",
+            "Set the smoke level on {scope} {engine} to {smoke}"
+          ]
         }
       ],
       "types": [
@@ -1482,6 +1516,56 @@
               }
             }
           ]
+        },
+        {
+          "name": "smoke_options",
+          "values": [
+            {
+              "id": "3",
+              "name": {
+                "value": "high",
+                "synonyms": [
+                  "dense",
+                  "thick",
+                  "max",
+                  "maximum",
+                  "full",
+                  "heavy"
+                ]
+              }
+            },
+            {
+              "id": "2",
+              "name": {
+                "value": "medium"
+              }
+            },
+            {
+              "id": "1",
+              "name": {
+                "value": "low",
+                "synonyms": [
+                  "lowest",
+                  "wispy",
+                  "minimum",
+                  "min",
+                  "light"
+                ]
+              }
+            },
+            {
+              "id": "4",
+              "name": {
+                "value": "on"
+              }
+            },
+            {
+              "id": "0",
+              "name": {
+                "value": "off"
+              }
+            }
+          ]
         }
       ]
     },
@@ -1973,6 +2057,51 @@
               ]
             }
           ]
+        },
+        {
+          "name": "SmokeLevelIntent",
+          "delegationStrategy": "ALWAYS",
+          "confirmationRequired": false,
+          "prompts": {},
+          "slots": [
+            {
+              "name": "scope",
+              "type": "scope",
+              "confirmationRequired": false,
+              "elicitationRequired": false,
+              "prompts": {}
+            },
+            {
+              "name": "engine",
+              "type": "AMAZON.NUMBER",
+              "confirmationRequired": false,
+              "elicitationRequired": true,
+              "prompts": {
+                "elicitation": "Elicit.Slot.972783674255.517513819329"
+              },
+              "validations": [
+                {
+                  "type": "isGreaterThanOrEqualTo",
+                  "prompt": "Slot.Validation.972783674255.517513819329.1262717389102",
+                  "value": "1"
+                },
+                {
+                  "type": "isLessThanOrEqualTo",
+                  "prompt": "Slot.Validation.972783674255.517513819329.537713898101",
+                  "value": "9999"
+                }
+              ]
+            },
+            {
+              "name": "smoke",
+              "type": "smoke_options",
+              "confirmationRequired": false,
+              "elicitationRequired": true,
+              "prompts": {
+                "elicitation": "Elicit.Slot.972783674255.455064527029"
+              }
+            }
+          ]
         }
       ],
       "delegationStrategy": "ALWAYS"
@@ -2362,6 +2491,46 @@
           {
             "type": "PlainText",
             "value": "TMCC IDs must be equal to or greater than one"
+          }
+        ]
+      },
+      {
+        "id": "Elicit.Slot.972783674255.517513819329",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "Tell me the TMCC of the engine?"
+          },
+          {
+            "type": "PlainText",
+            "value": "Tell me the TMCC ID of the {scope} ?"
+          }
+        ]
+      },
+      {
+        "id": "Slot.Validation.972783674255.517513819329.1262717389102",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "TMCC ID's must be between one and nine thousand nine hundred ninety nine"
+          }
+        ]
+      },
+      {
+        "id": "Slot.Validation.972783674255.517513819329.537713898101",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "TMCC ID's must be between one and nine thousand nine hundred ninety nine"
+          }
+        ]
+      },
+      {
+        "id": "Elicit.Slot.972783674255.455064527029",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "Tell me the smoke level you want for {scope} {engine}"
           }
         ]
       }
