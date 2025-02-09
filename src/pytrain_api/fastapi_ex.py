@@ -14,8 +14,8 @@ from typing import TypeVar, Annotated, Any
 import jwt
 
 # from ask_sdk_model import Request
-from fastapi import HTTPException, APIRouter, Path, Query, Depends, status, FastAPI
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from fastapi import HTTPException, APIRouter, Path, Query, Depends, status, FastAPI, Security
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer, APIKeyHeader
 from fastapi_utils.cbv import cbv
 from jwt import InvalidTokenError
 from passlib.context import CryptContext
@@ -79,6 +79,16 @@ fake_users_db = {
         "hashed_password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
         "disabled": False,
     },
+}
+
+api_keys = {
+    "e54d4431-5dab-474e-b71a-0db1fcb9e659": "7oDYjo3d9r58EJKYi5x4E8",
+    "5f0c7127-3be9-4488-b801-c7b6415b45e9": "mUP7PpTHmFAkxcQLWKMY8t",
+}
+
+users = {
+    "7oDYjo3d9r58EJKYi5x4E8": {"name": "Dave"},
+    "mUP7PpTHmFAkxcQLWKMY8t": {"name": "Alice"},
 }
 
 
@@ -173,6 +183,24 @@ async def get_current_active_user(
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
+
+api_key_header = APIKeyHeader(name="X-API-Key")
+
+
+def get_api_user(api_header: str = Security(api_key_header)):
+    if check_api_key(api_header):
+        user = get_user_from_api_key(api_header)
+        return user
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid API key")
+
+
+def check_api_key(api_key: str):
+    return api_key in api_keys
+
+
+def get_user_from_api_key(api_key: str):
+    return users[api_keys[api_key]]
 
 
 @app.post("/token", include_in_schema=False)
@@ -308,8 +336,8 @@ class TrainInfo(ComponentInfoIr):
     scope: Component = Component.TRAIN
 
 
-# router = APIRouter(prefix="/pytrain/v1", dependencies=[Depends(get_current_active_user)])
-router = APIRouter(prefix="/pytrain/v1")
+router = APIRouter(prefix="/pytrain/v1", dependencies=[Depends(get_api_user)])
+# router = APIRouter(prefix="/pytrain/v1")
 
 
 # @app.get("/", summary=f"Redirect to {API_NAME} Documentation")
