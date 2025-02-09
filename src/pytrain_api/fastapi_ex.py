@@ -870,6 +870,10 @@ class Train(PyTrainEngine):
     async def shutdown(self, tmcc_id: Annotated[int, Train.id_path()], dialog: bool = False):
         return super().shutdown(tmcc_id, dialog=dialog)
 
+    @router.post("/train/{tmcc_id:int}/smoke_level_req")
+    async def smoke_level(self, tmcc_id: Annotated[int, Train.id_path()], level: SmokeOption):
+        return super().smoke(tmcc_id, level=level)
+
     @router.post("/train/{tmcc_id:int}/speed_req/{speed}")
     async def speed(
         self,
