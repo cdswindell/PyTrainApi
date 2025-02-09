@@ -32,6 +32,7 @@ from pytrain import (
     SequenceCommandEnum,
     TMCC2RRSpeedsEnum,
     TMCC1RRSpeedsEnum,
+    TMCC2EffectsControl,
 )
 from pytrain.cli.pytrain import PyTrain
 from pytrain.db.component_state import ComponentState
@@ -633,13 +634,13 @@ class PyTrainEngine(PyTrainComponent):
                 self.do_request(TMCC1EngineCommandEnum.SMOKE_ON, tmcc_id)
         else:
             if level is None or level == SmokeOption.OFF:
-                self.do_request(TMCC2EngineCommandEnum.SMOKE_OFF, tmcc_id)
+                self.do_request(TMCC2EffectsControl.SMOKE_OFF, tmcc_id)
             elif level == SmokeOption.ON or level == SmokeOption.LOW:
-                self.do_request(TMCC2EngineCommandEnum.SMOKE_LOW, tmcc_id)
+                self.do_request(TMCC2EffectsControl.SMOKE_LOW, tmcc_id)
             elif level == SmokeOption.MEDIUM:
-                self.do_request(TMCC2EngineCommandEnum.SMOKE_MEDIUM, tmcc_id)
+                self.do_request(TMCC2EffectsControl.SMOKE_MEDIUM, tmcc_id)
             elif level == SmokeOption.HIGH:
-                self.do_request(TMCC2EngineCommandEnum.SMOKE_HIGH, tmcc_id)
+                self.do_request(TMCC2EffectsControl.SMOKE_HIGH, tmcc_id)
         return {"status": f"{self.scope.title} {tmcc_id} Smoke: {level}..."}
 
     def toggle_direction(self, tmcc_id: int):
