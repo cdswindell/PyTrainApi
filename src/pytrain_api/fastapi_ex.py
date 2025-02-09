@@ -37,7 +37,8 @@ from pytrain import (
 from pytrain.cli.pytrain import PyTrain
 from pytrain.db.component_state import ComponentState
 from pytrain.protocol.command_def import CommandDefEnum
-from starlette.responses import RedirectResponse
+from starlette.responses import RedirectResponse, FileResponse
+from starlette.staticfiles import StaticFiles
 
 E = TypeVar("E", bound=CommandDefEnum)
 API_NAME = "PyTrainApi"
@@ -343,6 +344,14 @@ router = APIRouter(prefix="/pytrain/v1", dependencies=[Depends(get_api_user)])
 # @app.get("/", summary=f"Redirect to {API_NAME} Documentation")
 # def index_redirect():
 #     return RedirectResponse(url="/docs")
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse("static/favicon.ico")
+
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.get("/pytrain", summary=f"Redirect to {API_NAME} Documentation")
