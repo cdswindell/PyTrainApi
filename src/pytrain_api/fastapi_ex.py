@@ -207,18 +207,26 @@ class BellOption(str, Enum):
     TOGGLE = "toggle"
 
 
-class HornOption(str, Enum):
-    SOUND = "sound"
-    GRADE = "grade"
-    QUILLING = "quilling"
-
-
 class Component(str, Enum):
     ACCESSORY = "accessory"
     ENGINE = "engine"
     ROUTE = "route"
     SWITCH = "switch"
     TRAIN = "train"
+
+
+class HornOption(str, Enum):
+    SOUND = "sound"
+    GRADE = "grade"
+    QUILLING = "quilling"
+
+
+class SmokeOption(str, Enum):
+    OFF = "off"
+    ON = "on"
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
 
 
 class ComponentInfo(BaseModel):
@@ -617,6 +625,23 @@ class PyTrainEngine(PyTrainComponent):
                 self.do_request(TMCC2EngineCommandEnum.BELL_ONE_SHOT_DING, tmcc_id, 3)
         return {"status": f"{self.scope.title} {tmcc_id} ringing bell..."}
 
+    def smoke(self, tmcc_id: int, level: SmokeOption):
+        if self.is_tmcc(tmcc_id):
+            if level is None or level == SmokeOption.OFF:
+                self.do_request(TMCC1EngineCommandEnum.SMOKE_OFF, tmcc_id)
+            else:
+                self.do_request(TMCC1EngineCommandEnum.SMOKE_ON, tmcc_id)
+        else:
+            if level is None or level == SmokeOption.OFF:
+                self.do_request(TMCC2EngineCommandEnum.SMOKE_OFF, tmcc_id)
+            elif level == SmokeOption.ON or level == SmokeOption.LOW:
+                self.do_request(TMCC2EngineCommandEnum.SMOKE_LOW, tmcc_id)
+            elif level == SmokeOption.MEDIUM:
+                self.do_request(TMCC2EngineCommandEnum.SMOKE_MEDIUM, tmcc_id)
+            elif level == SmokeOption.HIGH:
+                self.do_request(TMCC2EngineCommandEnum.SMOKE_HIGH, tmcc_id)
+        return {"status": f"{self.scope.title} {tmcc_id} Smoke: {level}..."}
+
     def toggle_direction(self, tmcc_id: int):
         if self.is_tmcc(tmcc_id):
             self.do_request(TMCC1EngineCommandEnum.TOGGLE_DIRECTION, tmcc_id)
@@ -703,6 +728,10 @@ class Engine(PyTrainEngine):
     @router.post("/engine/{tmcc_id:int}/shutdown_req")
     async def shutdown(self, tmcc_id: Annotated[int, Engine.id_path()], dialog: bool = False):
         return super().shutdown(tmcc_id, dialog=dialog)
+
+    @router.post("/engine/{tmcc_id:int}/smoke_level_req")
+    async def smoke_level(self, tmcc_id: Annotated[int, Engine.id_path()], level: SmokeOption):
+        return super().smoke(tmcc_id, level=level)
 
     @router.post("/engine/{tmcc_id:int}/speed_req/{speed}")
     async def speed(
