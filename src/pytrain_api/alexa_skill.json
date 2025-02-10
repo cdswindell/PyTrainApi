@@ -487,6 +487,27 @@
             "Set smoke level {scope} {engine} to {smoke}",
             "Set the smoke level on {scope} {engine} to {smoke}"
           ]
+        },
+        {
+          "name": "SetPyTrainServerIntent",
+          "slots": [
+            {
+              "name": "server",
+              "type": "AMAZON.SearchQuery",
+              "samples": [
+                "My PyTrain Server is {server}",
+                "My server is {server}",
+                "{server}"
+              ]
+            }
+          ],
+          "samples": [
+            "Server {server}",
+            "My server is {server}",
+            "My PyTrain server is {server}",
+            "My PieTrain Server is {server}",
+            "My Pie Train Server is {server}"
+          ]
         }
       ],
       "types": [
@@ -2114,6 +2135,23 @@
               }
             }
           ]
+        },
+        {
+          "name": "SetPyTrainServerIntent",
+          "confirmationRequired": false,
+          "prompts": {},
+          "slots": [
+            {
+              "name": "server",
+              "type": "AMAZON.SearchQuery",
+              "confirmationRequired": true,
+              "elicitationRequired": true,
+              "prompts": {
+                "confirmation": "Confirm.Slot.520346523642.1711855872549",
+                "elicitation": "Elicit.Slot.520346523642.1711855872549"
+              }
+            }
+          ]
         }
       ],
       "delegationStrategy": "ALWAYS"
@@ -2543,6 +2581,24 @@
           {
             "type": "PlainText",
             "value": "Tell me the smoke level you want for {scope} {engine}"
+          }
+        ]
+      },
+      {
+        "id": "Confirm.Slot.520346523642.1711855872549",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "You said {server} ?"
+          }
+        ]
+      },
+      {
+        "id": "Elicit.Slot.520346523642.1711855872549",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "Tell me the name of your PyTrain server?"
           }
         ]
       }
