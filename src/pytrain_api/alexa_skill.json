@@ -481,9 +481,9 @@
             }
           ],
           "samples": [
-            "{scope} smoke {scope} {engine}",
-            "{scope} smoke on {scope} {engine}",
-            "{scope} the smoke on {scope} {engine}",
+            "{smoke}  {scope} {engine}",
+            "{smoke}  on {scope} {engine}",
+            "{smoke} the smoke on {scope} {engine}",
             "Smoke {scope} {engine} {smoke}",
             "Set the smoke level of {scope} {engine} to {smoke}",
             "Set smoke level {scope} {engine} {smoke}",
@@ -634,6 +634,7 @@
               "name": {
                 "value": "turn off",
                 "synonyms": [
+                  "disable",
                   "off",
                   "quiet",
                   "silence",
@@ -646,6 +647,7 @@
               "name": {
                 "value": "turn on",
                 "synonyms": [
+                  "enable",
                   "on",
                   "sound",
                   "activate"
@@ -2112,7 +2114,6 @@
         },
         {
           "name": "SmokeLevelIntent",
-          "delegationStrategy": "ALWAYS",
           "confirmationRequired": false,
           "prompts": {},
           "slots": [
