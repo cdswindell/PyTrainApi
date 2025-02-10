@@ -447,7 +447,7 @@
             "{scope} {tmcc_id} report",
             "{scope} {tmcc_id} status",
             "report {scope} {tmcc_id}",
-            "tell me the status of {scope} {tmcc_id}",
+            "What's the status of {scope} {tmcc_id}",
             "Status of {scope} {tmcc_id}",
             "Tell me about {scope} {tmcc_id}",
             "status {scope} {tmcc_id}",
@@ -502,15 +502,20 @@
             }
           ],
           "samples": [
+            "My pie train endpoint is {server}",
+            "My endpoint is {server}",
+            "server {server}",
+            "my server is {server}",
+            "My Pie Train server is {server}",
+            "My Py Train server is {server}",
             "My PyTrain server is {server}",
-            "My Pie Train Server is {server}",
-            "My PieTrain Server is {server}",
-            "My API Server is {server}",
-            "Server {server}",
-            "My server is {server}",
-            "My PyTrain API server is {server}",
-            "My PieTrain API Server is {server}",
-            "My Pie Train API Server is {server}"
+            "My PyTrain end point is {server}",
+            "My Pie Train end point is {server}",
+            "My PieTrain endpoint is {server}",
+            "My api end point is {server}",
+            "end point {server}",
+            "My end point is {server}",
+            "My Pie Train server end point is {server}"
           ]
         }
       ],
