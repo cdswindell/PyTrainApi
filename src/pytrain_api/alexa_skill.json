@@ -502,20 +502,19 @@
             }
           ],
           "samples": [
-            "My pie train endpoint is {server}",
-            "My endpoint is {server}",
+            "My pi train url is {server}",
+            "My pie train url is {server}",
+            "My url is {server}",
             "server {server}",
             "my server is {server}",
             "My Pie Train server is {server}",
             "My Py Train server is {server}",
             "My PyTrain server is {server}",
-            "My PyTrain end point is {server}",
-            "My Pie Train end point is {server}",
-            "My PieTrain endpoint is {server}",
-            "My api end point is {server}",
-            "end point {server}",
-            "My end point is {server}",
-            "My Pie Train server end point is {server}"
+            "My PyTrain url is {server}",
+            "My Pie Train server url is {server}",
+            "My PieTrain url is {server}",
+            "My server url is {server}",
+            "url {server}"
           ]
         }
       ],
