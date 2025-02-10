@@ -481,6 +481,9 @@
             }
           ],
           "samples": [
+            "{scope} smoke {scope} {engine}",
+            "{scope} smoke on {scope} {engine}",
+            "{scope} the smoke on {scope} {engine}",
             "Smoke {scope} {engine} {smoke}",
             "Set the smoke level of {scope} {engine} to {smoke}",
             "Set smoke level {scope} {engine} {smoke}",
@@ -502,6 +505,7 @@
             }
           ],
           "samples": [
+            "My py train url is {server}",
             "my pietrain server url is {server}",
             "my pytrain server url is {server}",
             "my pi train server url is {server}",
@@ -1589,6 +1593,7 @@
               "name": {
                 "value": "low",
                 "synonyms": [
+                  "enable",
                   "lowest",
                   "wispy",
                   "minimum",
@@ -1606,7 +1611,10 @@
             {
               "id": "0",
               "name": {
-                "value": "off"
+                "value": "off",
+                "synonyms": [
+                  "disable"
+                ]
               }
             }
           ]
