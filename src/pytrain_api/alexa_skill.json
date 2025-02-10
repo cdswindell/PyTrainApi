@@ -502,11 +502,15 @@
             }
           ],
           "samples": [
+            "My PyTrain server is {server}",
+            "My Pie Train Server is {server}",
+            "My PieTrain Server is {server}",
+            "My API Server is {server}",
             "Server {server}",
             "My server is {server}",
-            "My PyTrain server is {server}",
-            "My PieTrain Server is {server}",
-            "My Pie Train Server is {server}"
+            "My PyTrain API server is {server}",
+            "My PieTrain API Server is {server}",
+            "My Pie Train API Server is {server}"
           ]
         }
       ],
