@@ -502,6 +502,9 @@
             }
           ],
           "samples": [
+            "my pietrain server url is {server}",
+            "my pytrain server url is {server}",
+            "my pi train server url is {server}",
             "My pi train url is {server}",
             "My pie train url is {server}",
             "My url is {server}",
