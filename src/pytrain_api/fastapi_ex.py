@@ -33,6 +33,7 @@ from pytrain import (
     TMCC2RRSpeedsEnum,
     TMCC1RRSpeedsEnum,
     TMCC2EffectsControl,
+    get_version,
 )
 from pytrain.cli.pytrain import PyTrain
 from pytrain.db.component_state import ComponentState
@@ -341,9 +342,17 @@ router = APIRouter(prefix="/pytrain/v1", dependencies=[Depends(get_api_user)])
 # router = APIRouter(prefix="/pytrain/v1")
 
 
-# @app.get("/", summary=f"Redirect to {API_NAME} Documentation")
-# def index_redirect():
-#     return RedirectResponse(url="/docs")
+@app.get("/", summary=f"Redirect to {API_NAME} Documentation")
+def index_redirect():
+    return RedirectResponse(url="/docs")
+
+
+@app.post("/version", summary=f"Get {PROGRAM_NAME} Version", include_in_schema=False)
+def version(server: str = None):
+    return {
+        "version": get_version(),
+        "server": server,
+    }
 
 
 @app.get("/favicon.ico", include_in_schema=False)
