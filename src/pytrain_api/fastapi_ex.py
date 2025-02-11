@@ -362,12 +362,8 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.get("/pytrain", summary=f"Redirect to {API_NAME} Documentation")
-def pytrain_redirect():
-    return RedirectResponse(url="/docs")
-
-
-@router.get("/", summary=f"Redirect to {API_NAME} Documentation")
-def redirect_to_doc():
+@app.get("/pytrain/v1", summary=f"Redirect to {API_NAME} Documentation")
+def pytrain_doc():
     return RedirectResponse(url="/docs")
 
 
