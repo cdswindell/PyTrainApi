@@ -7,11 +7,13 @@
 #
 from __future__ import annotations
 
+import sys
 from datetime import timedelta, datetime, timezone
 from enum import Enum
-from typing import TypeVar, Annotated, Any
+from typing import TypeVar, Annotated, Any, cast
 
 import jwt
+import uvicorn
 from fastapi import HTTPException, APIRouter, Path, Query, Depends, status, FastAPI, Security
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer, APIKeyHeader
 from fastapi_utils.cbv import cbv
@@ -31,17 +33,20 @@ from pytrain import (
     TMCC2RRSpeedsEnum,
     TMCC1RRSpeedsEnum,
     TMCC2EffectsControl,
-    get_version,
+    is_package,
 )
 from pytrain.cli.pytrain import PyTrain
 from pytrain.db.component_state import ComponentState
 from pytrain.protocol.command_def import CommandDefEnum
+from pytrain.utils.argument_parser import PyTrainArgumentParser
 from starlette.responses import RedirectResponse, FileResponse
 from starlette.staticfiles import StaticFiles
 
+from .. import get_version
+
 E = TypeVar("E", bound=CommandDefEnum)
 API_NAME = "PyTrainApi"
-
+DEFAULT_API_SERVER_PORT: int = 8000
 
 TMCC_RR_SPEED_MAP = {
     201: TMCC1RRSpeedsEnum.ROLL,
@@ -119,7 +124,7 @@ app = FastAPI()
 
 
 #
-# fastapi run src/pytrain_api/fastapi_ex.py
+# fastapi run src/pytrain_api/pytrain_api.py
 #
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
@@ -226,7 +231,7 @@ async def read_users_me(
     return current_user
 
 
-pytrain = PyTrain("-client -api -echo".split())
+PYTRAIN_SERVER: PyTrain | None = None
 
 
 class BellOption(str, Enum):
@@ -392,7 +397,7 @@ async def send_command(
         else:
             tmcc = ""
         cmd = f"{component.value} {tmcc_id}{tmcc} {command}"
-        parse_response = pytrain.parse_cli(cmd)
+        parse_response = PYTRAIN_SERVER.parse_cli(cmd)
         if isinstance(parse_response, CommandReq):
             parse_response.send()
             return {"status": f"'{cmd}' command sent"}
@@ -423,15 +428,15 @@ async def halt():
     description=f"Enable/disable echoing of {PROGRAM_NAME} commands to log file. ",
 )
 async def echo(on: bool = True):
-    pytrain.queue_command(f"echo {'on' if on else 'off'}")
+    PYTRAIN_SERVER.queue_command(f"echo {'on' if on else 'off'}")
     return {"status": f"Echo {'enabled' if on else 'disabled'}"}
 
 
 @router.post("/system/stop_req")
 async def stop():
-    pytrain.queue_command("tr 99 -s")
-    pytrain.queue_command("en 99 -s")
-    pytrain.queue_command("en 99 -tmcc -s")
+    PYTRAIN_SERVER.queue_command("tr 99 -s")
+    PYTRAIN_SERVER.queue_command("en 99 -s")
+    PYTRAIN_SERVER.queue_command("en 99 -tmcc -s")
     return {"status": "Stop all engines and trains command sent"}
 
 
@@ -441,7 +446,7 @@ def get_components(
     is_legacy: bool = None,
     is_tmcc: bool = None,
 ) -> list[dict[str, any]]:
-    states = pytrain.store.query(scope)
+    states = PYTRAIN_SERVER.store.query(scope)
     if states is None:
         raise HTTPException(status_code=404, detail=f"No {scope.label} found")
     else:
@@ -480,7 +485,7 @@ class PyTrainComponent:
         return self._scope
 
     def get(self, tmcc_id: int) -> dict[str, Any]:
-        state: ComponentState = pytrain.store.query(self.scope, tmcc_id)
+        state: ComponentState = PYTRAIN_SERVER.store.query(self.scope, tmcc_id)
         if state is None:
             raise HTTPException(status_code=404, detail=f"{self.scope.title} {tmcc_id} not found")
         else:
@@ -511,7 +516,7 @@ class PyTrainComponent:
 
     @staticmethod
     def queue_command(cmd: str):
-        pytrain.queue_command(cmd)
+        PYTRAIN_SERVER.queue_command(cmd)
 
 
 @router.get("/accessories")
@@ -538,7 +543,7 @@ class PyTrainEngine(PyTrainComponent):
         return "engine" if self.scope == CommandScope.ENGINE else "train"
 
     def is_tmcc(self, tmcc_id: int) -> bool:
-        state = pytrain.store.query(self.scope, tmcc_id)
+        state = PYTRAIN_SERVER.store.query(self.scope, tmcc_id)
         return state.is_tmcc if state and state else True
 
     def tmcc(self, tmcc_id: int) -> str:
@@ -938,3 +943,83 @@ class Train(PyTrainEngine):
 
 
 app.include_router(router)
+
+
+class PyTrainApi:
+    def __init__(self, cmd_line: list[str] | None = None) -> None:
+        try:
+            # parse command line args
+            if cmd_line:
+                args = self.command_line_parser().parse_args(cmd_line)
+            else:
+                args = self.command_line_parser().parse_args()
+
+            if args.version:
+                return
+
+            pytrain_args = "-api"
+            if args.ser2 is True:
+                pytrain_args += " -ser2"
+                if args.baudrate:
+                    pytrain_args += f" -baudrate {args.baudrate}"
+                if args.port:
+                    pytrain_args += f" -port {args.port}"
+            if args.base is not None:
+                pytrain_args += " -base"
+                if isinstance(args.base, list) and len(args.base):
+                    pytrain_args += f" {args.base[0]}"
+            elif args.client is True:
+                pytrain_args += " -client"
+            elif args.server:
+                pytrain_args += f" -server {args.server}"
+
+            if (args.base is not None or args.ser2 is True) and args.server_port:
+                pytrain_args += f" -server_port {args.server_port}"
+
+            if args.echo is True:
+                pytrain_args += " -echo"
+            if args.buttons_file:
+                pytrain_args += f" -buttons_file {args.buttons_file}"
+
+            # create a PyTrain process to handle commands
+            global PYTRAIN_SERVER
+            PYTRAIN_SERVER = PyTrain(pytrain_args.split())
+            port = args.api_port if args.api_port else DEFAULT_API_SERVER_PORT
+            host = args.api_host if args.api_host else "0.0.0.0"
+            uvicorn.run(f"{__name__}:app", host=host, port=port, reload=False)
+        except Exception as e:
+            # Output anything else nicely formatted on stderr and exit code 1
+            sys.exit(f"{__file__}: error: {e}\n")
+
+    @classmethod
+    def command_line_parser(cls) -> PyTrainArgumentParser:
+        prog = "pytrain_api" if is_package() else "pytrain_api.py"
+        parser = PyTrainArgumentParser(add_help=False)
+        parser.add_argument(
+            "-version",
+            action="version",
+            version=f"{cls.__qualname__} {get_version()}",
+            help="Show version and exit",
+        )
+        server_opts = parser.add_argument_group("Api server options")
+        server_opts.add_argument(
+            "-api_host",
+            type=str,
+            default="0.0.0.0",
+            help="Web server Host IP address (default: 0.0.0.0; listen on all IP addresses)",
+        )
+        server_opts.add_argument(
+            "-api_port",
+            type=int,
+            default=DEFAULT_API_SERVER_PORT,
+            help=f"Web server API port (default: {DEFAULT_API_SERVER_PORT})",
+        )
+        # remove args we don't want user to see
+        ptp = cast(PyTrainArgumentParser, PyTrain.command_line_parser())
+        ptp.remove_args(["-headless", "-replay_file", "-no_wait", "-version"])
+        return PyTrainArgumentParser(
+            prog=prog,
+            add_help=False,
+            description=f"Run the {PROGRAM_NAME} Api Server",
+            parents=[parser, ptp],
+        )
