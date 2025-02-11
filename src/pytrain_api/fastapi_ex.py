@@ -12,8 +12,6 @@ from enum import Enum
 from typing import TypeVar, Annotated, Any
 
 import jwt
-
-# from ask_sdk_model import Request
 from fastapi import HTTPException, APIRouter, Path, Query, Depends, status, FastAPI, Security
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer, APIKeyHeader
 from fastapi_utils.cbv import cbv
@@ -342,9 +340,9 @@ router = APIRouter(prefix="/pytrain/v1", dependencies=[Depends(get_api_user)])
 # router = APIRouter(prefix="/pytrain/v1")
 
 
-@app.get("/", summary=f"Redirect to {API_NAME} Documentation")
-def index_redirect():
-    return RedirectResponse(url="/docs")
+@app.get("/", include_in_schema=False)
+def invalid_home():
+    raise HTTPException(status_code=403)
 
 
 @app.post("/version", summary=f"Get {PROGRAM_NAME} Version", include_in_schema=False)
