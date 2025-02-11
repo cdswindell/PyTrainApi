@@ -8,7 +8,7 @@ dynamic = ["version"]
 authors = [
     { name = "Dave Swindell", email = "pytraininfo@gmail.com" },
 ]
-description = "Control Lionel TMCC/Legacy engines, switches, and accesseries from a Raspberry Pi"
+description = "Restful API to control Lionel TMCC/Legacy engines, switches, and accesseries from a Raspberry Pi"
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
@@ -54,14 +54,8 @@ version_scheme = "only-version"
 [tool.setuptools.packages.find]
 where = ["src"]
 
-[tool.setuptools.package-data]
-install = ["*.template"]
-
-
 [project.scripts]
-pytrain = "pytrain:main"
-piconfig = "pytrain.cli.piconfig:main"
-make_service = "pytrain.cli.make_service:main"
+pytrain_api = "pytrain_api:main"
 
 [project.urls]
 Homepage = "https://github.com/cdswindell/PyLegacy"

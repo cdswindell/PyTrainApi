@@ -35,6 +35,7 @@ from pytrain import (
     TMCC2EffectsControl,
     is_package,
 )
+from pytrain import get_version as pytrain_get_version
 from pytrain.cli.pytrain import PyTrain
 from pytrain.db.component_state import ComponentState
 from pytrain.protocol.command_def import CommandDefEnum
@@ -353,7 +354,8 @@ def invalid_home():
 @app.post("/version", summary=f"Get {PROGRAM_NAME} Version", include_in_schema=False)
 def version(server: str = None):
     return {
-        "version": get_version(),
+        "pytrain": pytrain_get_version(),
+        "pytrain_api": get_version(),
         "server": server,
     }
 
@@ -954,9 +956,6 @@ class PyTrainApi:
             else:
                 args = self.command_line_parser().parse_args()
 
-            if args.version:
-                return
-
             pytrain_args = "-api"
             if args.ser2 is True:
                 pytrain_args += " -ser2"
@@ -1021,5 +1020,8 @@ class PyTrainApi:
             prog=prog,
             add_help=False,
             description=f"Run the {PROGRAM_NAME} Api Server",
-            parents=[parser, ptp],
+            parents=[
+                parser,
+                ptp,
+            ],
         )

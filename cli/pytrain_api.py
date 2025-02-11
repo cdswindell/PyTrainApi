@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 #
 #  PyTrainApi: a restful API for controlling Lionel Legacy engines, trains, switches, and accessories
 #
@@ -9,7 +8,7 @@
 #
 #
 
-from src.pytrain_api.pytrain_api import PyTrainApi
+from src import main
 
 if __name__ == "__main__":
-    PyTrainApi()
+    main()

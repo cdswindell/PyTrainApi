@@ -8,9 +8,23 @@
 #
 
 import importlib.metadata
+import sys
 from importlib.metadata import PackageNotFoundError
 
 PROGRAM_PACKAGE = "pytrain-ogr-api"
+
+
+def main(args: list[str] | None = None) -> int:
+    from .pytrain_api.pytrain_api import PyTrainApi, API_NAME
+
+    if args is None:
+        args = sys.argv[1:]
+    try:
+        PyTrainApi(args)
+        return 0
+    except Exception as e:
+        # Output anything else nicely formatted on stderr and exit code 1
+        sys.exit(f"{API_NAME}: error: {e}\n")
 
 
 def is_package() -> bool:
