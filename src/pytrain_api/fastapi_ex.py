@@ -361,8 +361,8 @@ async def favicon():
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
-@app.get("/pytrain", summary=f"Redirect to {API_NAME} Documentation")
 @app.get("/pytrain/v1", summary=f"Redirect to {API_NAME} Documentation")
+@app.get("/pytrain", summary=f"Redirect to {API_NAME} Documentation")
 def pytrain_doc():
     return RedirectResponse(url="/docs")
 
