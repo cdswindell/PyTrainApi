@@ -4,8 +4,8 @@ protocol. **PyTrain Api** is used by the **PyTrain** Alexa skill to enables voic
 
 **PyTrain Api** is developed in pure Python. It uses the [FastAPI](https://fastapi.tiangolo.com) framework and
 includes an ASGI-compliant web server, [Uvicorn](https://www.uvicorn.org). Once installed, it only takes one
-command to launch the **PyTrain Api**.
+command to launch the **PyTrain Api** and begin serving requests.
 
-**PyTrain Api** can run as a **PyTrain** client connected to another **PyTrain** server or can act as both
+**PyTrain Api** runs as a **PyTrain** client connected to another **PyTrain** server, or can act as both
 a **PyTrain** server _and_ a **PyTrain Api** server. And, like **PyTrain**, **PyTrain Api** can run on a Raspberry Pi
 running 64 bit Bookworm distribution or later.
