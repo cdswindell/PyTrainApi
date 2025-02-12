@@ -843,11 +843,13 @@ class Switch(PyTrainComponent):
 
     @router.post("/switch/{tmcc_id}/thru_req")
     async def thru(self, tmcc_id: Annotated[int, Switch.id_path()]):
-        return self.send(TMCC1SwitchCommandEnum.THRU, tmcc_id)
+        self.do_request(TMCC1SwitchCommandEnum.THRU, tmcc_id)
+        return {"status": f"{self.scope.title} {tmcc_id} thrown thru"}
 
     @router.post("/switch/{tmcc_id}/out_req")
     async def out(self, tmcc_id: Annotated[int, Switch.id_path()]):
-        return self.send(TMCC1SwitchCommandEnum.OUT, tmcc_id)
+        self.do_request(TMCC1SwitchCommandEnum.OUT, tmcc_id)
+        return {"status": f"{self.scope.title} {tmcc_id} thrown out"}
 
 
 @router.get("/trains", response_model=list[TrainInfo])
