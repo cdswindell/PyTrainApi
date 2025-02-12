@@ -6,6 +6,6 @@ The **PyTrain Api** is developed in pure Python. It uses the [FastAPI](https://f
 includes an ASGI-compliant web server, [Uvicorn](https://www.uvicorn.org). Once installed, it only takes one
 command to launch the **PyTrain Api**.
 
-The **PyTrain Api** can be run as a **PyTrain** client connected to another **PyTrain** server, or can act as both
+The **PyTrain Api** can run as a **PyTrain** client connected to another **PyTrain** server or can act as both
 a **PyTrain** server _and_ a **PyTrain Api** server. And, like **PyTrain**, **PyTrain Api** can run on a Raspberry Pi
 running 64 bit Bookworm distribution or later.
