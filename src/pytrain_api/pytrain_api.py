@@ -43,8 +43,6 @@ from pytrain.utils.argument_parser import PyTrainArgumentParser
 from starlette.responses import RedirectResponse, FileResponse
 from starlette.staticfiles import StaticFiles
 
-from . import get_version
-
 E = TypeVar("E", bound=CommandDefEnum)
 API_NAME = "PyTrainApi"
 DEFAULT_API_SERVER_PORT: int = 8000
@@ -353,6 +351,8 @@ def invalid_home():
 
 @app.post("/version", summary=f"Get {PROGRAM_NAME} Version", include_in_schema=False)
 def version(server: str = None):
+    from . import get_version
+
     return {
         "pytrain": pytrain_get_version(),
         "pytrain_api": get_version(),
@@ -985,6 +985,8 @@ app.include_router(router)
 
 class PyTrainApi:
     def __init__(self, cmd_line: list[str] | None = None) -> None:
+        from . import get_version
+
         try:
             # parse command line args
             if cmd_line:
@@ -1029,6 +1031,8 @@ class PyTrainApi:
 
     @classmethod
     def command_line_parser(cls) -> PyTrainArgumentParser:
+        from . import get_version
+
         prog = "pytrain_api" if is_package() else "pytrain_api.py"
         parser = PyTrainArgumentParser(add_help=False)
         parser.add_argument(
