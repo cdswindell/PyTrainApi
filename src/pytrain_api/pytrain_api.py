@@ -602,19 +602,23 @@ class PyTrainEngine(PyTrainComponent):
         return {"status": f"{self.scope.title} {tmcc_id} speed now: {cmd.data}"}
 
     def startup(self, tmcc_id: int, dialog: bool = False):
-        cmd = "-sui"
-        tmcc = self.tmcc(tmcc_id)
-        if not tmcc and dialog is True:
-            cmd = "-sud"
-        self.queue_command(f"{self.prefix} {tmcc_id}{tmcc} {cmd}")
+        if self.tmcc(tmcc_id) is True:
+            cmd = TMCC1EngineCommandEnum.START_UP_IMMEDIATE
+        else:
+            cmd = (
+                TMCC2EngineCommandEnum.START_UP_DELAYED if dialog is True else TMCC2EngineCommandEnum.START_UP_IMMEDIATE
+            )
+        self.do_request(cmd, tmcc_id)
         return {"status": f"{self.scope.title} {tmcc_id} starting up..."}
 
     def shutdown(self, tmcc_id: int, dialog: bool = False):
-        cmd = "-sdi"
-        tmcc = self.tmcc(tmcc_id)
-        if not tmcc and dialog is True:
-            cmd = "-sdd"
-        self.queue_command(f"{self.prefix} {tmcc_id}{tmcc} {cmd}")
+        if self.tmcc(tmcc_id) is True:
+            cmd = TMCC1EngineCommandEnum.SHUTDOWN_IMMEDIATE
+        else:
+            cmd = (
+                TMCC2EngineCommandEnum.SHUTDOWN_DELAYED if dialog is True else TMCC2EngineCommandEnum.SHUTDOWN_IMMEDIATE
+            )
+        self.do_request(cmd, tmcc_id)
         return {"status": f"{self.scope.title} {tmcc_id} shutting down..."}
 
     def stop(self, tmcc_id: int):
