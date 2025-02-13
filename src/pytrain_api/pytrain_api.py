@@ -43,7 +43,7 @@ from pytrain.utils.argument_parser import PyTrainArgumentParser
 from starlette.responses import RedirectResponse, FileResponse
 from starlette.staticfiles import StaticFiles
 
-from .. import get_version
+from . import get_version
 
 E = TypeVar("E", bound=CommandDefEnum)
 API_NAME = "PyTrainApi"
