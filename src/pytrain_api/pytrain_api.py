@@ -701,6 +701,20 @@ class PyTrainEngine(PyTrainComponent):
             self.do_request(TMCC2EngineCommandEnum.TOGGLE_DIRECTION, tmcc_id)
         return {"status": f"{self.scope.title} {tmcc_id} toggle direction..."}
 
+    def volume_up(self, tmcc_id: int):
+        if self.is_tmcc(tmcc_id):
+            self.do_request(TMCC1EngineCommandEnum.VOLUME_UP, tmcc_id)
+        else:
+            self.do_request(TMCC2EngineCommandEnum.VOLUME_UP, tmcc_id)
+        return {"status": f"{self.scope.title} {tmcc_id} volume up..."}
+
+    def volume_down(self, tmcc_id: int):
+        if self.is_tmcc(tmcc_id):
+            self.do_request(TMCC1EngineCommandEnum.VOLUME_DOWN, tmcc_id)
+        else:
+            self.do_request(TMCC2EngineCommandEnum.VOLUME_DOWN, tmcc_id)
+        return {"status": f"{self.scope.title} {tmcc_id} volume up..."}
+
     def blow_horn(self, tmcc_id: int, option: HornOption, intensity: int = 10):
         if self.is_tmcc(tmcc_id):
             self.do_request(TMCC1EngineCommandEnum.BLOW_HORN_ONE, tmcc_id, repeat=10)
@@ -809,6 +823,14 @@ class Engine(PyTrainEngine):
     @router.post("/engine/{tmcc_id:int}/toggle_direction_req")
     async def toggle_direction(self, tmcc_id: Annotated[int, Engine.id_path()]):
         return super().toggle_direction(tmcc_id)
+
+    @router.post("/engine/{tmcc_id:int}/volume_down_req")
+    async def volume_down(self, tmcc_id: Annotated[int, Engine.id_path()]):
+        return super().volume_down(tmcc_id)
+
+    @router.post("/engine/{tmcc_id:int}/volume_up_req")
+    async def volume_up(self, tmcc_id: Annotated[int, Engine.id_path()]):
+        return super().volume_up(tmcc_id)
 
 
 @router.get("/routes", response_model=list[RouteInfo])
@@ -948,6 +970,14 @@ class Train(PyTrainEngine):
     @router.post("/train/{tmcc_id:int}/toggle_direction_req")
     async def toggle_direction(self, tmcc_id: Annotated[int, Train.id_path()]):
         return super().toggle_direction(tmcc_id)
+
+    @router.post("/train/{tmcc_id:int}/volume_down_req")
+    async def volume_down(self, tmcc_id: Annotated[int, Train.id_path()]):
+        return super().volume_down(tmcc_id)
+
+    @router.post("/train/{tmcc_id:int}/volume_up_req")
+    async def volume_up(self, tmcc_id: Annotated[int, Train.id_path()]):
+        return super().volume_up(tmcc_id)
 
 
 app.include_router(router)
