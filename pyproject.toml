@@ -33,6 +33,8 @@ dependencies = [
     "passlib >= 1.7.4",
     "pyjwt >= 2.10.1",
     "python_multipart >= 0.0.20",
+    "setuptools >= 75.6.0",
+    "setuptools_scm >= 8.1",
     "typing-inspect >= 0.9.0",
     "uvicorn >= 0.34.0",
 ]

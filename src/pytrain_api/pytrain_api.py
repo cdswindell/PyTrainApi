@@ -1017,6 +1017,7 @@ class PyTrainApi:
                 pytrain_args += f" -buttons_file {args.buttons_file}"
 
             # create a PyTrain process to handle commands
+            print(f"{API_NAME} {get_version()}")
             global PYTRAIN_SERVER
             PYTRAIN_SERVER = PyTrain(pytrain_args.split())
             port = args.api_port if args.api_port else DEFAULT_API_SERVER_PORT
