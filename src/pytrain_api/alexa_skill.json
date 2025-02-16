@@ -523,6 +523,39 @@
             "My server url is {server}",
             "url {server}"
           ]
+        },
+        {
+          "name": "ChangeVolumeIntent",
+          "slots": [
+            {
+              "name": "volume",
+              "type": "volume",
+              "samples": [
+                "{volume}"
+              ]
+            },
+            {
+              "name": "scope",
+              "type": "scope"
+            },
+            {
+              "name": "engine",
+              "type": "AMAZON.NUMBER",
+              "samples": [
+                "{engine}",
+                "train {engine}",
+                "engine {engine}"
+              ]
+            }
+          ],
+          "samples": [
+            "{volume} volume  {engine}",
+            "{volume} volume of {engine}",
+            "{volume} the volume of  {engine}",
+            "{volume} volume {scope} {engine}",
+            "{volume} volume of {scope} {engine}",
+            "{volume} the volume of {scope} {engine}"
+          ]
         }
       ],
       "types": [
@@ -1620,6 +1653,29 @@
               }
             }
           ]
+        },
+        {
+          "name": "volume",
+          "values": [
+            {
+              "id": "1",
+              "name": {
+                "value": "decrease",
+                "synonyms": [
+                  "lower"
+                ]
+              }
+            },
+            {
+              "id": "0",
+              "name": {
+                "value": "increases",
+                "synonyms": [
+                  "raise"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -2172,6 +2228,38 @@
               }
             }
           ]
+        },
+        {
+          "name": "ChangeVolumeIntent",
+          "confirmationRequired": false,
+          "prompts": {},
+          "slots": [
+            {
+              "name": "volume",
+              "type": "volume",
+              "confirmationRequired": false,
+              "elicitationRequired": true,
+              "prompts": {
+                "elicitation": "Elicit.Slot.453350679191.512045947681"
+              }
+            },
+            {
+              "name": "scope",
+              "type": "scope",
+              "confirmationRequired": false,
+              "elicitationRequired": false,
+              "prompts": {}
+            },
+            {
+              "name": "engine",
+              "type": "AMAZON.NUMBER",
+              "confirmationRequired": false,
+              "elicitationRequired": true,
+              "prompts": {
+                "elicitation": "Elicit.Slot.453350679191.1271070001596"
+              }
+            }
+          ]
         }
       ],
       "delegationStrategy": "ALWAYS"
@@ -2619,6 +2707,28 @@
           {
             "type": "PlainText",
             "value": "Tell me the name of your PyTrain server?"
+          }
+        ]
+      },
+      {
+        "id": "Elicit.Slot.453350679191.512045947681",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "Should I raise or lower the volume?"
+          }
+        ]
+      },
+      {
+        "id": "Elicit.Slot.453350679191.1271070001596",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "Tell me the engine TMCC ID"
+          },
+          {
+            "type": "PlainText",
+            "value": "Tell me the {scope} TMCC  ID"
           }
         ]
       }
