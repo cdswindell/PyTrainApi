@@ -337,7 +337,7 @@ class EngineInfo(ComponentInfoIr):
 
 class TrainInfo(EngineInfo):
     scope: Component = Component.TRAIN
-    consist_flags: int | None
+    flags: int | None
     components: dict[int, str] | None
 
 
