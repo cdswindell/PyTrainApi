@@ -10,7 +10,7 @@ from __future__ import annotations
 import sys
 from datetime import timedelta, datetime, timezone
 from enum import Enum
-from typing import TypeVar, Annotated, Any, cast, Dict
+from typing import TypeVar, Annotated, Any, cast
 
 import jwt
 import uvicorn
@@ -338,7 +338,7 @@ class EngineInfo(ComponentInfoIr):
 class TrainInfo(EngineInfo):
     scope: Component = Component.TRAIN
     consist_flags: int | None
-    consist_components: Dict
+    components: dict[int, str] | None
 
 
 router = APIRouter(prefix="/pytrain/v1", dependencies=[Depends(get_api_user)])
