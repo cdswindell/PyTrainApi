@@ -356,15 +356,23 @@ router = APIRouter(prefix="/pytrain/v1", dependencies=[Depends(get_api_user)])
 
 
 FAVICON_PATH = None
+APPLE_ICON_PATH = None
 STATIC_DIR = find_dir("static", (".", "../"))
 if STATIC_DIR:
     if os.path.isfile(f"{STATIC_DIR}/favicon.ico") is True:
         app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
         FAVICON_PATH = f"{STATIC_DIR}/favicon.ico"
-print(STATIC_DIR, FAVICON_PATH, os.path.isfile(FAVICON_PATH))
+    if os.path.isfile(f"{STATIC_DIR}/apple-touch-icon.png") is True:
+        APPLE_ICON_PATH = FAVICON_PATH = f"{STATIC_DIR}/apple-touch-icon.png"
 
 
 @app.get("/apple-touch-icon.png", include_in_schema=False)
+async def apple_icon():
+    if APPLE_ICON_PATH:
+        return FileResponse(APPLE_ICON_PATH)
+    raise HTTPException(status_code=403)
+
+
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     if FAVICON_PATH:
