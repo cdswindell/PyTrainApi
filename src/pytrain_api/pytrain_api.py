@@ -14,7 +14,8 @@ from typing import TypeVar, Annotated, Any, cast
 
 import jwt
 import uvicorn
-from fastapi import HTTPException, APIRouter, Path, Query, Depends, status, FastAPI, Security
+from fastapi import HTTPException, Request, APIRouter, Path, Query, Depends, status, FastAPI, Security
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer, APIKeyHeader
 from fastapi_utils.cbv import cbv
 from jwt import InvalidTokenError
@@ -40,6 +41,7 @@ from pytrain.cli.pytrain import PyTrain
 from pytrain.db.component_state import ComponentState
 from pytrain.protocol.command_def import CommandDefEnum
 from pytrain.utils.argument_parser import PyTrainArgumentParser
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import RedirectResponse
 
 E = TypeVar("E", bound=CommandDefEnum)
@@ -348,6 +350,22 @@ router = APIRouter(prefix="/pytrain/v1", dependencies=[Depends(get_api_user)])
 @app.get("/", include_in_schema=False)
 def invalid_home():
     raise HTTPException(status_code=403)
+
+
+favicon_path = "src/static/favicon.ico"
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse(favicon_path)
+
+
+# noinspection PyUnusedLocal
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    if exc.status_code in [404]:
+        return JSONResponse(content={"detail": "Forbidden"}, status_code=403)
+    return JSONResponse(content={"detail": exc.detail}, status_code=exc.status_code)
 
 
 @app.post("/version", summary=f"Get {PROGRAM_NAME} Version", include_in_schema=False)

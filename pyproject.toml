@@ -27,7 +27,7 @@ classifiers = [
 license = { file = "LICENSE" }
 
 dependencies = [
-    "pytrain-ogr >= 0.9.89",
+    "pytrain-ogr >= 0.9.91",
     "fastapi >= 0.115.8",
     "fastapi-utils >= 0.8.0",
     "passlib >= 1.7.4",
@@ -57,6 +57,9 @@ version_scheme = "only-version"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+install = ["*.ico"]
 
 [project.scripts]
 pytrain_api = "pytrain_api:main"
