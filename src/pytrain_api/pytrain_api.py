@@ -364,6 +364,7 @@ if STATIC_DIR:
 print(STATIC_DIR, FAVICON_PATH, os.path.isfile(FAVICON_PATH))
 
 
+@app.get("/apple-touch-icon.png", include_in_schema=False)
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     if FAVICON_PATH:
