@@ -7,6 +7,7 @@
 #
 from __future__ import annotations
 
+import os
 import sys
 from datetime import timedelta, datetime, timezone
 from enum import Enum
@@ -41,8 +42,10 @@ from pytrain.cli.pytrain import PyTrain
 from pytrain.db.component_state import ComponentState
 from pytrain.protocol.command_def import CommandDefEnum
 from pytrain.utils.argument_parser import PyTrainArgumentParser
+from pytrain.utils.path_utils import find_dir
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import RedirectResponse
+from starlette.staticfiles import StaticFiles
 
 E = TypeVar("E", bound=CommandDefEnum)
 API_NAME = "PyTrainApi"
@@ -347,17 +350,25 @@ router = APIRouter(prefix="/pytrain/v1", dependencies=[Depends(get_api_user)])
 # router = APIRouter(prefix="/pytrain/v1")
 
 
-@app.get("/", include_in_schema=False)
-def invalid_home():
-    raise HTTPException(status_code=403)
+# @app.get("/", include_in_schema=False)
+# def invalid_home():
+#     raise HTTPException(status_code=403)
 
 
-favicon_path = "src/static/favicon.ico"
+FAVICON_PATH = None
+STATIC_DIR = find_dir("static", (".", "../"))
+if STATIC_DIR:
+    if os.path.isfile(f"{STATIC_DIR}/favicon.ico") is True:
+        app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+        FAVICON_PATH = f"{STATIC_DIR}/favicon.ico"
+print(STATIC_DIR, FAVICON_PATH, os.path.isfile(FAVICON_PATH))
 
 
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
-    return FileResponse(favicon_path)
+    if FAVICON_PATH:
+        return FileResponse(FAVICON_PATH)
+    raise HTTPException(status_code=403)
 
 
 # noinspection PyUnusedLocal
