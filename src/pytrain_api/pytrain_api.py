@@ -350,11 +350,6 @@ router = APIRouter(prefix="/pytrain/v1", dependencies=[Depends(get_api_user)])
 # router = APIRouter(prefix="/pytrain/v1")
 
 
-# @app.get("/", include_in_schema=False)
-# def invalid_home():
-#     raise HTTPException(status_code=403)
-
-
 FAVICON_PATH = None
 APPLE_ICON_PATH = None
 STATIC_DIR = find_dir("static", (".", "../"))
