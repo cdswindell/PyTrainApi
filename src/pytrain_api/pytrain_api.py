@@ -277,11 +277,16 @@ class SmokeOption(str, Enum):
 
 
 class DialogOption(str, Enum):
+    ENGINEER_ACK = "engineer ack"
+    ENGINEER_ALL_CLEAR = "engineer all clear"
     ENGINEER_ARRIVED = "engineer arrived"
+    ENGINEER_ARRIVING = "engineer arriving"
+    ENGINEER_DEPARTED = "engineer departed"
     ENGINEER_DEPARTURE_DENIED = "engineer deny departure"
     ENGINEER_DEPARTURE_GRANTED = "engineer grant departure"
     ENGINEER_FUEL_LEVEL = "engineer current fuel"
     ENGINEER_FUEL_REFILLED = "engineer fuel refilled"
+    ENGINEER_ID = "engineer id"
     TOWER_DEPARTURE_DENIED = "tower deny departure"
     TOWER_DEPARTURE_GRANTED = "tower grant departure"
     TOWER_RANDOM_CHATTER = "tower chatter"
@@ -293,9 +298,14 @@ Tmcc1DialogToCommand: dict[DialogOption, E] = {
 
 
 Tmcc2DialogToCommand: dict[DialogOption, E] = {
+    DialogOption.ENGINEER_ACK: TMCC2RailSoundsDialogControl.ENGINEER_ACK,
+    DialogOption.ENGINEER_ID: TMCC2RailSoundsDialogControl.ENGINEER_ID,
+    DialogOption.ENGINEER_ALL_CLEAR: TMCC2RailSoundsDialogControl.ENGINEER_ALL_CLEAR,
     DialogOption.ENGINEER_ARRIVED: TMCC2RailSoundsDialogControl.ENGINEER_ARRIVED,
+    DialogOption.ENGINEER_ARRIVING: TMCC2RailSoundsDialogControl.ENGINEER_ARRIVING,
     DialogOption.ENGINEER_DEPARTURE_DENIED: TMCC2RailSoundsDialogControl.ENGINEER_DEPARTURE_DENIED,
     DialogOption.ENGINEER_DEPARTURE_GRANTED: TMCC2RailSoundsDialogControl.ENGINEER_DEPARTURE_GRANTED,
+    DialogOption.ENGINEER_DEPARTED: TMCC2RailSoundsDialogControl.ENGINEER_DEPARTED,
     DialogOption.ENGINEER_FUEL_LEVEL: TMCC2RailSoundsDialogControl.ENGINEER_FUEL_LEVEL,
     DialogOption.ENGINEER_FUEL_REFILLED: TMCC2RailSoundsDialogControl.ENGINEER_FUEL_REFILLED,
     DialogOption.TOWER_DEPARTURE_DENIED: TMCC2RailSoundsDialogControl.TOWER_DEPARTURE_DENIED,
@@ -744,9 +754,9 @@ class PyTrainEngine(PyTrainComponent):
 
     def reset(self, tmcc_id: int, hold: bool = False):
         if self.is_tmcc(tmcc_id):
-            self.do_request(TMCC1EngineCommandEnum.RESET, tmcc_id, repeat=40 if hold else 1)
+            self.do_request(TMCC1EngineCommandEnum.RESET, tmcc_id, duration=3 if hold else 0)
         else:
-            self.do_request(TMCC2EngineCommandEnum.RESET, tmcc_id, repeat=40 if hold else 1)
+            self.do_request(TMCC2EngineCommandEnum.RESET, tmcc_id, duration=3 if hold else 0)
         return {"status": f"{self.scope.title} {tmcc_id} {'reset and refueled' if hold else 'reset'}..."}
 
     def reverse(self, tmcc_id: int):
