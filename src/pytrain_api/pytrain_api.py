@@ -16,6 +16,7 @@ from typing import TypeVar, Annotated, Any, cast
 import jwt
 import uvicorn
 from fastapi import HTTPException, Request, APIRouter, Path, Query, Depends, status, FastAPI, Security
+from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer, APIKeyHeader
 from fastapi_utils.cbv import cbv
@@ -46,6 +47,8 @@ from pytrain.utils.path_utils import find_dir
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import RedirectResponse
 from starlette.staticfiles import StaticFiles
+
+from . import get_version
 
 E = TypeVar("E", bound=CommandDefEnum)
 API_NAME = "PyTrainApi"
@@ -123,7 +126,13 @@ class UserInDB(User):
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-app = FastAPI()
+app = FastAPI(
+    title="PyTrain API",
+    description="Operate and control Lionel Legacy/TMCC engines, trains, switches, accessories, routes, "
+    "and LCS components",
+    version=get_version(),
+    docs_url=None,
+)
 
 
 #
@@ -392,6 +401,15 @@ def version(server: str = None):
         "pytrain_api": get_version(),
         "server": server,
     }
+
+
+@app.get("/docs", include_in_schema=False)
+async def swagger_ui_html():
+    return get_swagger_ui_html(
+        openapi_url="/openapi.json",
+        title=f"{API_NAME}",
+        swagger_favicon_url="/static/favicon.ico",
+    )
 
 
 @app.get("/pytrain/v1", summary=f"Redirect to {API_NAME} Documentation")

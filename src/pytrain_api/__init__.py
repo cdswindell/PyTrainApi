@@ -11,12 +11,13 @@ import importlib.metadata
 import sys
 from importlib.metadata import PackageNotFoundError
 
-from .pytrain_api import PyTrainApi, API_NAME
 
 PROGRAM_PACKAGE = "pytrain-ogr-api"
 
 
 def main(args: list[str] | None = None) -> int:
+    from .pytrain_api import PyTrainApi, API_NAME
+
     if args is None:
         args = sys.argv[1:]
     try:
