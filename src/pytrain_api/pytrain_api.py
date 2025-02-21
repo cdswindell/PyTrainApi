@@ -127,7 +127,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 app = FastAPI(
-    title="PyTrain API",
+    title=f"{PROGRAM_NAME} API",
     description="Operate and control Lionel Legacy/TMCC engines, trains, switches, accessories, routes, "
     "and LCS components",
     version=get_version(),
@@ -407,7 +407,7 @@ def version(server: str = None):
 async def swagger_ui_html():
     return get_swagger_ui_html(
         openapi_url="/openapi.json",
-        title=f"{API_NAME}",
+        title=f"{PROGRAM_NAME} API",
         swagger_favicon_url="/static/favicon.ico",
     )
 
