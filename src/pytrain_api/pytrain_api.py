@@ -412,8 +412,8 @@ async def swagger_ui_html():
     )
 
 
-@app.get("/pytrain/v1", summary=f"Redirect to {API_NAME} Documentation")
 @app.get("/pytrain", summary=f"Redirect to {API_NAME} Documentation")
+@app.get("/pytrain/v1", summary=f"Redirect to {API_NAME} Documentation")
 def pytrain_doc():
     return RedirectResponse(url="/docs")
 
