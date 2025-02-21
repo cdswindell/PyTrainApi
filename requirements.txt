@@ -1,4 +1,4 @@
-pytrain-ogr>=0.9.91
+pytrain-ogr>=0.9.93
 fastapi-utils>=0.8.0
 fastapi>=0.115.8
 passlib>=1.7.4

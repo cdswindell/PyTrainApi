@@ -37,6 +37,7 @@ from pytrain import (
     TMCC1RRSpeedsEnum,
     TMCC2EffectsControl,
     is_package,
+    TMCC2RailSoundsDialogControl,
 )
 from pytrain import get_version as pytrain_get_version
 from pytrain.cli.pytrain import PyTrain
@@ -247,10 +248,10 @@ PYTRAIN_SERVER: PyTrain | None = None
 
 
 class BellOption(str, Enum):
+    TOGGLE = "toggle"
     OFF = "off"
     ON = "on"
     ONCE = "once"
-    TOGGLE = "toggle"
 
 
 class Component(str, Enum):
@@ -273,6 +274,34 @@ class SmokeOption(str, Enum):
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
+
+
+class DialogOption(str, Enum):
+    ENGINEER_ARRIVED = "engineer arrived"
+    ENGINEER_DEPARTURE_DENIED = "engineer deny departure"
+    ENGINEER_DEPARTURE_GRANTED = "engineer grant departure"
+    ENGINEER_FUEL_LEVEL = "engineer current fuel"
+    ENGINEER_FUEL_REFILLED = "engineer fuel refilled"
+    TOWER_DEPARTURE_DENIED = "tower deny departure"
+    TOWER_DEPARTURE_GRANTED = "tower grant departure"
+    TOWER_RANDOM_CHATTER = "tower chatter"
+
+
+Tmcc1DialogToCommand: dict[DialogOption, E] = {
+    DialogOption.TOWER_RANDOM_CHATTER: TMCC2EngineCommandEnum.TOWER_CHATTER,
+}
+
+
+Tmcc2DialogToCommand: dict[DialogOption, E] = {
+    DialogOption.ENGINEER_ARRIVED: TMCC2RailSoundsDialogControl.ENGINEER_ARRIVED,
+    DialogOption.ENGINEER_DEPARTURE_DENIED: TMCC2RailSoundsDialogControl.ENGINEER_DEPARTURE_DENIED,
+    DialogOption.ENGINEER_DEPARTURE_GRANTED: TMCC2RailSoundsDialogControl.ENGINEER_DEPARTURE_GRANTED,
+    DialogOption.ENGINEER_FUEL_LEVEL: TMCC2RailSoundsDialogControl.ENGINEER_FUEL_LEVEL,
+    DialogOption.ENGINEER_FUEL_REFILLED: TMCC2RailSoundsDialogControl.ENGINEER_FUEL_REFILLED,
+    DialogOption.TOWER_DEPARTURE_DENIED: TMCC2RailSoundsDialogControl.TOWER_DEPARTURE_DENIED,
+    DialogOption.TOWER_DEPARTURE_GRANTED: TMCC2RailSoundsDialogControl.TOWER_DEPARTURE_GRANTED,
+    DialogOption.TOWER_RANDOM_CHATTER: TMCC2EngineCommandEnum.TOWER_CHATTER,
+}
 
 
 class ComponentInfo(BaseModel):
@@ -559,6 +588,7 @@ class PyTrainComponent:
             else:
                 cmd_req = CommandReq.build(cmd_def, tmcc_id, data, self.scope)
             if submit is True:
+                repeat = repeat if repeat and repeat >= 1 else 1
                 duration = duration if duration is not None else 0
                 cmd_req.send(repeat=repeat, duration=duration)
             return cmd_req
@@ -628,7 +658,7 @@ class PyTrainEngine(PyTrainComponent):
                     cmd = CommandReq.build(cmd_def, tmcc_id, scope=self.scope)
             if cmd is None:
                 raise HTTPException(
-                    status_code=status.HTTP_406_NOT_ACCEPTABLE,
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail=f"TMCC speeds must be between 0 and 31 inclusive: {speed}",
                 )
         else:
@@ -644,11 +674,25 @@ class PyTrainEngine(PyTrainComponent):
                     cmd = CommandReq.build(cmd_def, tmcc_id, scope=self.scope)
             if cmd is None:
                 raise HTTPException(
-                    status_code=status.HTTP_406_NOT_ACCEPTABLE,
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail=f"Legacy speeds must be between 0 and 199 inclusive: {speed}",
                 )
         self.do_request(cmd)
         return {"status": f"{self.scope.title} {tmcc_id} speed now: {cmd.data}"}
+
+    def dialog(self, tmcc_id: int, dialog: DialogOption):
+        if self.is_tmcc(tmcc_id):
+            cmd = Tmcc2DialogToCommand.get(dialog, None)
+        else:
+            cmd = Tmcc2DialogToCommand.get(dialog, None)
+        if cmd:
+            self.do_request(cmd, tmcc_id)
+            return {"status": f"Issued dialog request '{dialog.value}' to {self.scope.title} {tmcc_id}"}
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Dialog option '{dialog.value}' not supported on {self.scope.title} {tmcc_id}",
+            )
 
     def startup(self, tmcc_id: int, dialog: bool = False):
         if self.tmcc(tmcc_id) is True:
@@ -712,7 +756,7 @@ class PyTrainEngine(PyTrainComponent):
             self.do_request(TMCC2EngineCommandEnum.REVERSE_DIRECTION, tmcc_id)
         return {"status": f"{self.scope.title} {tmcc_id} reverse..."}
 
-    def ring_bell(self, tmcc_id: int, option: BellOption):
+    def ring_bell(self, tmcc_id: int, option: BellOption, duration: float = None):
         if self.is_tmcc(tmcc_id):
             self.do_request(TMCC1EngineCommandEnum.RING_BELL, tmcc_id)
         else:
@@ -723,7 +767,7 @@ class PyTrainEngine(PyTrainComponent):
             elif option == BellOption.OFF:
                 self.do_request(TMCC2EngineCommandEnum.BELL_OFF, tmcc_id)
             elif option == BellOption.ONCE:
-                self.do_request(TMCC2EngineCommandEnum.BELL_ONE_SHOT_DING, tmcc_id, 3)
+                self.do_request(TMCC2EngineCommandEnum.BELL_ONE_SHOT_DING, tmcc_id, 3, duration=duration)
         return {"status": f"{self.scope.title} {tmcc_id} ringing bell..."}
 
     def smoke(self, tmcc_id: int, level: SmokeOption):
@@ -813,9 +857,18 @@ class Engine(PyTrainEngine):
     async def ring_bell(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
-        option: Annotated[BellOption, Query(description="Bell effect")] = BellOption.TOGGLE,
+        option: Annotated[BellOption, Query(description="Bell effect")],
+        duration: Annotated[float, Query(description="Duration (seconds, only with 'once' option)", gt=0.0)] = None,
     ):
-        return super().ring_bell(tmcc_id, option)
+        return super().ring_bell(tmcc_id, option, duration)
+
+    @router.post("/engine/{tmcc_id:int}/dialog_req")
+    async def do_dialog(
+        self,
+        tmcc_id: Annotated[int, Engine.id_path()],
+        option: Annotated[DialogOption, Query(description="Dialog effect")],
+    ):
+        return super().dialog(tmcc_id, option)
 
     @router.post("/engine/{tmcc_id:int}/forward_req")
     async def forward(self, tmcc_id: Annotated[int, Engine.id_path()]):
@@ -829,9 +882,9 @@ class Engine(PyTrainEngine):
     async def blow_horn(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
-        option: Annotated[HornOption, Query(description="Horn effect")] = HornOption.SOUND,
+        option: Annotated[HornOption, Query(description="Horn effect")],
         intensity: Annotated[int, Query(description="Quilling horn intensity (Legacy engines only)", ge=0, le=15)] = 10,
-        duration: Annotated[float, Query(description="Duration (seconds, Legacy engines only)", gt=0.0)] = None,
+        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
         return super().blow_horn(tmcc_id, option, intensity, duration)
 
@@ -964,9 +1017,18 @@ class Train(PyTrainEngine):
     async def ring_bell(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
-        option: Annotated[BellOption, Query(description="Bell effect")] = BellOption.TOGGLE,
+        option: Annotated[BellOption, Query(description="Bell effect")],
+        duration: Annotated[float, Query(description="Duration (seconds, only with 'once' option)", gt=0.0)] = None,
     ):
-        return super().ring_bell(tmcc_id, option)
+        return super().ring_bell(tmcc_id, option, duration)
+
+    @router.post("/train/{tmcc_id:int}/dialog_req")
+    async def do_dialog(
+        self,
+        tmcc_id: Annotated[int, Train.id_path()],
+        option: Annotated[DialogOption, Query(description="Dialog effect")],
+    ):
+        return super().dialog(tmcc_id, option)
 
     @router.post("/train/{tmcc_id:int}/forward_req")
     async def forward(self, tmcc_id: Annotated[int, Train.id_path()]):
@@ -984,7 +1046,7 @@ class Train(PyTrainEngine):
     async def blow_horn(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
-        option: Annotated[HornOption, Query(description="Horn effect")] = HornOption.SOUND,
+        option: Annotated[HornOption, Query(description="Horn effect")],
         intensity: Annotated[int, Query(description="Quilling horn intensity (Legacy engines only)", ge=0, le=15)] = 10,
         duration: Annotated[float, Query(description="Duration (seconds, Legacy engines only)", gt=0.0)] = None,
     ):
