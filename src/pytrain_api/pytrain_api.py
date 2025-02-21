@@ -418,6 +418,37 @@ def pytrain_doc():
     return RedirectResponse(url="/docs")
 
 
+@router.get(
+    "/system/halt",
+    summary="Emergency Stop",
+    description="Stops all engines and trains, in their tracks; turns off all power districts.",
+)
+async def halt():
+    try:
+        CommandReq(TMCC1HaltCommandEnum.HALT).send()
+        return {"status": "HALT command sent"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post(
+    "/system/echo_req",
+    summary="Enable/Disable Command Echoing",
+    description=f"Enable/disable echoing of {PROGRAM_NAME} commands to log file. ",
+)
+async def echo(on: bool = True):
+    PYTRAIN_SERVER.queue_command(f"echo {'on' if on else 'off'}")
+    return {"status": f"Echo {'enabled' if on else 'disabled'}"}
+
+
+@router.post("/system/stop_req")
+async def stop():
+    PYTRAIN_SERVER.queue_command("tr 99 -s")
+    PYTRAIN_SERVER.queue_command("en 99 -s")
+    PYTRAIN_SERVER.queue_command("en 99 -tmcc -s")
+    return {"status": "Stop all engines and trains command sent"}
+
+
 @router.post(
     "/{component}/{tmcc_id:int}/cli_req",
     summary=f"Send {PROGRAM_NAME} CLI command",
@@ -453,37 +484,6 @@ async def send_command(
         raise he
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-
-@router.get(
-    "/system/halt",
-    summary="Emergency Stop",
-    description="Stops all engines and trains, in their tracks; turns off all power districts.",
-)
-async def halt():
-    try:
-        CommandReq(TMCC1HaltCommandEnum.HALT).send()
-        return {"status": "HALT command sent"}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@router.post(
-    "/system/echo_req",
-    summary="Enable/Disable Command Echoing",
-    description=f"Enable/disable echoing of {PROGRAM_NAME} commands to log file. ",
-)
-async def echo(on: bool = True):
-    PYTRAIN_SERVER.queue_command(f"echo {'on' if on else 'off'}")
-    return {"status": f"Echo {'enabled' if on else 'disabled'}"}
-
-
-@router.post("/system/stop_req")
-async def stop():
-    PYTRAIN_SERVER.queue_command("tr 99 -s")
-    PYTRAIN_SERVER.queue_command("en 99 -s")
-    PYTRAIN_SERVER.queue_command("en 99 -tmcc -s")
-    return {"status": "Stop all engines and trains command sent"}
 
 
 def get_components(
@@ -551,14 +551,19 @@ class PyTrainComponent:
         data: int = None,
         submit: bool = True,
         repeat: int = 1,
+        duration: float = 0,
     ) -> CommandReq:
-        if isinstance(cmd_def, CommandReq):
-            cmd_req = cmd_def
-        else:
-            cmd_req = CommandReq.build(cmd_def, tmcc_id, data, self.scope)
-        if submit is True:
-            cmd_req.send(repeat=repeat)
-        return cmd_req
+        try:
+            if isinstance(cmd_def, CommandReq):
+                cmd_req = cmd_def
+            else:
+                cmd_req = CommandReq.build(cmd_def, tmcc_id, data, self.scope)
+            if submit is True:
+                duration = duration if duration is not None else 0
+                cmd_req.send(repeat=repeat, duration=duration)
+            return cmd_req
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
 
     @staticmethod
     def queue_command(cmd: str):
@@ -759,16 +764,16 @@ class PyTrainEngine(PyTrainComponent):
             self.do_request(TMCC2EngineCommandEnum.VOLUME_DOWN, tmcc_id)
         return {"status": f"{self.scope.title} {tmcc_id} volume up..."}
 
-    def blow_horn(self, tmcc_id: int, option: HornOption, intensity: int = 10):
+    def blow_horn(self, tmcc_id: int, option: HornOption, intensity: int = 10, duration: float = None):
         if self.is_tmcc(tmcc_id):
             self.do_request(TMCC1EngineCommandEnum.BLOW_HORN_ONE, tmcc_id, repeat=10)
         else:
             if option is None or option == HornOption.SOUND:
-                self.do_request(TMCC2EngineCommandEnum.BLOW_HORN_ONE, tmcc_id, repeat=10)
+                self.do_request(TMCC2EngineCommandEnum.BLOW_HORN_ONE, tmcc_id, duration=duration)
             elif option == HornOption.GRADE:
                 self.do_request(SequenceCommandEnum.GRADE_CROSSING_SEQ, tmcc_id)
             elif option == HornOption.QUILLING:
-                self.do_request(TMCC2EngineCommandEnum.QUILLING_HORN, tmcc_id, intensity)
+                self.do_request(TMCC2EngineCommandEnum.QUILLING_HORN, tmcc_id, intensity, duration=duration)
         return {"status": f"{self.scope.title} {tmcc_id} blowing horn..."}
 
 
@@ -826,8 +831,9 @@ class Engine(PyTrainEngine):
         tmcc_id: Annotated[int, Engine.id_path()],
         option: Annotated[HornOption, Query(description="Horn effect")] = HornOption.SOUND,
         intensity: Annotated[int, Query(description="Quilling horn intensity (Legacy engines only)", ge=0, le=15)] = 10,
+        duration: Annotated[float, Query(description="Duration (seconds, Legacy engines only)", gt=0.0)] = None,
     ):
-        return super().blow_horn(tmcc_id, option, intensity)
+        return super().blow_horn(tmcc_id, option, intensity, duration)
 
     @router.post("/engine/{tmcc_id:int}/rear_coupler_req")
     async def rear_coupler(self, tmcc_id: Annotated[int, Engine.id_path()]):
@@ -980,8 +986,9 @@ class Train(PyTrainEngine):
         tmcc_id: Annotated[int, Train.id_path()],
         option: Annotated[HornOption, Query(description="Horn effect")] = HornOption.SOUND,
         intensity: Annotated[int, Query(description="Quilling horn intensity (Legacy engines only)", ge=0, le=15)] = 10,
+        duration: Annotated[float, Query(description="Duration (seconds, Legacy engines only)", gt=0.0)] = None,
     ):
-        return super().blow_horn(tmcc_id, option, intensity)
+        return super().blow_horn(tmcc_id, option, intensity, duration)
 
     @router.post("/train/{tmcc_id:int}/reset_req")
     async def reset(
