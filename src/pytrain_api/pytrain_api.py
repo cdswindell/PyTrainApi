@@ -38,6 +38,7 @@ from pytrain import (
     TMCC2EffectsControl,
     is_package,
     TMCC2RailSoundsDialogControl,
+    TMCC1AuxCommandEnum,
 )
 from pytrain import get_version as pytrain_get_version
 from pytrain.cli.pytrain import PyTrain
@@ -631,6 +632,65 @@ class Accessory(PyTrainComponent):
     @router.get("/accessory/{tmcc_id}")
     async def get_accessory(self, tmcc_id: Annotated[int, Accessory.id_path()]) -> AccessoryInfo:
         return AccessoryInfo(**super().get(tmcc_id))
+
+    @router.post("/accessory/{tmcc_id}/boost_req")
+    async def boost(
+        self,
+        tmcc_id: Annotated[int, Accessory.id_path()],
+        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+    ):
+        self.do_request(TMCC1AuxCommandEnum.BOOST, tmcc_id, duration=duration)
+        d = f" for {duration} second(s)" if duration else ""
+        return {"status": f"Sending Boost request to {self.scope.title} {tmcc_id}{d}"}
+
+    @router.post("/accessory/{tmcc_id}/brake_req")
+    async def brake(
+        self,
+        tmcc_id: Annotated[int, Accessory.id_path()],
+        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+    ):
+        self.do_request(TMCC1AuxCommandEnum.BRAKE, tmcc_id, duration=duration)
+        d = f" for {duration} second(s)" if duration else ""
+        return {"status": f"Sending Brake request to {self.scope.title} {tmcc_id}{d}"}
+
+    @router.post("/accessory/{tmcc_id}/numeric_req")
+    async def numeric(
+        self,
+        tmcc_id: Annotated[int, Accessory.id_path()],
+        number: Annotated[int, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
+        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+    ):
+        self.do_request(TMCC1AuxCommandEnum.NUMERIC, tmcc_id, data=number, duration=duration)
+        d = f" for {duration} second(s)" if duration else ""
+        return {"status": f"Sending Numeric {number} request to {self.scope.title} {tmcc_id}{d}"}
+
+    @router.post("/accessory/{tmcc_id}/speed_req/{speed}")
+    async def speed(
+        self,
+        tmcc_id: Annotated[int, Accessory.id_path()],
+        speed: Annotated[int, Path(description="Relative speed (-5 - 5)", ge=-5, le=5)],
+        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+    ):
+        self.do_request(TMCC1AuxCommandEnum.RELATIVE_SPEED, tmcc_id, data=speed, duration=duration)
+        d = f" for {duration} second(s)" if duration else ""
+        return {"status": f"Sending Speed {speed} request to {self.scope.title} {tmcc_id}{d}"}
+
+    @router.post("/accessory/{tmcc_id}/{aux_req}")
+    async def operate_accessory(
+        self,
+        tmcc_id: Annotated[int, Accessory.id_path()],
+        aux_req: Annotated[AuxOption, Path(description="Aux 1, Aux2, or Aux 3")],
+        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+    ):
+        cmd = TMCC1AuxCommandEnum.by_name(f"{aux_req.name}_OPT_ONE")
+        if cmd:
+            self.do_request(cmd, tmcc_id, duration=duration)
+            d = f" for {duration} second(s)" if duration else ""
+            return {"status": f"Sending {aux_req.name} to {self.scope.title} {tmcc_id}{d}"}
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Aux option '{aux_req.value}' not supported on {self.scope.title} {tmcc_id}",
+        )
 
 
 class PyTrainEngine(PyTrainComponent):
