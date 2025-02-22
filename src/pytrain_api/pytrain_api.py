@@ -276,6 +276,12 @@ class SmokeOption(str, Enum):
     HIGH = "high"
 
 
+class AuxOption(str, Enum):
+    AUX1 = "aux1"
+    AUX2 = "aux2"
+    AUX3 = "aux3"
+
+
 class DialogOption(str, Enum):
     ENGINEER_ACK = "engineer ack"
     ENGINEER_ALL_CLEAR = "engineer all clear"
@@ -591,6 +597,7 @@ class PyTrainComponent:
         submit: bool = True,
         repeat: int = 1,
         duration: float = 0,
+        delay: float = None,
     ) -> CommandReq:
         try:
             if isinstance(cmd_def, CommandReq):
@@ -600,7 +607,8 @@ class PyTrainComponent:
             if submit is True:
                 repeat = repeat if repeat and repeat >= 1 else 1
                 duration = duration if duration is not None else 0
-                cmd_req.send(repeat=repeat, duration=duration)
+                delay = delay if delay is not None else 0
+                cmd_req.send(repeat=repeat, delay=delay, duration=duration)
             return cmd_req
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
@@ -830,6 +838,36 @@ class PyTrainEngine(PyTrainComponent):
                 self.do_request(TMCC2EngineCommandEnum.QUILLING_HORN, tmcc_id, intensity, duration=duration)
         return {"status": f"{self.scope.title} {tmcc_id} blowing horn..."}
 
+    def aux_req(self, tmcc_id, aux: AuxOption, number, duration):
+        if self.is_tmcc(tmcc_id):
+            cmd = TMCC1EngineCommandEnum.by_name(f"{aux.name}_OPTION_ONE")
+            cmd2 = TMCC1EngineCommandEnum.NUMERIC
+        else:
+            cmd = TMCC2EngineCommandEnum.by_name(f"{aux.name}_OPTION_ONE")
+            cmd2 = TMCC2EngineCommandEnum.NUMERIC
+        if cmd:
+            if number is not None:
+                self.do_request(cmd, tmcc_id)
+                self.do_request(cmd2, tmcc_id, data=number, delay=0.10, duration=duration)
+            else:
+                self.do_request(cmd, tmcc_id, duration=duration)
+            d = f" for {duration} second(s)" if duration else ""
+            return {"status": f"Sending {aux.name} to {self.scope.title} {tmcc_id}{d}"}
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Aux option '{aux.value}' not supported on {self.scope.title} {tmcc_id}",
+            )
+
+    def numeric_req(self, tmcc_id, number, duration):
+        if self.is_tmcc(tmcc_id):
+            cmd = TMCC1EngineCommandEnum.NUMERIC
+        else:
+            cmd = TMCC2EngineCommandEnum.NUMERIC
+        self.do_request(cmd, tmcc_id, data=number, duration=duration)
+        d = f" for {duration} second(s)" if duration else ""
+        return {"status": f"Sending Numeric {number} to {self.scope.title} {tmcc_id}{d}"}
+
 
 @router.get("/engines")
 async def get_engines(contains: str = None, is_legacy: bool = None, is_tmcc: bool = None) -> list[EngineInfo]:
@@ -898,6 +936,15 @@ class Engine(PyTrainEngine):
     ):
         return super().blow_horn(tmcc_id, option, intensity, duration)
 
+    @router.post("/engine/{tmcc_id:int}/numeric_req")
+    async def numeric_req(
+        self,
+        tmcc_id: Annotated[int, Engine.id_path()],
+        number: Annotated[int, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
+        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+    ):
+        return super().numeric_req(tmcc_id, number, duration)
+
     @router.post("/engine/{tmcc_id:int}/rear_coupler_req")
     async def rear_coupler(self, tmcc_id: Annotated[int, Engine.id_path()]):
         return super().rear_coupler(tmcc_id)
@@ -954,6 +1001,16 @@ class Engine(PyTrainEngine):
     @router.post("/engine/{tmcc_id:int}/volume_up_req")
     async def volume_up(self, tmcc_id: Annotated[int, Engine.id_path()]):
         return super().volume_up(tmcc_id)
+
+    @router.post("/engine/{tmcc_id:int}/{aux_req}")
+    async def aux_req(
+        self,
+        tmcc_id: Annotated[int, Engine.id_path()],
+        aux_req: Annotated[AuxOption, Path(description="Aux 1, Aux2, or Aux 3")],
+        number: Annotated[int, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
+        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+    ):
+        return super().aux_req(tmcc_id, aux_req, number, duration)
 
 
 @router.get("/routes", response_model=list[RouteInfo])
@@ -1048,6 +1105,15 @@ class Train(PyTrainEngine):
     async def front_coupler(self, tmcc_id: Annotated[int, Train.id_path()]):
         return super().front_coupler(tmcc_id)
 
+    @router.post("/train/{tmcc_id:int}/numeric_req")
+    async def numeric_req(
+        self,
+        tmcc_id: Annotated[int, Train.id_path()],
+        number: Annotated[int, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
+        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+    ):
+        return super().numeric_req(tmcc_id, number, duration)
+
     @router.post("/train/{tmcc_id:int}/rear_coupler_req")
     async def rear_coupler(self, tmcc_id: Annotated[int, Train.id_path()]):
         return super().rear_coupler(tmcc_id)
@@ -1111,6 +1177,16 @@ class Train(PyTrainEngine):
     @router.post("/train/{tmcc_id:int}/volume_up_req")
     async def volume_up(self, tmcc_id: Annotated[int, Train.id_path()]):
         return super().volume_up(tmcc_id)
+
+    @router.post("/train/{tmcc_id:int}/{aux_req}")
+    async def aux_req(
+        self,
+        tmcc_id: Annotated[int, Train.id_path()],
+        aux_req: Annotated[AuxOption, Path(description="Aux 1, Aux2, or Aux 3")],
+        number: Annotated[int, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
+        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+    ):
+        return super().aux_req(tmcc_id, aux_req, number, duration)
 
 
 app.include_router(router)
