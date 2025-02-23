@@ -1,11 +1,11 @@
 dist/
+ .env
 src/*.egg-info/
 src/pytrain_api/_version.py
 .idea/
 .tox/
 __pycache__
  *.pyc
- .env
 /pytrain.log*
 .DS_Store
 /replay.txt
