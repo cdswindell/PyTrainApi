@@ -43,6 +43,9 @@ from pytrain import (
 from pytrain import get_version as pytrain_get_version
 from pytrain.cli.pytrain import PyTrain
 from pytrain.db.component_state import ComponentState
+from pytrain.pdi.asc2_req import Asc2Req
+from pytrain.pdi.bpc2_req import Bpc2Req
+from pytrain.pdi.constants import PdiCommand, Bpc2Action, Asc2Action
 from pytrain.protocol.command_def import CommandDefEnum
 from pytrain.utils.argument_parser import PyTrainArgumentParser
 from pytrain.utils.path_utils import find_dir
@@ -238,14 +241,13 @@ async def login_for_access_token(
     return Token(access_token=access_token, token_type="bearer")
 
 
-@app.get("/users/me", response_model=User, include_in_schema=False)
-async def read_users_me(
-    current_user: Annotated[User, Depends(get_current_active_user)],
-):
-    return current_user
-
-
 PYTRAIN_SERVER: PyTrain | None = None
+
+
+class AuxOption(str, Enum):
+    AUX1 = "aux1"
+    AUX2 = "aux2"
+    AUX3 = "aux3"
 
 
 class BellOption(str, Enum):
@@ -263,26 +265,6 @@ class Component(str, Enum):
     TRAIN = "train"
 
 
-class HornOption(str, Enum):
-    SOUND = "sound"
-    GRADE = "grade"
-    QUILLING = "quilling"
-
-
-class SmokeOption(str, Enum):
-    OFF = "off"
-    ON = "on"
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-
-
-class AuxOption(str, Enum):
-    AUX1 = "aux1"
-    AUX2 = "aux2"
-    AUX3 = "aux3"
-
-
 class DialogOption(str, Enum):
     ENGINEER_ACK = "engineer ack"
     ENGINEER_ALL_CLEAR = "engineer all clear"
@@ -297,6 +279,25 @@ class DialogOption(str, Enum):
     TOWER_DEPARTURE_DENIED = "tower deny departure"
     TOWER_DEPARTURE_GRANTED = "tower grant departure"
     TOWER_RANDOM_CHATTER = "tower chatter"
+
+
+class HornOption(str, Enum):
+    SOUND = "sound"
+    GRADE = "grade"
+    QUILLING = "quilling"
+
+
+class OnOffOption(str, Enum):
+    OFF = "off"
+    ON = "on"
+
+
+class SmokeOption(str, Enum):
+    OFF = "off"
+    ON = "on"
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
 
 
 Tmcc1DialogToCommand: dict[DialogOption, E] = {
@@ -633,6 +634,35 @@ class Accessory(PyTrainComponent):
     async def get_accessory(self, tmcc_id: Annotated[int, Accessory.id_path()]) -> AccessoryInfo:
         return AccessoryInfo(**super().get(tmcc_id))
 
+    @router.post("/accessory/{tmcc_id}/asc2_req")
+    async def asc2(
+        self,
+        tmcc_id: Annotated[int, Accessory.id_path()],
+        state: Annotated[OnOffOption, Query(description="On or Off")],
+        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+    ):
+        try:
+            duration = duration if duration is not None and duration > 0.0 else 0
+            int_state = 0 if state == OnOffOption.OFF else 1
+            d = f" for {duration} second(s)" if duration else ""
+            # adjust time and duration parameters
+            if int_state == 1:
+                if duration > 2.5:
+                    time = 0.600
+                    duration -= time
+                elif 0.0 < duration <= 2.55:
+                    time = duration
+                    duration = 0
+                else:
+                    time = 0
+            else:
+                time = duration = 0.0
+            req = Asc2Req(tmcc_id, PdiCommand.ASC2_SET, Asc2Action.CONTROL1, values=int_state, time=time)
+            req.send(duration=duration)
+            return {"status": f"Sending Asc2 {tmcc_id} {state.name} request{tmcc_id}{d}"}
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
     @router.post("/accessory/{tmcc_id}/boost_req")
     async def boost(
         self,
@@ -642,6 +672,20 @@ class Accessory(PyTrainComponent):
         self.do_request(TMCC1AuxCommandEnum.BOOST, tmcc_id, duration=duration)
         d = f" for {duration} second(s)" if duration else ""
         return {"status": f"Sending Boost request to {self.scope.title} {tmcc_id}{d}"}
+
+    @router.post("/accessory/{tmcc_id}/bpc2_req")
+    async def bpc2(
+        self,
+        tmcc_id: Annotated[int, Accessory.id_path()],
+        state: Annotated[OnOffOption, Query(description="On or Off")],
+    ):
+        try:
+            int_state = 0 if state == OnOffOption.OFF else 1
+            req = Bpc2Req(tmcc_id, PdiCommand.BPC2_SET, Bpc2Action.CONTROL3, state=int_state)
+            req.send()
+            return {"status": f"Sending Bpc2 {tmcc_id} {state.name} request"}
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
 
     @router.post("/accessory/{tmcc_id}/brake_req")
     async def brake(
@@ -653,6 +697,16 @@ class Accessory(PyTrainComponent):
         d = f" for {duration} second(s)" if duration else ""
         return {"status": f"Sending Brake request to {self.scope.title} {tmcc_id}{d}"}
 
+    @router.post("/accessory/{tmcc_id}/front_coupler_req")
+    async def front_coupler(
+        self,
+        tmcc_id: Annotated[int, Accessory.id_path()],
+        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+    ):
+        self.do_request(TMCC1AuxCommandEnum.FRONT_COUPLER, tmcc_id, duration=duration)
+        d = f" for {duration} second(s)" if duration else ""
+        return {"status": f"Sending Front Coupler request to {self.scope.title} {tmcc_id}{d}"}
+
     @router.post("/accessory/{tmcc_id}/numeric_req")
     async def numeric(
         self,
@@ -663,6 +717,16 @@ class Accessory(PyTrainComponent):
         self.do_request(TMCC1AuxCommandEnum.NUMERIC, tmcc_id, data=number, duration=duration)
         d = f" for {duration} second(s)" if duration else ""
         return {"status": f"Sending Numeric {number} request to {self.scope.title} {tmcc_id}{d}"}
+
+    @router.post("/accessory/{tmcc_id}/rear_coupler_req")
+    async def rear_coupler(
+        self,
+        tmcc_id: Annotated[int, Accessory.id_path()],
+        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+    ):
+        self.do_request(TMCC1AuxCommandEnum.REAR_COUPLER, tmcc_id, duration=duration)
+        d = f" for {duration} second(s)" if duration else ""
+        return {"status": f"Sending Rear Coupler request to {self.scope.title} {tmcc_id}{d}"}
 
     @router.post("/accessory/{tmcc_id}/speed_req/{speed}")
     async def speed(
