@@ -440,8 +440,11 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 
 
 @app.post("/version", summary=f"Get {PROGRAM_NAME} Version", include_in_schema=False)
-def version(server: str = None):
+def version(server: str = None, uid: str = None):
     from . import get_version
+
+    uid_decoded = jwt.decode(uid, SECRET_KEY, algorithms=[ALGORITHM])
+    print(server, uid_decoded)
 
     return {
         "pytrain": pytrain_get_version(),
