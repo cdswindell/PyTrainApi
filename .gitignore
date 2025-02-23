@@ -1,5 +1,4 @@
 dist/
- .env
 src/*.egg-info/
 src/pytrain_api/_version.py
 .idea/
@@ -10,3 +9,4 @@ __pycache__
 .DS_Store
 /replay.txt
 /.pytrain.history
+/.env
