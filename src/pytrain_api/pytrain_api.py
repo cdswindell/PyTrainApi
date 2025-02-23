@@ -15,6 +15,7 @@ from typing import TypeVar, Annotated, Any, cast
 
 import jwt
 import uvicorn
+from dotenv import load_dotenv, find_dotenv
 from fastapi import HTTPException, Request, APIRouter, Path, Query, Depends, status, FastAPI, Security
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import JSONResponse, FileResponse
@@ -81,9 +82,10 @@ LEGACY_RR_SPEED_MAP = {
 
 # to get a string like this run:
 # openssl rand -hex 32
-# TODO: Read key from env variable
-SECRET_KEY = "9b9cc80647ed32596c289ebc8a7e7b22a93259cbaaca96417532c271ced8f1fa"
-ALGORITHM = "HS256"
+
+load_dotenv(find_dotenv())
+SECRET_KEY = os.environ.get("SECRET_KEY")
+ALGORITHM = os.environ.get("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 # password is:"secret" (without the quotes)
