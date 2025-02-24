@@ -80,12 +80,13 @@ LEGACY_RR_SPEED_MAP = {
     207: TMCC2RRSpeedsEnum.HIGHBALL,
 }
 
-# to get a string like this run:
+# to get a secret key,
 # openssl rand -hex 32
 
 load_dotenv(find_dotenv())
 SECRET_KEY = os.environ.get("SECRET_KEY")
 ALGORITHM = os.environ.get("ALGORITHM")
+HTTPS_SERVER = os.environ.get("HTTPS_SERVER")
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 # password is:"secret" (without the quotes)
@@ -448,13 +449,13 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 
 
 @app.post("/version", summary=f"Get {PROGRAM_NAME} Version", include_in_schema=False)
-def version(server: str = None, uid: str = None):
+def version(uid: str = None):
     from . import get_version
 
     uid_decoded = jwt.decode(uid, SECRET_KEY, algorithms=[ALGORITHM])
     token_uid = uid_decoded.get("UID", None)
     token_server = uid_decoded.get("SERVER", None)
-    if server is None or server != token_server:
+    if token_server is None or HTTPS_SERVER != token_server.lower():
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
     print(token_uid)
