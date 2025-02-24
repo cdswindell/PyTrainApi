@@ -456,8 +456,6 @@ class Uid(BaseModel):
 def version(uid: Annotated[Uid, Body()] = None):
     from . import get_version
 
-    print(uid)
-
     uid_decoded = jwt.decode(uid.uid, SECRET_KEY, algorithms=[ALGORITHM])
     token_uid = uid_decoded.get("UID", None)
     token_server = uid_decoded.get("SERVER", None)
@@ -465,7 +463,7 @@ def version(uid: Annotated[Uid, Body()] = None):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
     # store the key and its associated data
-    api_keys[uid] = uid_decoded
+    api_keys[uid.uid] = uid_decoded
 
     # recompute the token, it will differ, but receiver can match user
     computed_token = jwt.encode({"UID": token_uid, "SERVER": token_server}, SECRET_KEY, algorithm=ALGORITHM)
