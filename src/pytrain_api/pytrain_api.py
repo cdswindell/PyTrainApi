@@ -458,7 +458,8 @@ def version(server: str = None, uid: str = None):
     token_server = uid_decoded.get("SERVER", None)
     computed_token = jwt.encode({"UID": token_uid, "SERVER": token_server}, SECRET_KEY, algorithm=ALGORITHM)
 
-    print(f"Server: {server} Token Server: {token_server} Token == Computed: {uid == computed_token}")
+    print(f"Server: {server} Token Server: {token_server} {'Match!' if server == token_server else '*******'}")
+    print(f"UID: {uid}\nComputed: {computed_token}\n{'Match!' if uid == computed_token else '*******'}")
 
     api_keys[uid] = uid_decoded
 
