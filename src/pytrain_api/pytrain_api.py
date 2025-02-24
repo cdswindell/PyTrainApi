@@ -16,7 +16,7 @@ from typing import TypeVar, Annotated, Any, cast
 import jwt
 import uvicorn
 from dotenv import load_dotenv, find_dotenv
-from fastapi import HTTPException, Request, APIRouter, Path, Query, Depends, status, FastAPI, Security
+from fastapi import HTTPException, Request, APIRouter, Path, Query, Depends, status, FastAPI, Security, Body
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer, APIKeyHeader
@@ -449,7 +449,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 
 
 @app.post("/version", summary=f"Get {PROGRAM_NAME} Version", include_in_schema=False)
-def version(uid: str = None):
+def version(uid: Annotated[str, Body()] = None):
     from . import get_version
 
     uid_decoded = jwt.decode(uid, SECRET_KEY, algorithms=[ALGORITHM])
