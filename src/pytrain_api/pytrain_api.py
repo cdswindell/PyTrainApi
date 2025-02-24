@@ -457,6 +457,8 @@ def version(server: str = None, uid: str = None):
     if server is None or server != token_server:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
+    print(token_uid)
+
     # store the key and its associated data
     api_keys[uid] = uid_decoded
 
