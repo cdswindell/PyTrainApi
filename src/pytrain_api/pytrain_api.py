@@ -448,13 +448,17 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     return JSONResponse(content={"detail": exc.detail}, status_code=exc.status_code)
 
 
+class Uid(BaseModel):
+    uid: str
+
+
 @app.post("/version", summary=f"Get {PROGRAM_NAME} Version", include_in_schema=False)
-def version(uid: Annotated[str, Body()] = None):
+def version(uid: Annotated[Uid, Body()] = None):
     from . import get_version
 
     print(uid)
 
-    uid_decoded = jwt.decode(uid, SECRET_KEY, algorithms=[ALGORITHM])
+    uid_decoded = jwt.decode(uid.uid, SECRET_KEY, algorithms=[ALGORITHM])
     token_uid = uid_decoded.get("UID", None)
     token_server = uid_decoded.get("SERVER", None)
     if token_server is None or HTTPS_SERVER != token_server.lower():
