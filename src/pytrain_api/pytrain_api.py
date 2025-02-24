@@ -219,6 +219,12 @@ def get_api_user(api_header: str = Security(api_key_header)):
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid API key")
 
 
+def get_api_token(api_key: str = Security(api_key_header)) -> bool:
+    if api_key in api_keys:
+        return True
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid API key")
+
+
 def check_api_key(api_key: str):
     return api_key in api_keys
 
@@ -404,7 +410,7 @@ class TrainInfo(EngineInfo):
     components: dict[int, str] | None
 
 
-router = APIRouter(prefix="/pytrain/v1", dependencies=[Depends(get_api_user)])
+router = APIRouter(prefix="/pytrain/v1", dependencies=[Depends(get_api_token)])
 # router = APIRouter(prefix="/pytrain/v1")
 
 
@@ -453,6 +459,8 @@ def version(server: str = None, uid: str = None):
     computed_token = jwt.encode({"UID": token_uid, "SERVER": token_server}, SECRET_KEY, algorithm=ALGORITHM)
 
     print(f"Server: {server} Token Server: {token_server} Token == Computed: {uid == computed_token}")
+
+    api_keys[uid] = uid_decoded
 
     return {
         "pytrain": pytrain_get_version(),
