@@ -452,17 +452,16 @@ def version(server: str = None, uid: str = None):
     from . import get_version
 
     uid_decoded = jwt.decode(uid, SECRET_KEY, algorithms=[ALGORITHM])
-    print(server, uid_decoded)
-
     token_uid = uid_decoded.get("UID", None)
     token_server = uid_decoded.get("SERVER", None)
-    computed_token = jwt.encode({"UID": token_uid, "SERVER": token_server}, SECRET_KEY, algorithm=ALGORITHM)
+    if server is None or server != token_server:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
-    print(f"Server: {server} Token Server: {token_server} {'Match!' if server == token_server else '*******'}")
-    print(f"UID: {uid}\nComputed: {computed_token}\n{'Match!' if uid == computed_token else '*******'}")
-
+    # store the key and its associated data
     api_keys[uid] = uid_decoded
 
+    # recompute the token, it will differ, but receiver can match user
+    computed_token = jwt.encode({"UID": token_uid, "SERVER": token_server}, SECRET_KEY, algorithm=ALGORITHM)
     return {
         "pytrain": pytrain_get_version(),
         "pytrain_api": get_version(),
