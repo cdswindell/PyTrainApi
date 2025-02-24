@@ -452,6 +452,8 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 def version(uid: Annotated[str, Body()] = None):
     from . import get_version
 
+    print(str)
+
     uid_decoded = jwt.decode(uid, SECRET_KEY, algorithms=[ALGORITHM])
     token_uid = uid_decoded.get("UID", None)
     token_server = uid_decoded.get("SERVER", None)
