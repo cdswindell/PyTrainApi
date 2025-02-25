@@ -465,7 +465,7 @@ def version(uid: Annotated[Uid, Body()] = None):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
     # create a new guid key and encode it as a JWT token
-    guid = uuid.uuid4()
+    guid = str(uuid.uuid4())
     api_keys[guid] = uid_decoded
     print(uid_decoded)
 
