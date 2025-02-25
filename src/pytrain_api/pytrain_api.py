@@ -223,11 +223,17 @@ def get_api_user(api_header: str = Security(api_key_header)):
 
 
 def get_api_token(api_key: str = Security(api_key_header)) -> bool:
-    payload = jwt.decode(api_key, SECRET_KEY, algorithms=[ALGORITHM])
-    print(payload)
-    print(api_keys)
-    if payload and payload.get("GUID", None) in api_keys and payload.get("SERVER", None) == HTTPS_SERVER:
+    if api_key in api_keys:
         return True
+    # see if it's a jwt token
+    payload = jwt.decode(api_key, SECRET_KEY, algorithms=[ALGORITHM])
+    if payload and payload.get("SERVER", None) == HTTPS_SERVER and payload.get("SECRET", None) == SECRET_PHRASE:
+        guid = payload.get("GUID", None)
+        if guid in api_keys:
+            return True
+        if guid:
+            print(f"{guid} not in API Keys,but other info checks out")
+            return True
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid API key")
 
 
@@ -467,15 +473,14 @@ def version(uid: Annotated[Uid, Body()]):
     if token_server is None or HTTPS_SERVER != token_server.lower():
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
-    # create a new guid key and encode it as a JWT token
-    guid = str(uuid.uuid4())
-    print(api_keys)
-    api_keys[guid] = uid_decoded
-    print(f"{guid} -->{uid_decoded}")
-    print(api_keys)
-
     # Encode as jwt token and return to Alexa/user
-    api_key = jwt.encode({"GUID": guid, "SERVER": token_server}, SECRET_KEY, algorithm=ALGORITHM)
+    guid = str(uuid.uuid4())
+    api_key = jwt.encode(
+        {"GUID": guid, "SERVER": token_server, "SECRET": SECRET_PHRASE},
+        SECRET_KEY,
+        algorithm=ALGORITHM,
+    )
+    api_keys[guid] = api_key
     return {
         "api-token": api_key,
         "pytrain": pytrain_get_version(),
