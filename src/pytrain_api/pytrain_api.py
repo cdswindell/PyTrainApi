@@ -456,7 +456,7 @@ class Uid(BaseModel):
 
 
 @app.post("/version", summary=f"Get {PROGRAM_NAME} Version", include_in_schema=False)
-def version(uid: Annotated[Uid, Body()] = None):
+def version(uid: Annotated[Uid, Body()]):
     from . import get_version
 
     uid_decoded = jwt.decode(uid.uid, SECRET_PHRASE, algorithms=[ALGORITHM])
@@ -469,12 +469,13 @@ def version(uid: Annotated[Uid, Body()] = None):
     api_keys[guid] = uid_decoded
     print(uid_decoded)
 
-    # recompute the token, it will differ, but receiver can match user
+    # Encode as jwt token and return to Alexa/user
     api_key = jwt.encode({"GUID": guid, "SERVER": token_server}, SECRET_KEY, algorithm=ALGORITHM)
+    print(f"API Key: {api_key}, {token_server}")
     return {
+        "api-token": api_key,
         "pytrain": pytrain_get_version(),
         "pytrain_api": get_version(),
-        "api-token": api_key,
     }
 
 
