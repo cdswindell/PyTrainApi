@@ -469,8 +469,10 @@ def version(uid: Annotated[Uid, Body()]):
 
     # create a new guid key and encode it as a JWT token
     guid = str(uuid.uuid4())
+    print(api_keys)
     api_keys[guid] = uid_decoded
-    print(uid_decoded)
+    print(f"{guid} -->{uid_decoded}")
+    print(api_keys)
 
     # Encode as jwt token and return to Alexa/user
     api_key = jwt.encode({"GUID": guid, "SERVER": token_server}, SECRET_KEY, algorithm=ALGORITHM)
