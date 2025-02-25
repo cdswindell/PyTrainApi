@@ -467,6 +467,7 @@ def version(uid: Annotated[Uid, Body()] = None):
     # create a new guid key and encode it as a JWT token
     guid = uuid.uuid4()
     api_keys[guid] = uid_decoded
+    print(uid_decoded)
 
     # recompute the token, it will differ, but receiver can match user
     api_key = jwt.encode({"GUID": guid, "SERVER": token_server}, SECRET_KEY, algorithm=ALGORITHM)
