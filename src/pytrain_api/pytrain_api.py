@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import sys
+import uuid
 from datetime import timedelta, datetime, timezone
 from enum import Enum
 from typing import TypeVar, Annotated, Any, cast
@@ -85,6 +86,7 @@ LEGACY_RR_SPEED_MAP = {
 
 load_dotenv(find_dotenv())
 SECRET_KEY = os.environ.get("SECRET_KEY")
+SECRET_PHRASE = os.environ.get("SECRET_PHRASE") if os.environ.get("SECRET_PHRASE") else "PYTRAINAPI"
 ALGORITHM = os.environ.get("ALGORITHM")
 HTTPS_SERVER = os.environ.get("HTTPS_SERVER")
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
@@ -427,6 +429,7 @@ if STATIC_DIR:
 
 
 @app.get("/apple-touch-icon.png", include_in_schema=False)
+@app.get("/apple-touch-icon-precomposed.png", include_in_schema=False)
 async def apple_icon():
     if APPLE_ICON_PATH:
         return FileResponse(APPLE_ICON_PATH)
@@ -456,21 +459,21 @@ class Uid(BaseModel):
 def version(uid: Annotated[Uid, Body()] = None):
     from . import get_version
 
-    uid_decoded = jwt.decode(uid.uid, SECRET_KEY, algorithms=[ALGORITHM])
-    token_uid = uid_decoded.get("UID", None)
+    uid_decoded = jwt.decode(uid.uid, SECRET_PHRASE, algorithms=[ALGORITHM])
     token_server = uid_decoded.get("SERVER", None)
     if token_server is None or HTTPS_SERVER != token_server.lower():
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
-    # store the key and its associated data
-    api_keys[uid.uid] = uid_decoded
+    # create a new guid key and encode it as a JWT token
+    guid = uuid.uuid4()
+    api_keys[guid] = uid_decoded
 
     # recompute the token, it will differ, but receiver can match user
-    computed_token = jwt.encode({"UID": token_uid, "SERVER": token_server}, SECRET_KEY, algorithm=ALGORITHM)
+    api_key = jwt.encode({"GUID": guid, "SERVER": token_server}, SECRET_KEY, algorithm=ALGORITHM)
     return {
         "pytrain": pytrain_get_version(),
         "pytrain_api": get_version(),
-        "api-token": computed_token,
+        "api-token": api_key,
     }
 
 
