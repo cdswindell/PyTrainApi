@@ -6,24 +6,35 @@
         {
           "name": "AMAZON.CancelIntent",
           "samples": [
-            "Nothing",
-            "That's all",
-            "That's it",
-            "close pie train",
-            "close",
-            "bye for now",
-            "bye",
-            "exit pie train",
-            "all done"
+            "forget it",
+            "never mind",
+            "Nevermind",
+            "Nothing"
           ]
         },
         {
           "name": "AMAZON.HelpIntent",
-          "samples": []
+          "samples": [
+            "what can I say",
+            "what do I do",
+            "How does this skill work",
+            "help me"
+          ]
         },
         {
           "name": "AMAZON.StopIntent",
-          "samples": []
+          "samples": [
+            "quit pytrain",
+            "Quit skill",
+            "Quit Pie Train",
+            "Exit skill",
+            "Exit pytrain",
+            "Exit pie train",
+            "that's it",
+            "All done",
+            "Stop Pie Train",
+            "Stop PyTrain"
+          ]
         },
         {
           "name": "AMAZON.NavigateHomeIntent",
