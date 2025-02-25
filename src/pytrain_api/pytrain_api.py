@@ -223,9 +223,7 @@ def get_api_user(api_header: str = Security(api_key_header)):
 
 
 def get_api_token(api_key: str = Security(api_key_header)) -> bool:
-    print("*****", api_key)
-    payload = jwt.decode(api_key, SECRET_PHRASE, algorithms=[ALGORITHM])
-    print("*****", payload)
+    payload = jwt.decode(api_key, SECRET_KEY, algorithms=[ALGORITHM])
     if payload and payload.get("GUID", None) in api_keys and payload.get("SERVER", None) == HTTPS_SERVER:
         return True
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid API key")
