@@ -471,7 +471,6 @@ def version(uid: Annotated[Uid, Body()]):
     from . import get_version
 
     try:
-        print(f"*** Secret Phrase: {SECRET_PHRASE}")
         uid_decoded = jwt.decode(uid.uid, HTTPS_SERVER, algorithms=[ALGORITHM])
         token_server = uid_decoded.get("SERVER", None)
         if token_server is None or HTTPS_SERVER != token_server.lower():
