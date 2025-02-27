@@ -22,7 +22,7 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer, APIKeyHeader
 from fastapi_utils.cbv import cbv
-from jwt import InvalidTokenError
+from jwt import InvalidTokenError, InvalidSignatureError
 from passlib.context import CryptContext
 from pydantic import BaseModel, field_validator, model_validator, Field
 from pytrain import (
@@ -470,24 +470,28 @@ class Uid(BaseModel):
 def version(uid: Annotated[Uid, Body()]):
     from . import get_version
 
-    uid_decoded = jwt.decode(uid.uid, SECRET_PHRASE, algorithms=[ALGORITHM])
-    token_server = uid_decoded.get("SERVER", None)
-    if token_server is None or HTTPS_SERVER != token_server.lower():
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    try:
+        print(f"*** Secret Phrase: {SECRET_PHRASE}")
+        uid_decoded = jwt.decode(uid.uid, SECRET_PHRASE, algorithms=[ALGORITHM])
+        token_server = uid_decoded.get("SERVER", None)
+        if token_server is None or HTTPS_SERVER != token_server.lower():
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
-    # Encode as jwt token and return to Alexa/user
-    guid = str(uuid.uuid4())
-    api_key = jwt.encode(
-        {"GUID": guid, "SERVER": token_server, "SECRET": SECRET_PHRASE},
-        SECRET_KEY,
-        algorithm=ALGORITHM,
-    )
-    api_keys[guid] = api_key
-    return {
-        "api-token": api_key,
-        "pytrain": pytrain_get_version(),
-        "pytrain_api": get_version(),
-    }
+        # Encode as jwt token and return to Alexa/user
+        guid = str(uuid.uuid4())
+        api_key = jwt.encode(
+            {"GUID": guid, "SERVER": token_server, "SECRET": SECRET_PHRASE},
+            SECRET_KEY,
+            algorithm=ALGORITHM,
+        )
+        api_keys[guid] = api_key
+        return {
+            "api-token": api_key,
+            "pytrain": pytrain_get_version(),
+            "pytrain_api": get_version(),
+        }
+    except InvalidSignatureError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
 
 @app.get("/docs", include_in_schema=False)
