@@ -472,7 +472,7 @@ def version(uid: Annotated[Uid, Body()]):
 
     try:
         print(f"*** Secret Phrase: {SECRET_PHRASE}")
-        uid_decoded = jwt.decode(uid.uid, SECRET_PHRASE, algorithms=[ALGORITHM])
+        uid_decoded = jwt.decode(uid.uid, HTTPS_SERVER, algorithms=[ALGORITHM])
         token_server = uid_decoded.get("SERVER", None)
         if token_server is None or HTTPS_SERVER != token_server.lower():
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
