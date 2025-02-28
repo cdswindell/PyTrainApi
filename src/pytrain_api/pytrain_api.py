@@ -930,12 +930,16 @@ class PyTrainEngine(PyTrainComponent):
             self.do_request(TMCC2EngineCommandEnum.REAR_COUPLER, tmcc_id)
         return {"status": f"{self.scope.title} {tmcc_id} rear coupler..."}
 
-    def reset(self, tmcc_id: int, hold: bool = False):
+    def reset(
+        self,
+        tmcc_id: int,
+        duration: int = None,
+    ):
         if self.is_tmcc(tmcc_id):
-            self.do_request(TMCC1EngineCommandEnum.RESET, tmcc_id, duration=3 if hold else 0)
+            self.do_request(TMCC1EngineCommandEnum.RESET, tmcc_id, duration=duration)
         else:
-            self.do_request(TMCC2EngineCommandEnum.RESET, tmcc_id, duration=3 if hold else 0)
-        return {"status": f"{self.scope.title} {tmcc_id} {'reset and refueled' if hold else 'reset'}..."}
+            self.do_request(TMCC2EngineCommandEnum.RESET, tmcc_id, duration=duration)
+        return {"status": f"{self.scope.title} {tmcc_id} {'reset and refueled' if duration else 'reset'}..."}
 
     def reverse(self, tmcc_id: int):
         if self.is_tmcc(tmcc_id):
@@ -1124,8 +1128,13 @@ class Engine(PyTrainEngine):
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
         hold: Annotated[bool, Query(title="refuel", description="If true, perform refuel operation")] = False,
+        duration: Annotated[int, Query(description="Refueling time (seconds)", ge=3)] = 3,
     ):
-        return super().reset(tmcc_id, hold=hold)
+        if hold is True:
+            duration = duration if duration and duration > 3 else 3
+        else:
+            duration = None
+        return super().reset(tmcc_id, duration)
 
     @router.post("/engine/{tmcc_id:int}/reverse_req")
     async def reverse(self, tmcc_id: Annotated[int, Engine.id_path()]):
@@ -1303,8 +1312,13 @@ class Train(PyTrainEngine):
         self,
         tmcc_id: Annotated[int, Train.id_path()],
         hold: Annotated[bool, Query(title="refuel", description="If true, perform refuel operation")] = False,
+        duration: Annotated[int, Query(description="Refueling time (seconds)", ge=3)] = 3,
     ):
-        return super().reset(tmcc_id, hold=hold)
+        if hold is True:
+            duration = duration if duration and duration > 3 else 3
+        else:
+            duration = None
+        return super().reset(tmcc_id, duration)
 
     @router.post("/train/{tmcc_id:int}/reverse_req")
     async def reverse(self, tmcc_id: Annotated[int, Train.id_path()]):
