@@ -471,9 +471,11 @@ def version(uid: Annotated[Uid, Body()]):
     from . import get_version
 
     try:
+        print(f"Trying {HTTPS_SERVER}...")
         uid_decoded = jwt.decode(uid.uid, HTTPS_SERVER, algorithms=[ALGORITHM])
     except InvalidSignatureError:
         try:
+            print(f"Trying {SECRET_PHRASE}...")
             uid_decoded = jwt.decode(uid.uid, SECRET_PHRASE, algorithms=[ALGORITHM])
         except InvalidSignatureError:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
