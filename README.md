@@ -184,7 +184,33 @@ cli/pytrain_api
 
 4. Go to your gateway and determine its *external* IP address. This address is assigned by your ISP
    (Comcast, Verizon, Spectrum, etc.). Write it down.
-5. Consult your gateway documentation and
+5. Consult your gateway documentation how to forward port 80 to port 8000 on your **PyTrain API** server.
+   This will send all traffic from the outside world to port 8000 on your **PyTrain Api** server. You will need
+   to repeat this step any time your external IP address changes (see Notes below).
+6. Say the following to your Alexa: *Alexa, Open PyTrain*
+7. The *PyTrain* skill will ask you for the external IP address of your network. Give it the number
+   you wrote down above.
+
+Your **PyTrain** skill is now active and connected to your layout. To test it out, assuming you have an
+engine on the tracks with TMCC ID 67, try the following:
+
+* Ask PyTrain to start up engine 67
+* Blow the horn on engine 67
+* toggle the bell on engine 67
+* accelerate engine 67 to speed step 10
+* stop engine 67
+* shut down engine 67 with dialog
+
+As long as you see the *blue light* on your Alexa, the **PyTrain** skill is listening. If the light goes out, simply say
+*Alexa, Open PyTrain*, and speak your request.
+
+Notes:
+
+* If your gateway supports Dynamic DNS, you can assign a *domain name* to your external network, and your gateway will
+  automatically update it with your external IP address, should your ISP change it.
+  [Netgear](https://kb.netgear.com/23860/How-do-I-set-up-a-NETGEAR-Dynamic-DNS-account-on-my-NETGEAR-router,
+  [No-ip.com](https://www.noip.com), and [Dyn.com](https://www.oracle.com/cloud/networking/dns/?er=221886)
+  all provide dynamic dns services at reasonable cost.
 
 ### Additional Security
 
