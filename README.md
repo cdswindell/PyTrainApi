@@ -210,7 +210,7 @@ Notes:
 
 * If your gateway supports Dynamic DNS, you can assign a *domain name* to your external network, and your gateway will
   automatically update it with your external IP address, should your ISP change it.
-  [Netgear](https://kb.netgear.com/23860/How-do-I-set-up-a-NETGEAR-Dynamic-DNS-account-on-my-NETGEAR-router,
+  [Netgear](https://kb.netgear.com/23860/How-do-I-set-up-a-NETGEAR-Dynamic-DNS-account-on-my-NETGEAR-router),
   [No-ip.com](https://www.noip.com), and [Dyn.com](https://www.oracle.com/cloud/networking/dns/?er=221886)
   all provide dynamic dns services at reasonable cost.
 
