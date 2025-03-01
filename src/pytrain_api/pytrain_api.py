@@ -1456,7 +1456,6 @@ class PyTrainApi:
             print(f"{'Server' if self.is_server else 'Client'} updating...")
         # always update pip
         os.system(f"cd {os.getcwd()}; pip install -U pip")
-        print(f"{API_NAME} is package: {is_package()}.")
         if is_package():
             # upgrade from Pypi
             os.system(f"cd {os.getcwd()}; pip install -U {API_PACKAGE}")
