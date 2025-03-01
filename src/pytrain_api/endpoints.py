@@ -149,7 +149,7 @@ app = FastAPI(
 
 
 #
-# fastapi run src/pytrain_api/pytrain_api.py
+# fastapi run src/pytrain_api/endpoints.py
 #
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
@@ -1501,7 +1501,7 @@ class PyTrainApi:
     def command_line_parser(cls) -> PyTrainArgumentParser:
         from . import get_version
 
-        prog = "pytrain_api" if is_package() else "pytrain_api.py"
+        prog = "pytrain_api" if is_package() else "endpoints.py"
         parser = PyTrainArgumentParser(add_help=False)
         parser.add_argument(
             "-version",

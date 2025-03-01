@@ -16,7 +16,7 @@ API_PACKAGE = "pytrain-ogr-api"
 
 
 def main(args: list[str] | None = None) -> int:
-    from .pytrain_api import PyTrainApi, API_NAME
+    from .endpoints import PyTrainApi, API_NAME
 
     if args is None:
         args = sys.argv[1:]
