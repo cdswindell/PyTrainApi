@@ -12,7 +12,7 @@ import sys
 from importlib.metadata import PackageNotFoundError
 
 
-PROGRAM_PACKAGE = "pytrain-ogr-api"
+API_PACKAGE = "pytrain-ogr-api"
 
 
 def main(args: list[str] | None = None) -> int:
@@ -24,19 +24,15 @@ def main(args: list[str] | None = None) -> int:
         PyTrainApi(args)
 
         return 0
-    except SystemExit as se:
-        print(se)
-        return se.code
     except Exception as e:
-        print(e)
         # Output anything else nicely formatted on stderr and exit code 1
-        sys.exit(f"{API_NAME}: error: {e}\n")
+        return sys.exit(f"{API_NAME}: error: {e}\n")
 
 
 def is_package() -> bool:
     try:
         # production version
-        importlib.metadata.version(PROGRAM_PACKAGE)
+        importlib.metadata.version(API_PACKAGE)
         return True
     except PackageNotFoundError:
         return False
@@ -53,7 +49,7 @@ def get_version() -> str:
     version = None
     try:
         # production version
-        version = importlib.metadata.version(PROGRAM_PACKAGE)
+        version = importlib.metadata.version(API_PACKAGE)
     except PackageNotFoundError:
         pass
 

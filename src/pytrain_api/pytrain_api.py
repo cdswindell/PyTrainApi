@@ -8,10 +8,12 @@
 from __future__ import annotations
 
 import os
+import subprocess
 import sys
 import uuid
 from datetime import timedelta, datetime, timezone
 from enum import Enum
+from time import sleep
 from typing import TypeVar, Annotated, Any, cast
 
 import jwt
@@ -38,12 +40,12 @@ from pytrain import (
     TMCC2RRSpeedsEnum,
     TMCC1RRSpeedsEnum,
     TMCC2EffectsControl,
-    is_package,
     TMCC2RailSoundsDialogControl,
     TMCC1AuxCommandEnum,
+    is_linux,
 )
 from pytrain import get_version as pytrain_get_version
-from pytrain.cli.pytrain import PyTrain
+from pytrain.cli.pytrain import PyTrain, PyTrainExitStatus
 from pytrain.db.component_state import ComponentState
 from pytrain.pdi.asc2_req import Asc2Req
 from pytrain.pdi.bpc2_req import Bpc2Req
@@ -55,10 +57,11 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import RedirectResponse
 from starlette.staticfiles import StaticFiles
 
-from . import get_version
+from . import get_version, is_package
 
 E = TypeVar("E", bound=CommandDefEnum)
-API_NAME = "PyTrainApi"
+API_NAME = "PyTrain Api"
+API_PACKAGE = "pytrain-ogr-api"
 DEFAULT_API_SERVER_PORT: int = 8000
 
 TMCC_RR_SPEED_MAP = {
@@ -1388,8 +1391,10 @@ class PyTrainApi:
                 args = self.command_line_parser().parse_args()
 
             pytrain_args = "-api"
+            self._is_server = False
             if args.ser2 is True:
                 pytrain_args += " -ser2"
+                self._is_server = True
                 if args.baudrate:
                     pytrain_args += f" -baudrate {args.baudrate}"
                 if args.port:
@@ -1401,6 +1406,7 @@ class PyTrainApi:
             elif args.client is True:
                 pytrain_args += " -client"
             elif args.server:
+                self._is_server = True
                 pytrain_args += f" -server {args.server}"
 
             if (args.base is not None or args.ser2 is True) and args.server_port:
@@ -1418,11 +1424,79 @@ class PyTrainApi:
             port = args.api_port if args.api_port else DEFAULT_API_SERVER_PORT
             host = args.api_host if args.api_host else "0.0.0.0"
             uvicorn.run(f"{__name__}:app", host=host, port=port, reload=False)
-            print(f"API server shut down {PYTRAIN_SERVER.exit_status}...")
+            if PYTRAIN_SERVER.exit_status:
+                if PYTRAIN_SERVER.exit_status == PyTrainExitStatus.UPGRADE:
+                    self.upgrade()
+                elif PYTRAIN_SERVER.exit_status == PyTrainExitStatus.UPDATE:
+                    self.update()
+                elif PYTRAIN_SERVER.exit_status in [PyTrainExitStatus.REBOOT, PyTrainExitStatus.SHUTDOWN]:
+                    self.reboot(PYTRAIN_SERVER.exit_status)
+                if PYTRAIN_SERVER.exit_status != PyTrainExitStatus.QUIT:
+                    self.relaunch(PYTRAIN_SERVER.exit_status)
         except Exception as e:
-            print(e)
             # Output anything else nicely formatted on stderr and exit code 1
             sys.exit(f"{__file__}: error: {e}\n")
+
+    # noinspection PyUnusedLocal
+    def relaunch(self, exit_status: PyTrainExitStatus) -> None:
+        # if we're a client, we need to give the server time to respond, otherwise, we
+        # will connect to it as it is shutting down
+        print(f"{API_NAME} restarting...")
+        if self._is_server is False:
+            sleep(10)
+        # are we a service or run from the commandline?
+        if self.is_service is True:
+            # restart service
+            os.system("sudo systemctl restart pytrain_api.service")
+        else:
+            os.execv(sys.argv[0], sys.argv)
+
+    def update(self, do_inform: bool = True) -> None:
+        if do_inform:
+            print(f"{'Server' if self.is_server else 'Client'} updating...")
+        # always update pip
+        os.system(f"cd {os.getcwd()}; pip install -U pip")
+        print(f"{API_NAME} is package: {is_package()}.")
+        if is_package():
+            # upgrade from Pypi
+            os.system(f"cd {os.getcwd()}; pip install -U {API_PACKAGE}")
+        else:
+            # upgrade from github
+            os.system(f"cd {os.getcwd()}; git pull")
+            os.system(f"cd {os.getcwd()}; pip install -r requirements.txt")
+        self.relaunch(PyTrainExitStatus.UPDATE)
+
+    def upgrade(self) -> None:
+        if sys.platform == "linux":
+            print(f"{'Server' if self.is_server else 'Client'} upgrading...")
+            os.system("sudo apt update")
+            sleep(1)
+            os.system("sudo apt upgrade -y")
+        self.update(do_inform=False)
+
+    def reboot(self, option: PyTrainExitStatus) -> None:
+        if option == PyTrainExitStatus.REBOOT:
+            msg = "rebooting"
+        else:
+            msg = "shutting down"
+        print(f"{'Server' if self.is_server else 'Client'} {msg}...")
+        # are we running in API mode? if so, send signal
+        if option == PyTrainExitStatus.REBOOT:
+            opt = " -r"
+        else:
+            opt = ""
+        os.system(f"sudo shutdown{opt} now")
+
+    @property
+    def is_server(self) -> bool:
+        return self._is_server
+
+    @property
+    def is_service(self) -> bool:
+        if is_linux() is False:
+            return False
+        stat = subprocess.call("systemctl is-active --quiet  pytrain_api.service".split())
+        return stat == 0
 
     @classmethod
     def command_line_parser(cls) -> PyTrainArgumentParser:
