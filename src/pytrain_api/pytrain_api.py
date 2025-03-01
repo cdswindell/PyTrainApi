@@ -1418,7 +1418,9 @@ class PyTrainApi:
             port = args.api_port if args.api_port else DEFAULT_API_SERVER_PORT
             host = args.api_host if args.api_host else "0.0.0.0"
             uvicorn.run(f"{__name__}:app", host=host, port=port, reload=False)
+            print(f"API server shut down {PYTRAIN_SERVER.exit_status}...")
         except Exception as e:
+            print(e)
             # Output anything else nicely formatted on stderr and exit code 1
             sys.exit(f"{__file__}: error: {e}\n")
 

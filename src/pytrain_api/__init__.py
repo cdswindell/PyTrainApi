@@ -22,8 +22,13 @@ def main(args: list[str] | None = None) -> int:
         args = sys.argv[1:]
     try:
         PyTrainApi(args)
+
         return 0
+    except SystemExit as se:
+        print(se)
+        return se.code
     except Exception as e:
+        print(e)
         # Output anything else nicely formatted on stderr and exit code 1
         sys.exit(f"{API_NAME}: error: {e}\n")
 

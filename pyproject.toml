@@ -27,15 +27,15 @@ classifiers = [
 license = { file = "LICENSE" }
 
 dependencies = [
-    "pytrain-ogr >= 0.9.95",
-    "fastapi >= 0.115.8",
+    "pytrain-ogr >= 0.91.0",
+    "fastapi >= 0.115.10",
     "fastapi-utils >= 0.8.0",
     "passlib >= 1.7.4",
     "pyjwt >= 2.10.1",
     "python-dotenv >= 1.0.1",
     "python_multipart >= 0.0.20",
-    "setuptools >= 75.6.0",
-    "setuptools_scm >= 8.1",
+    "setuptools >= 75.8.2",
+    "setuptools_scm >= 8.2",
     "typing-inspect >= 0.9.0",
     "uvicorn >= 0.34.0",
 ]
