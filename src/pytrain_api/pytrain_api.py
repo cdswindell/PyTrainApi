@@ -17,8 +17,7 @@ from time import sleep
 from typing import cast
 
 import uvicorn
-from pytrain import is_linux, PROGRAM_NAME
-from pytrain.cli.pytrain import PyTrain, PyTrainExitStatus
+from pytrain import PyTrain, PyTrainExitStatus, is_linux, PROGRAM_NAME
 from pytrain.utils.argument_parser import PyTrainArgumentParser
 
 from . import is_package

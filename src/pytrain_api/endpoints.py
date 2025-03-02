@@ -102,12 +102,6 @@ app = FastAPI(
     docs_url=None,
 )
 
-
-#
-# fastapi run src/pytrain_api/endpoints.py
-#
-
-
 api_key_header = APIKeyHeader(name="X-API-Key")
 
 

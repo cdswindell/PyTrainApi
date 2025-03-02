@@ -29,7 +29,7 @@ from pytrain.db.component_state import ComponentState
 from pytrain.protocol.command_def import CommandDefEnum
 from starlette import status
 
-from src.pytrain_api.pytrain_api import PyTrainApi
+from .pytrain_api import PyTrainApi
 
 E = TypeVar("E", bound=CommandDefEnum)
 

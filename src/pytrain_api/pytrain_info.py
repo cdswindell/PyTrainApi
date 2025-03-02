@@ -13,7 +13,7 @@ from typing import Annotated, Any
 
 from pydantic import BaseModel, Field, model_validator, field_validator
 
-from src.pytrain_api.pytrain_component import Component
+from .pytrain_component import Component
 
 
 class ComponentInfo(BaseModel):
