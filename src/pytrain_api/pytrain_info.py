@@ -18,8 +18,8 @@ from .pytrain_component import Component
 
 class ComponentInfo(BaseModel):
     tmcc_id: Annotated[int, Field(title="TMCC ID", description="Assigned TMCC ID", ge=1, le=99)]
-    road_name: Annotated[str, Field(description="Road Name assigned by user", max_length=32)]
-    road_number: Annotated[str, Field(description="Road Number assigned by user", max_length=4)]
+    road_name: Annotated[str | None, Field(description="Road Name assigned by user", max_length=32)]
+    road_number: Annotated[str | None, Field(description="Road Number assigned by user", max_length=4)]
     scope: Component
 
 

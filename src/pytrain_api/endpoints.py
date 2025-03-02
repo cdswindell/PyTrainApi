@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import os
+import secrets
 import uuid
 from datetime import timedelta, datetime, timezone
 from typing import TypeVar, Annotated
@@ -59,10 +60,12 @@ E = TypeVar("E", bound=CommandDefEnum)
 
 # to get a secret key,
 # openssl rand -hex 32
+API_KEYS: dict[str, str] = dict()
 
 load_dotenv(find_dotenv())
 SECRET_KEY = os.environ.get("SECRET_KEY")
 SECRET_PHRASE = os.environ.get("SECRET_PHRASE") if os.environ.get("SECRET_PHRASE") else "PYTRAINAPI"
+API_TOKEN = os.environ.get("API_TOKEN")
 ALGORITHM = os.environ.get("ALGORITHM")
 HTTPS_SERVER = os.environ.get("HTTPS_SERVER")
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
@@ -78,10 +81,10 @@ fake_users_db = {
     },
 }
 
-api_keys = {
-    "e54d4431-5dab-474e-b71a-0db1fcb9e659": "7oDYjo3d9r58EJKYi5x4E8",
-    "5f0c7127-3be9-4488-b801-c7b6415b45e9": "mUP7PpTHmFAkxcQLWKMY8t",
-}
+# api_keys = {
+#     "e54d4431-5dab-474e-b71a-0db1fcb9e659": "7oDYjo3d9r58EJKYi5x4E8",
+#     "5f0c7127-3be9-4488-b801-c7b6415b45e9": "mUP7PpTHmFAkxcQLWKMY8t",
+# }
 
 
 class Token(BaseModel):
@@ -105,29 +108,37 @@ app = FastAPI(
 api_key_header = APIKeyHeader(name="X-API-Key")
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+def create_access_token(data: dict = None, expires_delta: timedelta | None = None):
+    if data is None:
+        to_encode = {}  # dict({"random": randint(1, 2**32)})
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+        to_encode = data.copy()
+    if expires_delta:
+        expire: datetime = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire: datetime = datetime.now(timezone.utc) + timedelta(days=365)
     to_encode.update({"exp": expire})
+    to_encode.update({"magic": API_NAME})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 
+def create_secret(length: int = 32) -> str:
+    return secrets.token_hex(length)
+
+
 def get_api_token(api_key: str = Security(api_key_header)) -> bool:
-    if api_key in api_keys:
+    if api_key and (api_key == API_TOKEN or api_key in API_KEYS):
         return True
     # see if it's a jwt token
     payload = jwt.decode(api_key, SECRET_KEY, algorithms=[ALGORITHM])
     if payload and payload.get("SERVER", None) == HTTPS_SERVER and payload.get("SECRET", None) == SECRET_PHRASE:
         guid = payload.get("GUID", None)
-        if guid in api_keys:
+        if guid in API_KEYS:
             return True
         if guid:
             print(f"{guid} not in API Keys,but other info checks out")
-            api_keys[guid] = api_key
+            API_KEYS[guid] = api_key
             return True
     print(f"*** Invalid Access attempt: payload: {payload} key: {api_key} ***")
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid API key")
@@ -199,7 +210,7 @@ def version(uid: Annotated[Uid, Body()]):
         SECRET_KEY,
         algorithm=ALGORITHM,
     )
-    api_keys[guid] = api_key
+    API_KEYS[guid] = api_key
     return {
         "api-token": api_key,
         "pytrain": pytrain_get_version(),

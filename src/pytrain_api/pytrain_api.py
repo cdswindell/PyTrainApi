@@ -52,6 +52,19 @@ class PyTrainApi:
             else:
                 args = self.command_line_parser().parse_args()
 
+            # if generate api key, do so and exit
+            if args.token is True:
+                from .endpoints import create_access_token
+
+                token = create_access_token()
+                print(f"Api Token: {token}")
+                return
+            if args.secret is True:
+                from .endpoints import create_secret
+
+                token = create_secret()
+                print(f"Api Secret: {token}")
+                return
             pytrain_args = "-api"
             self._is_server = False
             if args.ser2 is True:
@@ -185,6 +198,17 @@ class PyTrainApi:
             action="version",
             version=f"{cls.__qualname__} {get_version()}",
             help="Show version and exit",
+        )
+        secret_opts = parser.add_argument_group("Api Key options")
+        secret_opts.add_argument(
+            "-token",
+            action="store_true",
+            help="Generate API Token and exit",
+        )
+        secret_opts.add_argument(
+            "-secret",
+            action="store_true",
+            help="Generate API Secret and exit",
         )
         server_opts = parser.add_argument_group("Api server options")
         server_opts.add_argument(
