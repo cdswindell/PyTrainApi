@@ -30,7 +30,6 @@ dependencies = [
     "pytrain-ogr >= 0.91.0",
     "fastapi >= 0.115.10",
     "fastapi-utils >= 0.8.0",
-    "passlib >= 1.7.4",
     "pyjwt >= 2.10.1",
     "python-dotenv >= 1.0.1",
     "python_multipart >= 0.0.20",
