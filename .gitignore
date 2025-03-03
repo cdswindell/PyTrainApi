@@ -10,3 +10,4 @@ __pycache__
 /replay.txt
 /.pytrain.history
 /.env
+/cli/pytrain.log*

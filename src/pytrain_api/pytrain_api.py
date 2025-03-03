@@ -44,7 +44,7 @@ class PyTrainApi:
 
     def __init__(self, cmd_line: list[str] | None = None) -> None:
         from . import get_version
-        from .endpoints import app
+        from .endpoints import app, API_SERVER
 
         if self._initialized:
             return
@@ -109,10 +109,12 @@ class PyTrainApi:
                 pytrain_args += f" -buttons_file {args.buttons_file}"
 
             # create a PyTrain process to handle commands
-            log.info(f"{API_NAME} {get_version()}")
             self._pytrain_server = PyTrain(pytrain_args.split())
             port = args.api_port if args.api_port else DEFAULT_API_SERVER_PORT
             host = args.api_host if args.api_host else "0.0.0.0"
+            log.info(f"{API_NAME} {get_version()}")
+            if API_SERVER:
+                log.info(f"Starting {API_NAME} server; external access via {API_SERVER}...")
             uvicorn.run(app, host=host, port=port, reload=False)
             if self.pytrain.exit_status:
                 if self.pytrain.exit_status == PyTrainExitStatus.UPGRADE:
