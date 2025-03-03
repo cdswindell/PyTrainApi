@@ -143,7 +143,7 @@ def get_api_token(api_key: str = Security(api_key_header)) -> bool:
             return True
         if payload.get("SERVER", None) == HTTPS_SERVER and payload.get("SECRET", None) == SECRET_PHRASE:
             guid = payload.get("GUID", None)
-            if guid in API_KEYS:
+            if guid in API_KEYS and API_KEYS[guid] == api_key:
                 return True
             if guid:
                 print(f"{guid} not in API Keys,but other info checks out")
