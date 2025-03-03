@@ -73,6 +73,14 @@ class PyTrainApi:
             elif args.env is True:
                 self.write_env()
                 return
+            # if .env file is empty, create it and restart
+
+            if not find_dotenv():
+                log.warning("No .env file found, creating one and restarting...")
+                self.write_env()
+                self._is_server = True
+                self.relaunch(PyTrainExitStatus.RESTART)
+
             pytrain_args = "-api"
             self._is_server = False
             if args.ser2 is True:
