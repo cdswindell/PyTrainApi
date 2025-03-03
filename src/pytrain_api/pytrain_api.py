@@ -19,7 +19,7 @@ from time import sleep
 from typing import cast
 
 import uvicorn
-from dotenv import find_dotenv
+from dotenv import find_dotenv, load_dotenv
 from pytrain import PyTrain, PyTrainExitStatus, is_linux, PROGRAM_NAME
 from pytrain.utils.argument_parser import PyTrainArgumentParser
 
@@ -256,9 +256,20 @@ class PyTrainApi:
     def write_env() -> None:
         from .endpoints import create_secret, create_api_token, DEFAULT_API_SERVER_VALUE
 
+        api_server = DEFAULT_API_SERVER_VALUE
+        algorithm = "HS256"
+        alexa_exp = 60
+
         # look for existing file, if present, create a backup
         env_file = find_dotenv()
         if env_file:
+            load_dotenv(env_file)
+            api_server = os.environ.get("API_SERVER") if os.environ.get("API_SERVER") else api_server
+            algorithm = os.environ.get("ALGORITHM") if os.environ.get("ALGORITHM") else algorithm
+            alexa_exp = (
+                int(os.environ.get("ALEXA_TOKEN_EXP_MIN")) if os.environ.get("ALEXA_TOKEN_EXP_MIN") else alexa_exp
+            )
+
             env_file = os.path.relpath(env_file, os.getcwd())
             log.info(f"Renaming {env_file} to {env_file}.bak... ")
             os.rename(env_file, f"{env_file}.bak")
@@ -271,12 +282,12 @@ class PyTrainApi:
             f.write("#\n")
             f.write(f"# Created: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             f.write("#\n")
-            f.write('ALGORITHM="HS256"\n')
+            f.write(f'ALGORITHM="{algorithm}"\n')
             log.info("Creating SECRET_KEY...")
             secret = create_secret()
             f.write(f'SECRET_KEY="{secret}"\n')
-            f.write("ALEXA_TOKEN_EXP_MIN=60\n")
+            f.write(f"ALEXA_TOKEN_EXP_MIN={alexa_exp}\n")
             log.info("Creating API_TOKEN...")
             f.write(f'API_TOKEN="{create_api_token(secret=secret)}"\n')
             f.write("API_TOKENS=\n")
-            f.write(f'API_SERVER="{DEFAULT_API_SERVER_VALUE}"\n')
+            f.write(f'API_SERVER="{api_server}"\n')
