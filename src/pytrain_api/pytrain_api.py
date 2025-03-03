@@ -109,7 +109,7 @@ class PyTrainApi:
                 pytrain_args += f" -buttons_file {args.buttons_file}"
 
             # create a PyTrain process to handle commands
-            print(f"{API_NAME} {get_version()}")
+            log.info(f"{API_NAME} {get_version()}")
             self._pytrain_server = PyTrain(pytrain_args.split())
             port = args.api_port if args.api_port else DEFAULT_API_SERVER_PORT
             host = args.api_host if args.api_host else "0.0.0.0"
@@ -147,7 +147,7 @@ class PyTrainApi:
     def relaunch(self, exit_status: PyTrainExitStatus) -> None:
         # if we're a client, we need to give the server time to respond, otherwise, we
         # will connect to it as it is shutting down
-        print(f"{API_NAME} restarting...")
+        log.info(f"{API_NAME} restarting...")
         if self._is_server is False:
             sleep(10)
         # are we a service or run from the commandline?
@@ -159,7 +159,7 @@ class PyTrainApi:
 
     def update(self, do_inform: bool = True) -> None:
         if do_inform:
-            print(f"{'Server' if self.is_server else 'Client'} updating...")
+            log.info(f"{'Server' if self.is_server else 'Client'} updating...")
         # always update pip
         os.system(f"cd {os.getcwd()}; pip install -U pip")
         if is_package():
@@ -173,7 +173,7 @@ class PyTrainApi:
 
     def upgrade(self) -> None:
         if sys.platform == "linux":
-            print(f"{'Server' if self.is_server else 'Client'} upgrading...")
+            log.info(f"{'Server' if self.is_server else 'Client'} upgrading...")
             os.system("sudo apt update")
             sleep(1)
             os.system("sudo apt upgrade -y")
@@ -184,7 +184,7 @@ class PyTrainApi:
             msg = "rebooting"
         else:
             msg = "shutting down"
-        print(f"{'Server' if self.is_server else 'Client'} {msg}...")
+        log.info(f"{'Server' if self.is_server else 'Client'} {msg}...")
         # are we running in API mode? if so, send signal
         if option == PyTrainExitStatus.REBOOT:
             opt = " -r"

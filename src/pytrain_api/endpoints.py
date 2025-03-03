@@ -160,10 +160,10 @@ def get_api_token(api_key: str = Security(api_key_header)) -> bool:
             if guid in API_KEYS and API_KEYS[guid] == api_key:
                 return True
             if guid:
-                print(f"{guid} not in API Keys,but other info checks out")
+                log.info(f"{guid} not in API Keys,but other info checks out")
                 API_KEYS[guid] = api_key
                 return True
-    print(f"Invalid Access attempt: payload: {payload} key: {api_key}")
+    log.warning(f"Invalid Access attempt: payload: {payload} key: {api_key}")
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid API key")
 
 
