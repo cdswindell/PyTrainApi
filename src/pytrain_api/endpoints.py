@@ -7,6 +7,7 @@
 #
 from __future__ import annotations
 
+import logging
 import os
 import secrets
 import uuid
@@ -56,6 +57,8 @@ from .pytrain_component import (
 )
 from .pytrain_info import RouteInfo, SwitchInfo, AccessoryInfo, EngineInfo, TrainInfo
 
+log = logging.getLogger(__name__)
+
 E = TypeVar("E", bound=CommandDefEnum)
 
 DEFAULT_API_SERVER_VALUE = "[SERVER DOMAIN/IP ADDRESS NAME YOU GAVE TO ALEXA SKILL]"
@@ -78,11 +81,15 @@ if ALEXA_TOKEN_EXP_MIN is None or int(ALEXA_TOKEN_EXP_MIN) <= 0:
 else:
     ALEXA_TOKEN_EXP_MIN = int(ALEXA_TOKEN_EXP_MIN)
 
+if not API_SERVER or API_SERVER == DEFAULT_API_SERVER_VALUE:
+    log.error("API_SERVER not set in .env; Alexa skill will not work")
+
 if API_TOKENS:
     tokens = API_TOKENS.split(",")
     for token in tokens:
         token = token.strip()
         API_KEYS[token] = token
+
 
 # password is:"secret" (without the quotes)
 fake_users_db = {
