@@ -13,7 +13,6 @@ from enum import Enum
 from typing import Any, TypeVar
 
 from fastapi import Path, HTTPException
-from pydantic import BaseModel
 from pytrain import (
     CommandScope,
     CommandReq,
@@ -431,8 +430,3 @@ class PyTrainEngine(PyTrainComponent):
         self.do_request(cmd, tmcc_id, data=number, duration=duration)
         d = f" for {duration} second(s)" if duration else ""
         return {"status": f"Sending Numeric {number} to {self.scope.title} {tmcc_id}{d}"}
-
-
-class RouteSwitch(BaseModel):
-    switch: int
-    position: str

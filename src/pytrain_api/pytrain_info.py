@@ -28,8 +28,13 @@ class ComponentInfoIr(ComponentInfo):
     road_number: Annotated[str, Field(description="Road Name assigned by user or read from Sensor Track", max_length=4)]
 
 
+class RouteSwitch(BaseModel):
+    switch: int
+    position: str
+
+
 class RouteInfo(ComponentInfo):
-    switches: dict[int, str] | None
+    switches: list[RouteSwitch] | None
 
 
 class SwitchInfo(ComponentInfo):
