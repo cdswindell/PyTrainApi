@@ -20,7 +20,7 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.security import OAuth2PasswordBearer, APIKeyHeader
 from fastapi_utils.cbv import cbv
-from jwt import InvalidSignatureError
+from jwt import InvalidSignatureError, ExpiredSignatureError
 from pydantic import BaseModel
 from pytrain import (
     CommandScope,
@@ -54,7 +54,7 @@ from .pytrain_component import (
     OnOffOption,
     SmokeOption,
 )
-from .pytrain_info import ComponentInfo, RouteInfo, SwitchInfo, AccessoryInfo, EngineInfo, TrainInfo
+from .pytrain_info import RouteInfo, SwitchInfo, AccessoryInfo, EngineInfo, TrainInfo
 
 E = TypeVar("E", bound=CommandDefEnum)
 
@@ -66,9 +66,16 @@ load_dotenv(find_dotenv())
 SECRET_KEY = os.environ.get("SECRET_KEY")
 SECRET_PHRASE = os.environ.get("SECRET_PHRASE") if os.environ.get("SECRET_PHRASE") else "PYTRAINAPI"
 API_TOKEN = os.environ.get("API_TOKEN")
+API_TOKENS = os.environ.get("API_TOKENS")
 ALGORITHM = os.environ.get("ALGORITHM")
 HTTPS_SERVER = os.environ.get("HTTPS_SERVER")
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+if API_TOKENS:
+    tokens = API_TOKENS.split(",")
+    for token in tokens:
+        token = token.strip()
+        API_KEYS[token] = token
 
 # password is:"secret" (without the quotes)
 fake_users_db = {
@@ -90,10 +97,6 @@ fake_users_db = {
 class Token(BaseModel):
     access_token: str
     token_type: str
-
-
-class TokenData(BaseModel):
-    username: str | None = None
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -128,23 +131,27 @@ def create_secret(length: int = 32) -> str:
 
 
 def get_api_token(api_key: str = Security(api_key_header)) -> bool:
-    if api_key and (api_key == API_TOKEN or api_key in API_KEYS):
-        return True
     # see if it's a jwt token
-    payload = jwt.decode(api_key, SECRET_KEY, algorithms=[ALGORITHM])
-    if payload and payload.get("SERVER", None) == HTTPS_SERVER and payload.get("SECRET", None) == SECRET_PHRASE:
-        guid = payload.get("GUID", None)
-        if guid in API_KEYS:
+    try:
+        payload = jwt.decode(api_key, SECRET_KEY, algorithms=[ALGORITHM])
+    except InvalidSignatureError as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+    except ExpiredSignatureError as es:
+        raise HTTPException(status_code=498, detail=str(es))
+    if payload:
+        if api_key and (api_key == API_TOKEN or api_key in API_KEYS) and payload.get("magic") == API_NAME:
             return True
-        if guid:
-            print(f"{guid} not in API Keys,but other info checks out")
-            API_KEYS[guid] = api_key
-            return True
-    print(f"*** Invalid Access attempt: payload: {payload} key: {api_key} ***")
+        if payload.get("SERVER", None) == HTTPS_SERVER and payload.get("SECRET", None) == SECRET_PHRASE:
+            guid = payload.get("GUID", None)
+            if guid in API_KEYS:
+                return True
+            if guid:
+                print(f"{guid} not in API Keys,but other info checks out")
+                API_KEYS[guid] = api_key
+                return True
+    print(f"Invalid Access attempt: payload: {payload} key: {api_key}")
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid API key")
 
-
-C = TypeVar("C", bound=ComponentInfo)
 
 router = APIRouter(prefix="/pytrain/v1", dependencies=[Depends(get_api_token)])
 # router = APIRouter(prefix="/pytrain/v1")
