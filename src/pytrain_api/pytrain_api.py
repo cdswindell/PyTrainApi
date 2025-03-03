@@ -59,11 +59,13 @@ class PyTrainApi:
                 token = create_access_token()
                 print(f"Api Token: {token}")
                 return
-            if args.secret is True:
+            elif args.secret is True:
                 from .endpoints import create_secret
 
                 token = create_secret()
                 print(f"Api Secret: {token}")
+                return
+            elif args.env is True:
                 return
             pytrain_args = "-api"
             self._is_server = False
@@ -199,17 +201,25 @@ class PyTrainApi:
             version=f"{cls.__qualname__} {get_version()}",
             help="Show version and exit",
         )
-        secret_opts = parser.add_argument_group("Api Key options")
+
+        secrets = parser.add_argument_group(title="Management")
+        secret_opts = secrets.add_mutually_exclusive_group()
         secret_opts.add_argument(
-            "-token",
+            "-env",
             action="store_true",
-            help="Generate API Token and exit",
+            help="Write new .env file with SECRET_KEY, API_TOKEN, and ALGORITHM and exit",
         )
         secret_opts.add_argument(
             "-secret",
             action="store_true",
             help="Generate API Secret and exit",
         )
+        secret_opts.add_argument(
+            "-token",
+            action="store_true",
+            help="Generate API Token and exit",
+        )
+
         server_opts = parser.add_argument_group("Api server options")
         server_opts.add_argument(
             "-api_host",
