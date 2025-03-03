@@ -9,18 +9,23 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import subprocess
 import sys
 import threading
+from datetime import datetime
 from time import sleep
 from typing import cast
 
 import uvicorn
+from dotenv import find_dotenv
 from pytrain import PyTrain, PyTrainExitStatus, is_linux, PROGRAM_NAME
 from pytrain.utils.argument_parser import PyTrainArgumentParser
 
 from . import is_package
+
+log = logging.getLogger(__name__)
 
 API_NAME = "PyTrain Api"
 API_PACKAGE = "pytrain-ogr-api"
@@ -54,9 +59,9 @@ class PyTrainApi:
 
             # if generate api key, do so and exit
             if args.token is True:
-                from .endpoints import create_access_token
+                from .endpoints import create_api_token
 
-                token = create_access_token()
+                token = create_api_token()
                 print(f"Api Token: {token}")
                 return
             elif args.secret is True:
@@ -66,6 +71,7 @@ class PyTrainApi:
                 print(f"Api Secret: {token}")
                 return
             elif args.env is True:
+                self.write_env()
                 return
             pytrain_args = "-api"
             self._is_server = False
@@ -245,3 +251,32 @@ class PyTrainApi:
                 ptp,
             ],
         )
+
+    @staticmethod
+    def write_env() -> None:
+        from .endpoints import create_secret, create_api_token, DEFAULT_API_SERVER_VALUE
+
+        # look for existing file, if present, create a backup
+        env_file = find_dotenv()
+        if env_file:
+            env_file = os.path.relpath(env_file, os.getcwd())
+            log.info(f"Renaming {env_file} to {env_file}.bak... ")
+            os.rename(env_file, f"{env_file}.bak")
+        else:
+            env_file = ".env"  # write file in current directory
+        with open(env_file, "w") as f:
+            log.info(f"Creating {env_file}...")
+            f.write("#\n")
+            f.write(f"# {API_NAME} env \n")
+            f.write("#\n")
+            f.write(f"# Created: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write("#\n")
+            f.write('ALGORITHM="HS256"\n')
+            log.info("Creating SECRET_KEY...")
+            secret = create_secret()
+            f.write(f'SECRET_KEY="{secret}"\n')
+            f.write("ALEXA_TOKEN_EXP_MIN=60\n")
+            log.info("Creating API_TOKEN...")
+            f.write(f'API_TOKEN="{create_api_token(secret=secret)}"\n')
+            f.write("API_TOKENS=\n")
+            f.write(f'API_SERVER="{DEFAULT_API_SERVER_VALUE}"\n')

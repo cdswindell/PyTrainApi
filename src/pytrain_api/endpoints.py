@@ -58,18 +58,25 @@ from .pytrain_info import RouteInfo, SwitchInfo, AccessoryInfo, EngineInfo, Trai
 
 E = TypeVar("E", bound=CommandDefEnum)
 
+DEFAULT_API_SERVER_VALUE = "[SERVER DOMAIN/IP ADDRESS NAME YOU GAVE TO ALEXA SKILL]"
+
 # to get a secret key,
 # openssl rand -hex 32
 API_KEYS: dict[str, str] = dict()
 
+# Load environment variables that drive behavior
 load_dotenv(find_dotenv())
 SECRET_KEY = os.environ.get("SECRET_KEY")
 SECRET_PHRASE = os.environ.get("SECRET_PHRASE") if os.environ.get("SECRET_PHRASE") else "PYTRAINAPI"
 API_TOKEN = os.environ.get("API_TOKEN")
 API_TOKENS = os.environ.get("API_TOKENS")
 ALGORITHM = os.environ.get("ALGORITHM")
-HTTPS_SERVER = os.environ.get("HTTPS_SERVER")
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+API_SERVER = os.environ.get("API_SERVER")
+ALEXA_TOKEN_EXP_MIN = os.environ.get("ALEXA_TOKEN_EXP_MIN")
+if ALEXA_TOKEN_EXP_MIN is None or int(ALEXA_TOKEN_EXP_MIN) <= 0:
+    ALEXA_TOKEN_EXP_MIN = 60
+else:
+    ALEXA_TOKEN_EXP_MIN = int(ALEXA_TOKEN_EXP_MIN)
 
 if API_TOKENS:
     tokens = API_TOKENS.split(",")
@@ -111,9 +118,9 @@ app = FastAPI(
 api_key_header = APIKeyHeader(name="X-API-Key")
 
 
-def create_access_token(data: dict = None, expires_delta: timedelta | None = None):
+def create_api_token(data: dict = None, expires_delta: timedelta | None = None, secret=SECRET_KEY):
     if data is None:
-        to_encode = {}  # dict({"random": randint(1, 2**32)})
+        to_encode = {}
     else:
         to_encode = data.copy()
     if expires_delta:
@@ -122,7 +129,7 @@ def create_access_token(data: dict = None, expires_delta: timedelta | None = Non
         expire: datetime = datetime.now(timezone.utc) + timedelta(days=365)
     to_encode.update({"exp": expire})
     to_encode.update({"magic": API_NAME})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, secret, algorithm=ALGORITHM)
     return encoded_jwt
 
 
@@ -141,7 +148,7 @@ def get_api_token(api_key: str = Security(api_key_header)) -> bool:
     if payload:
         if api_key and (api_key == API_TOKEN or api_key in API_KEYS) and payload.get("magic") == API_NAME:
             return True
-        if payload.get("SERVER", None) == HTTPS_SERVER and payload.get("SECRET", None) == SECRET_PHRASE:
+        if payload.get("SERVER", None) == API_SERVER:
             guid = payload.get("GUID", None)
             if guid in API_KEYS and API_KEYS[guid] == api_key:
                 return True
@@ -200,22 +207,24 @@ def version(uid: Annotated[Uid, Body()]):
     from . import get_version
 
     try:
-        uid_decoded = jwt.decode(uid.uid, HTTPS_SERVER, algorithms=[ALGORITHM])
+        uid_decoded = jwt.decode(uid.uid, API_SERVER, algorithms=[ALGORITHM])
     except InvalidSignatureError:
         try:
             uid_decoded = jwt.decode(uid.uid, SECRET_PHRASE, algorithms=[ALGORITHM])
         except InvalidSignatureError:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
     token_server = uid_decoded.get("SERVER", None)
-    if token_server is None or HTTPS_SERVER != token_server.lower():
+    if token_server is None or API_SERVER != token_server.lower():
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
     # Encode as jwt token and return to Alexa/user
     guid = str(uuid.uuid4())
-    api_key = jwt.encode(
-        {"GUID": guid, "SERVER": token_server, "SECRET": SECRET_PHRASE},
-        SECRET_KEY,
-        algorithm=ALGORITHM,
+    api_key = create_api_token(
+        {
+            "GUID": guid,
+            "SERVER": token_server,
+        },
+        timedelta(minutes=ALEXA_TOKEN_EXP_MIN),
     )
     API_KEYS[guid] = api_key
     return {
