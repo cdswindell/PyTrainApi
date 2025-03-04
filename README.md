@@ -12,6 +12,21 @@ command to launch the **PyTrain Api** and begin serving requests.
 a **PyTrain** server _and_ a **PyTrain Api** server. And, like **PyTrain**, **PyTrain Api** can run on a Raspberry Pi
 running 64 bit Bookworm distribution or later.
 
+<!-- TOC -->
+
+* [Quick Start](#quick-start)
+    * [Requirements](#requirements)
+    * [Installation](#installation)
+        * [Create a Python Virtual Environment](#create-a-python-virtual-environment)
+        * [Run __PyTrain Api__ Directly](#run-__pytrain-api__-directly)
+        * [Run __PyTrain Api__ from a Development Environment](#run-__pytrain-api__-from-a-development-environment)
+    * [Configuration](#configuration)
+* [Alexa Skill](#alexa-skill)
+    * [Configuration](#configuration)
+    * [Additional Security](#additional-security)
+
+<!-- TOC -->
+
 ## Quick Start
 
 ### Requirements
@@ -112,6 +127,45 @@ cli/pytrain_api
 
 This command launches a webserver that accepts requests on port `8000`and connects to a __PyTrain__ server.
 To see the list of available Api endpoints, open a web browser and go to `http://<your local IP>:8000/pytrain`.
+
+### Configuration
+
+The **PyTrain Api** endpoints are all protected against unintensional as well as unwanted access. It does so by
+requiring an *api token* to be present in the header of each request. Modern programming languages make this
+easy to do.
+
+Api tokens should be kept secure, just like the key to your house, otherwise, anyone could learn and use it.
+For this reasn, ypu must generate the required keys yourself and keep them in a special file, the `.env` file.
+This file must be placed in the same directory you run the **PyTrain Api** program from.
+
+**PyTrain Api** provides a special command to generate a correctly-configured `.env` file and populate it
+with an api token for your own use. To do so, `cd` to the directory where you plan to run the Api and type:
+
+- Run **PyTrain Api** Directly
+
+```aiignore
+pytrin_api -env
+```
+
+- Run **PyTrain Api** from a Development Environment
+
+```aiignore
+cli/pytrin_api -env
+```
+
+Use the value assigned to the tag `API_TOKEN` as your secure **PyTrain Api** token. Simply include it in
+your request header with the tag `X-API-Key`, and you will be good to go. Below is an example of how to do
+this from Python:
+
+```aiignore
+headers = {"X-API-Key": "<Replace with the API_TOKEN from .env file>"}
+response = requests.post(url, headers=headers)
+```
+
+You *should not* modify any values in `.env` unless you are using the [Alexa Skill](#alexa-skill) (see below).
+Cnanging other values will
+break **PyTrain Api**. If you do mistakenly modify the file's contents or delete it, you can simply
+regenerate it using the appropriate command above.
 
 ## Alexa Skill
 
