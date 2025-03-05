@@ -90,7 +90,6 @@ if API_TOKENS:
         token = token.strip()
         API_KEYS[token] = token
 
-
 # password is:"secret" (without the quotes)
 fake_users_db = {
     "cdswindell": {
@@ -101,6 +100,7 @@ fake_users_db = {
         "disabled": False,
     },
 }
+
 
 # api_keys = {
 #     "e54d4431-5dab-474e-b71a-0db1fcb9e659": "7oDYjo3d9r58EJKYi5x4E8",
@@ -526,6 +526,22 @@ class Engine(PyTrainEngine):
         duration: Annotated[float, Query(description="Duration (seconds, only with 'once' option)", gt=0.0)] = None,
     ):
         return super().ring_bell(tmcc_id, option, duration)
+
+    @router.post("/engine/{tmcc_id}/boost_req")
+    async def boost(
+        self,
+        tmcc_id: Annotated[int, Engine.id_path()],
+        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+    ):
+        return super().boost(tmcc_id, duration)
+
+    @router.post("/engine/{tmcc_id}/brake_req")
+    async def brake(
+        self,
+        tmcc_id: Annotated[int, Engine.id_path()],
+        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+    ):
+        return super().brake(tmcc_id, duration)
 
     @router.post("/engine/{tmcc_id:int}/dialog_req")
     async def do_dialog(

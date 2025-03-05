@@ -72,7 +72,6 @@ Tmcc1DialogToCommand: dict[DialogOption, E] = {
     DialogOption.TOWER_RANDOM_CHATTER: TMCC2EngineCommandEnum.TOWER_CHATTER,
 }
 
-
 Tmcc2DialogToCommand: dict[DialogOption, E] = {
     DialogOption.ENGINEER_ACK: TMCC2RailSoundsDialogControl.ENGINEER_ACK,
     DialogOption.ENGINEER_ID: TMCC2RailSoundsDialogControl.ENGINEER_ID,
@@ -422,7 +421,7 @@ class PyTrainEngine(PyTrainComponent):
                 detail=f"Aux option '{aux.value}' not supported on {self.scope.title} {tmcc_id}",
             )
 
-    def numeric_req(self, tmcc_id, number, duration):
+    def numeric_req(self, tmcc_id, number, duration) -> dict:
         if self.is_tmcc(tmcc_id):
             cmd = TMCC1EngineCommandEnum.NUMERIC
         else:
@@ -430,3 +429,21 @@ class PyTrainEngine(PyTrainComponent):
         self.do_request(cmd, tmcc_id, data=number, duration=duration)
         d = f" for {duration} second(s)" if duration else ""
         return {"status": f"Sending Numeric {number} to {self.scope.title} {tmcc_id}{d}"}
+
+    def boost(self, tmcc_id, duration) -> dict:
+        if self.is_tmcc(tmcc_id):
+            cmd = TMCC1EngineCommandEnum.BOOST_SPEED
+        else:
+            cmd = TMCC2EngineCommandEnum.BOOST_SPEED
+        self.do_request(cmd, tmcc_id, duration=duration)
+        d = f" for {duration} second(s)" if duration else ""
+        return {"status": f"Sending Boost request to {self.scope.title} {tmcc_id}{d}"}
+
+    def brake(self, tmcc_id, duration) -> dict:
+        if self.is_tmcc(tmcc_id):
+            cmd = TMCC1EngineCommandEnum.BRAKE_SPEED
+        else:
+            cmd = TMCC2EngineCommandEnum.BRAKE_SPEED
+        self.do_request(cmd, tmcc_id, duration=duration)
+        d = f" for {duration} second(s)" if duration else ""
+        return {"status": f"Sending Brake request to {self.scope.title} {tmcc_id}{d}"}
