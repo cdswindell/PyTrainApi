@@ -727,6 +727,22 @@ class Train(PyTrainEngine):
     ):
         return super().ring_bell(tmcc_id, option, duration)
 
+    @router.post("/train/{tmcc_id}/boost_req")
+    async def boost(
+        self,
+        tmcc_id: Annotated[int, Train.id_path()],
+        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+    ):
+        return super().boost(tmcc_id, duration)
+
+    @router.post("/train/{tmcc_id}/brake_req")
+    async def brake(
+        self,
+        tmcc_id: Annotated[int, Train.id_path()],
+        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+    ):
+        return super().brake(tmcc_id, duration)
+
     @router.post("/train/{tmcc_id:int}/dialog_req")
     async def do_dialog(
         self,
