@@ -1,0 +1,24 @@
+#!/bin/bash
+#
+#
+# PyTrainApi: a restful API for controlling Lionel Legacy engines, trains, switches, and accessories
+#
+# Copyright (c) 2024-2025 Dave Swindell <pytraininfo.gmail.com>
+#
+# SPDX-License-Identifier: LPGL
+#
+# Use the PyTrain make_service script to configure this file.
+#
+PYTRAIN_API_HOME="___PYTRAINAPIHOME___"
+LIONEL_BASE="___LIONELBASE___"
+LCS_SER_2="___LCSSER2___"
+
+# change direction to PYTRAIN_HOME
+cd PYTRAIN_API_HOME
+
+# activate the virtual environment
+source ___ACTIVATE___; export PYTHONPATH=.
+
+# run the program with appropriate arguments
+___PYTRAINAPI___  ___LIONELBASE______LCSSER2___
+

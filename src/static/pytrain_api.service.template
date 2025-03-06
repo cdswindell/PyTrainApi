@@ -1,0 +1,14 @@
+[Unit]
+Description=PyTrain Api
+After=network-online.target
+After=multi-user.target
+
+[Service]
+Type=exec
+User=___USER___
+Group=___USER___
+ExecStart=___SHELL_SCRIPT___
+Nice=-5
+
+[Install]
+WantedBy=multi-user.target
