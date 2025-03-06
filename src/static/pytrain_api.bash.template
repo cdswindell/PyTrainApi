@@ -14,7 +14,7 @@ LIONEL_BASE="___LIONELBASE___"
 LCS_SER_2="___LCSSER2___"
 
 # change direction to PYTRAIN_HOME
-cd PYTRAIN_API_HOME
+cd $PYTRAIN_API_HOME
 
 # activate the virtual environment
 source ___ACTIVATE___; export PYTHONPATH=.
