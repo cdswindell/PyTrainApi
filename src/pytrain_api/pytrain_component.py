@@ -223,7 +223,7 @@ class PyTrainEngine(PyTrainComponent):
         else:
             cmd_def = SequenceCommandEnum.RAMPED_SPEED_SEQ
         cmd = None
-        if tmcc is True:
+        if tmcc:
             if isinstance(speed, int):
                 if speed in TMCC_RR_SPEED_MAP:
                     speed = TMCC_RR_SPEED_MAP[speed].value[0]
