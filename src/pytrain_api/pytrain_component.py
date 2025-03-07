@@ -235,9 +235,10 @@ class PyTrainEngine(PyTrainComponent):
                 if cmd_def:
                     cmd = CommandReq.build(cmd_def, tmcc_id, scope=self.scope)
             if cmd is None:
+                sc = self.scope.title
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=f"TMCC speeds must be between 0 and 31 inclusive: speed step {speed} is invalid.",
+                    detail=f"TMCC {sc} speeds must be between 0 and 31 inclusive: speed step {speed} is invalid.",
                 )
         else:
             if isinstance(speed, int):
@@ -251,9 +252,10 @@ class PyTrainEngine(PyTrainComponent):
                 if cmd_def:
                     cmd = CommandReq.build(cmd_def, tmcc_id, scope=self.scope)
             if cmd is None:
+                sc = self.scope.title
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=f"Legacy speeds must be between 0 and 199 inclusive: speed step {speed} is invalid.",
+                    detail=f"TMCC {sc} speeds must be between 0 and 31 inclusive: speed step {speed} is invalid.",
                 )
         self.do_request(cmd)
         return {"status": f"{self.scope.title} {tmcc_id} speed now: {speed}"}
