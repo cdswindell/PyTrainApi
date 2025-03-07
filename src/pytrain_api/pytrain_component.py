@@ -201,7 +201,9 @@ class PyTrainEngine(PyTrainComponent):
 
     def is_tmcc(self, tmcc_id: int) -> bool:
         state = PyTrainApi.get().pytrain.store.query(self.scope, tmcc_id)
-        return state.is_tmcc if state and state else True
+        if isinstance(state, ComponentState):
+            return state.is_tmcc if state else True
+        return True
 
     def tmcc(self, tmcc_id: int) -> str:
         return " -tmcc" if self.is_tmcc(tmcc_id) else ""
