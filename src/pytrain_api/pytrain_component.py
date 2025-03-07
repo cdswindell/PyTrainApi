@@ -221,7 +221,7 @@ class PyTrainEngine(PyTrainComponent):
         else:
             cmd_def = SequenceCommandEnum.RAMPED_SPEED_SEQ
         cmd = None
-        if tmcc:
+        if tmcc is True:
             if isinstance(speed, int):
                 if speed in TMCC_RR_SPEED_MAP:
                     speed = TMCC_RR_SPEED_MAP[speed].value[0]
@@ -254,7 +254,7 @@ class PyTrainEngine(PyTrainComponent):
                     detail=f"Legacy speeds must be between 0 and 199 inclusive: {speed}",
                 )
         self.do_request(cmd)
-        return {"status": f"{self.scope.title} {tmcc_id} speed now: {cmd.data}"}
+        return {"status": f"{self.scope.title} {tmcc_id} speed now: {speed}"}
 
     def dialog(self, tmcc_id: int, dialog: DialogOption):
         if self.is_tmcc(tmcc_id):
