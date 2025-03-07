@@ -578,6 +578,14 @@ class Engine(PyTrainEngine):
     ):
         return super().numeric_req(tmcc_id, number, duration)
 
+    @router.post("/engine/{tmcc_id:int}/momentum_req")
+    async def momentum(
+        self,
+        tmcc_id: Annotated[int, Engine.id_path()],
+        level: Annotated[int, Query(description="Momentum level (0 - 7)", ge=0, le=7)] = None,
+    ):
+        return super().momentum(tmcc_id, level)
+
     @router.post("/engine/{tmcc_id:int}/rear_coupler_req")
     async def rear_coupler(self, tmcc_id: Annotated[int, Engine.id_path()]):
         return super().rear_coupler(tmcc_id)
@@ -758,6 +766,14 @@ class Train(PyTrainEngine):
     @router.post("/train/{tmcc_id:int}/front_coupler_req")
     async def front_coupler(self, tmcc_id: Annotated[int, Train.id_path()]):
         return super().front_coupler(tmcc_id)
+
+    @router.post("/train/{tmcc_id:int}/momentum_req")
+    async def momentum(
+        self,
+        tmcc_id: Annotated[int, Train.id_path()],
+        level: Annotated[int, Query(description="Momentum level (0 - 7)", ge=0, le=7)] = None,
+    ):
+        return super().momentum(tmcc_id, level)
 
     @router.post("/train/{tmcc_id:int}/numeric_req")
     async def numeric_req(

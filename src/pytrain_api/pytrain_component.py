@@ -26,6 +26,7 @@ from pytrain import (
 )
 from pytrain.db.component_state import ComponentState
 from pytrain.protocol.command_def import CommandDefEnum
+from range_key_dict import RangeKeyDict
 from starlette import status
 
 from .pytrain_api import PyTrainApi
@@ -50,6 +51,14 @@ LEGACY_RR_SPEED_MAP = {
     206: TMCC2RRSpeedsEnum.NORMAL,
     207: TMCC2RRSpeedsEnum.HIGHBALL,
 }
+
+TMCC1_MOMENTUM_MAP = RangeKeyDict(
+    {
+        (0, 3): TMCC1EngineCommandEnum.MOMENTUM_LOW,
+        (3, 6): TMCC1EngineCommandEnum.MOMENTUM_MEDIUM,
+        (6, 8): TMCC1EngineCommandEnum.MOMENTUM_HIGH,
+    }
+)
 
 
 class DialogOption(str, Enum):
@@ -314,6 +323,14 @@ class PyTrainEngine(PyTrainComponent):
         else:
             self.do_request(TMCC2EngineCommandEnum.FRONT_COUPLER, tmcc_id)
         return {"status": f"{self.scope.title} {tmcc_id} front coupler..."}
+
+    def momentum(self, tmcc_id: int, level: int):
+        if self.is_tmcc(tmcc_id):
+            cmd = TMCC1_MOMENTUM_MAP.get(level, TMCC1EngineCommandEnum.MOMENTUM_LOW)
+            self.do_request(cmd, tmcc_id)
+        else:
+            self.do_request(TMCC2EngineCommandEnum.MOMENTUM, tmcc_id, data=level)
+        return {"status": f"{self.scope.title} {tmcc_id} momentum to {level}..."}
 
     def rear_coupler(self, tmcc_id: int):
         if self.is_tmcc(tmcc_id):
