@@ -77,7 +77,7 @@ ALGORITHM = os.environ.get("ALGORITHM")
 API_SERVER = os.environ.get("API_SERVER")
 ALEXA_TOKEN_EXP_MIN = os.environ.get("ALEXA_TOKEN_EXP_MIN")
 if ALEXA_TOKEN_EXP_MIN is None or int(ALEXA_TOKEN_EXP_MIN) <= 0:
-    ALEXA_TOKEN_EXP_MIN = 60
+    ALEXA_TOKEN_EXP_MIN = 15
 else:
     ALEXA_TOKEN_EXP_MIN = int(ALEXA_TOKEN_EXP_MIN)
 
@@ -89,23 +89,6 @@ if API_TOKENS:
     for token in tokens:
         token = token.strip()
         API_KEYS[token] = token
-
-# password is:"secret" (without the quotes)
-fake_users_db = {
-    "cdswindell": {
-        "username": "cdswindell",
-        "full_name": "Dave Swindell",
-        "email": "pytraininfo@gmail.com",
-        "hashed_password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
-        "disabled": False,
-    },
-}
-
-
-# api_keys = {
-#     "e54d4431-5dab-474e-b71a-0db1fcb9e659": "7oDYjo3d9r58EJKYi5x4E8",
-#     "5f0c7127-3be9-4488-b801-c7b6415b45e9": "mUP7PpTHmFAkxcQLWKMY8t",
-# }
 
 
 class Token(BaseModel):

@@ -91,18 +91,17 @@ class PyTrainApi:
                 if args.port:
                     pytrain_args += f" -port {args.port}"
             if args.base is not None:
+                self._is_server = True
                 pytrain_args += " -base"
                 if isinstance(args.base, list) and len(args.base):
                     pytrain_args += f" {args.base[0]}"
             elif args.client is True:
                 pytrain_args += " -client"
             elif args.server:
-                self._is_server = True
                 pytrain_args += f" -server {args.server}"
 
             if (args.base is not None or args.ser2 is True) and args.server_port:
                 pytrain_args += f" -server_port {args.server_port}"
-
             if args.echo is True:
                 pytrain_args += " -echo"
             if args.buttons_file:
@@ -115,7 +114,11 @@ class PyTrainApi:
             log.info(f"{API_NAME} {get_version()}")
             if API_SERVER:
                 log.info(f"Starting {API_NAME} server; external access via {API_SERVER}...")
+
+            # launch the web server, this starts the API
             uvicorn.run(app, host=host, port=port, reload=False)
+
+            # Web server exited, process signals from PyTrain server, if any
             if self.pytrain.exit_status:
                 if self.pytrain.exit_status == PyTrainExitStatus.UPGRADE:
                     self.upgrade()
@@ -211,12 +214,6 @@ class PyTrainApi:
 
         prog = "pytrain_api" if is_package() else "endpoints.py"
         parser = PyTrainArgumentParser(add_help=False)
-        parser.add_argument(
-            "-version",
-            action="version",
-            version=f"{cls.__qualname__} {get_version()}",
-            help="Show version and exit",
-        )
 
         secrets = parser.add_argument_group(title="Management")
         secret_opts = secrets.add_mutually_exclusive_group()
@@ -249,6 +246,15 @@ class PyTrainApi:
             default=DEFAULT_API_SERVER_PORT,
             help=f"Web server API port (default: {DEFAULT_API_SERVER_PORT})",
         )
+
+        misc = parser.add_argument_group("Miscellaneous options")
+        misc.add_argument(
+            "-version",
+            action="version",
+            version=f"{cls.__qualname__} {get_version()}",
+            help="Show version and exit",
+        )
+
         # remove args we don't want user to see
         ptp = cast(PyTrainArgumentParser, PyTrain.command_line_parser())
         ptp.remove_args(["-headless", "-replay_file", "-no_wait", "-version"])
