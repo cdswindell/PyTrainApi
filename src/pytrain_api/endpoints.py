@@ -183,7 +183,8 @@ async def favicon():
 # noinspection PyUnusedLocal
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
-    if exc.status_code in [404]:
+    # allow APis that issue a legitimate 404 to send a 404 response
+    if exc.status_code in [404] and (not exc.headers or exc.headers.get("X-Error", None) not in {"404"}):
         return JSONResponse(content={"detail": "Forbidden"}, status_code=403)
     return JSONResponse(content={"detail": exc.detail}, status_code=exc.status_code)
 

@@ -160,7 +160,8 @@ class PyTrainComponent:
     def get(self, tmcc_id: int) -> dict[str, Any]:
         state: ComponentState = PyTrainApi.get().pytrain.store.query(self.scope, tmcc_id)
         if state is None:
-            raise HTTPException(status_code=404, detail=f"{self.scope.title} {tmcc_id} not found")
+            headers = {"X-Error": "404"}
+            raise HTTPException(status_code=404, headers=headers, detail=f"{self.scope.title} {tmcc_id} not found")
         else:
             return state.as_dict()
 
