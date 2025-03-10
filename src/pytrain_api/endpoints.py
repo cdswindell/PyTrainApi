@@ -316,7 +316,8 @@ def get_components(
 ) -> list[dict[str, any]]:
     states = PyTrainApi.get().pytrain.store.query(scope)
     if states is None:
-        raise HTTPException(status_code=404, detail=f"No {scope.label} found")
+        headers = {"X-Error": "404"}
+        raise HTTPException(status_code=404, headers=headers, detail=f"No {scope.label} found")
     else:
         ret = list()
         for state in states:
@@ -329,7 +330,8 @@ def get_components(
                 continue
             ret.append(state.as_dict())
         if not ret:
-            raise HTTPException(status_code=404, detail=f"No matching {scope.label} found")
+            headers = {"X-Error": "404"}
+            raise HTTPException(status_code=404, headers=headers, detail=f"No matching {scope.label} found")
         return ret
 
 
