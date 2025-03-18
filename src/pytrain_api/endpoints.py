@@ -55,7 +55,7 @@ from .pytrain_component import (
     OnOffOption,
     SmokeOption,
 )
-from .pytrain_info import RouteInfo, SwitchInfo, AccessoryInfo, EngineInfo, TrainInfo
+from .pytrain_info import RouteInfo, SwitchInfo, AccessoryInfo, EngineInfo, TrainInfo, BlockInfo
 
 log = logging.getLogger(__name__)
 
@@ -470,6 +470,31 @@ class Accessory(PyTrainComponent):
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"Aux option '{aux_req.value}' not supported on {self.scope.title} {tmcc_id}",
         )
+
+
+@router.get("/blocks")
+async def get_blocks(contains: str = None) -> list[BlockInfo]:
+    return [BlockInfo(**d) for d in get_components(CommandScope.BLOCK, contains=contains)]
+
+
+@cbv(router)
+class Block(PyTrainComponent):
+    @classmethod
+    def id_path(cls, label: str = None, min_val: int = 1, max_val: int = 99) -> Path:
+        label = label if label else cls.__name__.replace("PyTrain", "")
+        return Path(
+            title="Block ID",
+            description=f"{label}'s Block ID",
+            ge=min_val,
+            le=max_val,
+        )
+
+    def __init__(self):
+        super().__init__(CommandScope.BLOCK)
+
+    @router.get("/block/{block_id}")
+    async def get_block(self, block_id: Annotated[int, Block.id_path()]) -> BlockInfo:
+        return BlockInfo(**super().get(block_id))
 
 
 @router.get("/engines")

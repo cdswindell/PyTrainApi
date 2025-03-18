@@ -42,6 +42,22 @@ class SwitchInfo(ComponentInfo):
     state: str | None
 
 
+class MotiveInfo(BaseModel):
+    scope: str | None
+    tmcc_id: int | None
+
+
+class BlockInfo(BaseModel):
+    scope: Component = Component.BLOCK
+    block_id: int
+    name: str | None
+    direction: str | None
+    sensor_track: int | None
+    switch: int | None
+    is_occupied: bool | None
+    occupied_by: MotiveInfo | None
+
+
 class AccessoryInfo(ComponentInfo):
     # noinspection PyMethodParameters
     @model_validator(mode="before")

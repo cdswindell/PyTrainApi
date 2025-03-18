@@ -113,6 +113,7 @@ class BellOption(str, Enum):
 
 class Component(str, Enum):
     ACCESSORY = "accessory"
+    BLOCK = "block"
     ENGINE = "engine"
     ROUTE = "route"
     SWITCH = "switch"
