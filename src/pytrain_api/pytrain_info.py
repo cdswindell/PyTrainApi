@@ -54,6 +54,8 @@ class BlockInfo(BaseModel):
     direction: str | None
     sensor_track: int | None
     switch: int | None
+    previous_block_id: int | None
+    next_block_id: int | None
     is_occupied: bool | None
     occupied_by: MotiveInfo | None
 

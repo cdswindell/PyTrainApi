@@ -1,4 +1,4 @@
-pytrain-ogr>=1.0.9
+pytrain-ogr>=1.0.11
 fastapi-utils>=0.8.0
 fastapi>=0.115.11
 pyjwt>=2.10.1
