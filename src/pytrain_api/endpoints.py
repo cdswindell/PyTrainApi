@@ -109,6 +109,19 @@ api_key_header = APIKeyHeader(name="X-API-Key")
 
 
 def create_api_token(data: dict = None, expires_delta: timedelta | None = None, secret=SECRET_KEY):
+    """
+    Creates a JSON Web Token (JWT) for API authentication. The method encodes the
+    provided payload data and includes an expiration time for the token. Additionally,
+    a magic identifier is added for API confirmation.
+
+    :param data: A dictionary containing the payload to encode into the token. Defaults to an
+        empty dictionary if no data is provided.
+    :param expires_delta: An optional timedelta specifying how long the token is valid. If
+        not provided, the token defaults to expiring in 365 days.
+    :param secret: A string value representing the secret key used to encode the token. Defaults
+        to SECRET_KEY if no secret is supplied.
+    :return: A string representing the encoded JWT.
+    """
     if data is None:
         to_encode = {}
     else:

@@ -140,6 +140,15 @@ class SmokeOption(str, Enum):
 
 
 class PyTrainComponent:
+    """
+    Represents a component of the PyTrain system as exchanged via the API.
+
+    This class provides mechanisms to interact with PyTrain API components through
+    specific commands, allowing operations like query, send, and request handling.
+    It also supports handling of TMCC ID paths and command queuing.
+
+    """
+
     @classmethod
     def id_path(cls, label: str = None, min_val: int = 1, max_val: int = 99) -> Path:
         label = label if label else cls.__name__.replace("PyTrain", "")

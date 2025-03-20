@@ -27,6 +27,18 @@ from .pytrain_api import API_NAME
 
 
 class MakeApiService:
+    """
+    Provides functionality for setting up and managing a Raspberry Pi-based `PyTrain` API service.
+
+    The `MakeApiService` class is responsible for:
+    - Configuring the environment for the `PyTrain` API service.
+    - Validating user inputs and command line arguments.
+    - Generating necessary shell scripts and systemd service definitions.
+    - Performing service installation and activation steps.
+    - Supporting both server and client configurations for the service.
+
+    """
+
     def __init__(self, cmd_line: list[str] = None) -> None:
         self._user = getpass.getuser()
         self._home = Path.home()

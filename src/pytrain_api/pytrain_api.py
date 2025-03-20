@@ -33,6 +33,20 @@ DEFAULT_API_SERVER_PORT: int = 8000
 
 
 class PyTrainApi:
+    """
+    This class provides an interface for managing and running a PyTrain system,
+    including its API server. It acts as a singleton to ensure only one instance
+    is created and can function as either a client or a server depending on the
+    specified arguments.
+
+    The class handles various operations such as parsing command-line arguments,
+    configuring and starting the server, managing environment settings, updating
+    and upgrading the system, and rebooting. The web server associated with the
+    API is launched through this class, and it processes signals accordingly for
+    different system states.
+
+    """
+
     _instance: None = None
     _lock = threading.RLock()
 
