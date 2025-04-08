@@ -196,6 +196,8 @@ class PyTrainApi:
             os.system("sudo apt update")
             sleep(1)
             os.system("sudo apt upgrade -y")
+            sleep(1)
+            os.system("sudo apt autoremove -y")
         self.update(do_inform=False)
 
     def reboot(self, option: PyTrainExitStatus) -> None:
