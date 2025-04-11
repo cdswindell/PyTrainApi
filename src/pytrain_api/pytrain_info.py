@@ -17,6 +17,12 @@ from .pytrain_component import Component
 
 
 class ProductInfo(BaseModel):
+    # noinspection PyMethodParameters
+    @model_validator(mode="before")
+    def validate_model(cls, data: Any) -> Any:
+        if isinstance(data, dict) and len(data) == 0:
+            raise ValueError("Product information not available")
+
     id: Annotated[int, Field(title="Product ID")]
     skuNumber: Annotated[int, Field(title="Sku Number", description="SKU Number assigned by Lionel")]
     blE_DecId: Annotated[int, Field(title="Bluetooth Decimal ID")]
