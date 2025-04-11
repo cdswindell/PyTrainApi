@@ -593,6 +593,10 @@ class Engine(PyTrainEngine):
     ):
         return super().blow_horn(tmcc_id, option, intensity, duration)
 
+    @router.get("/engine/{tmcc_id:int}/info")
+    async def get_info(self, tmcc_id: Annotated[int, Engine.id_path()]) -> dict:
+        return super().get_engine_info(tmcc_id)
+
     @router.post("/engine/{tmcc_id:int}/numeric_req")
     async def numeric_req(
         self,

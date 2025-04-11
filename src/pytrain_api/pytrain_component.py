@@ -24,7 +24,8 @@ from pytrain import (
     TMCC2RRSpeedsEnum,
     TMCC2RailSoundsDialogControl,
 )
-from pytrain.db.component_state import ComponentState
+from pytrain.db.component_state import ComponentState, EngineState
+from pytrain.db.prod_info import ProdInfo
 from pytrain.protocol.command_def import CommandDefEnum
 from range_key_dict import RangeKeyDict
 from starlette import status
@@ -479,3 +480,12 @@ class PyTrainEngine(PyTrainComponent):
         self.do_request(cmd, tmcc_id, duration=duration)
         d = f" for {duration} second(s)" if duration else ""
         return {"status": f"Sending Brake request to {self.scope.title} {tmcc_id}{d}"}
+
+    def get_engine_info(self, tmcc_id) -> dict:
+        state = PyTrainApi.get().pytrain.store.query(self.scope, tmcc_id)
+        engine_info = dict()
+        if isinstance(state, EngineState) and state.bt_id:
+            info = ProdInfo.get_info(state.bt_id)
+            if info:
+                engine_info.update()
+        return engine_info
