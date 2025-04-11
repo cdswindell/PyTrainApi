@@ -22,7 +22,7 @@ from fastapi.responses import JSONResponse, FileResponse
 from fastapi.security import OAuth2PasswordBearer, APIKeyHeader
 from fastapi_utils.cbv import cbv
 from jwt import InvalidSignatureError, ExpiredSignatureError
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from pytrain import (
     CommandScope,
     TMCC1SwitchCommandEnum,
@@ -204,9 +204,13 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 
 # noinspection PyUnusedLocal
 @app.exception_handler(ValueError)
-async def value_exception_handler(request: Request, exc: ValueError):
+async def validation_exception_handler(request: Request, exc: ValidationError):
+    detail = ""
+    for error in exc.errors():
+        detail += "; " if detail else ""
+        detail += error["msg"]
     return JSONResponse(
-        content={"detail": str(exc), "exception": str(type(exc))},
+        content={"detail": detail},
         status_code=status.HTTP_404_NOT_FOUND,
     )
 
