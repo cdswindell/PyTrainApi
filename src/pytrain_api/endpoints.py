@@ -55,7 +55,7 @@ from .pytrain_component import (
     OnOffOption,
     SmokeOption,
 )
-from .pytrain_info import RouteInfo, SwitchInfo, AccessoryInfo, EngineInfo, TrainInfo, BlockInfo
+from .pytrain_info import RouteInfo, SwitchInfo, AccessoryInfo, EngineInfo, TrainInfo, BlockInfo, ProductInfo
 
 log = logging.getLogger(__name__)
 
@@ -594,8 +594,8 @@ class Engine(PyTrainEngine):
         return super().blow_horn(tmcc_id, option, intensity, duration)
 
     @router.get("/engine/{tmcc_id:int}/info")
-    async def get_info(self, tmcc_id: Annotated[int, Engine.id_path()]) -> dict:
-        return super().get_engine_info(tmcc_id)
+    async def get_info(self, tmcc_id: Annotated[int, Engine.id_path()]) -> ProductInfo:
+        return ProductInfo(**super().get_engine_info(tmcc_id))
 
     @router.post("/engine/{tmcc_id:int}/numeric_req")
     async def numeric_req(

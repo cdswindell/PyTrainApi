@@ -16,6 +16,33 @@ from pydantic import BaseModel, Field, model_validator, field_validator
 from .pytrain_component import Component
 
 
+class ProductInfo(BaseModel):
+    id: Annotated[int, Field(title="Product ID")]
+    skuNumber: Annotated[int, Field(title="Sku Number", description="SKU Number assigned by Lionel")]
+    blE_DecId: Annotated[int, Field(title="Bluetooth Decimal ID")]
+    blE_HexId: Annotated[str, Field(title="Bluetooth Hexadecimal ID")]
+    productFamily: Annotated[int, Field(title="Product Family")]
+    engineClass: Annotated[int, Field(title="Engine Class")]
+    engineType: Annotated[str, Field(title="Engine Type")]
+    description: Annotated[str, Field(title="Description")]
+    roadName: Annotated[str, Field(title="Road Name")]
+    roadNumber: Annotated[str, Field(title="Road Number")]
+    gauge: Annotated[str, Field(title="Gauge")]
+    pmid: Annotated[int, Field(title="Product Management ID")]
+    smoke: Annotated[bool, Field(title="Smoke")]
+    hasOnBoardSound: Annotated[bool, Field(title="Has onboard sound")]
+    appSoundFilesAvailable: Annotated[bool, Field(title="Supports sound files")]
+    blE_StreamingSoundsSupported: Annotated[bool, Field(title="Supports Bluetooth streaming sounds")]
+    appControlledLight: Annotated[bool, Field(title="Supports controllable lights")]
+    frontCoupler: Annotated[bool, Field(title="Has Front Coupler")]
+    rearCoupler: Annotated[bool, Field(title="Has Rear Coupler")]
+    sound: Annotated[bool, Field(title="Supports Legacy RailSounds")]
+    masterVolume: Annotated[bool, Field(title="Has Master Volume Control")]
+    customSound: Annotated[bool, Field(title="Supports Sound Customization")]
+    undefinedBit: Annotated[bool, Field(title="Undefined Bit")]
+    imageUrl: Annotated[str, Field(title="Engine Image URL")]
+
+
 class ComponentInfo(BaseModel):
     tmcc_id: Annotated[int, Field(title="TMCC ID", description="Assigned TMCC ID", ge=1, le=99)]
     road_name: Annotated[str | None, Field(description="Road Name assigned by user", max_length=32)]
