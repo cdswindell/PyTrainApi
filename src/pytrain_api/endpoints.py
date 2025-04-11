@@ -205,7 +205,10 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 # noinspection PyUnusedLocal
 @app.exception_handler(ValueError)
 async def value_exception_handler(request: Request, exc: ValueError):
-    return JSONResponse(content={"detail": str(exc)}, status_code=status.HTTP_404_NOT_FOUND)
+    return JSONResponse(
+        content={"detail": str(exc), "exception": str(type(exc))},
+        status_code=status.HTTP_404_NOT_FOUND,
+    )
 
 
 class Uid(BaseModel):
