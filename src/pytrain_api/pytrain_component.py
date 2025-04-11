@@ -485,6 +485,7 @@ class PyTrainEngine(PyTrainComponent):
         state = PyTrainApi.get().pytrain.store.query(self.scope, tmcc_id)
         engine_info = dict()
         if isinstance(state, EngineState) and state.bt_id:
+            print(state)
             info = ProdInfo.get_info(state.bt_id)
             if info:
                 engine_info.update()
