@@ -209,7 +209,7 @@ async def validation_exception_handler(request: Request, exc: ValidationError):
     for error in exc.errors():
         detail += "; " if detail else ""
         detail += error["msg"]
-    detail.replace("Value error, ", "")
+    detail = detail.replace("Value error, ", "")
     return JSONResponse(
         content={"detail": detail},
         status_code=status.HTTP_404_NOT_FOUND,
