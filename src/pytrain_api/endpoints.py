@@ -166,7 +166,6 @@ def get_api_token(api_key: str = Security(api_key_header)) -> bool:
 router = APIRouter(prefix="/pytrain/v1", dependencies=[Depends(get_api_token)])
 # router = APIRouter(prefix="/pytrain/v1")
 
-
 FAVICON_PATH = None
 APPLE_ICON_PATH = None
 STATIC_DIR = find_dir("static", (".", "../"))
