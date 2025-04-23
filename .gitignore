@@ -5,9 +5,9 @@ src/pytrain_api/_version.py
 .tox/
 __pycache__
  *.pyc
-/pytrain.log*
+*pytrain.log*
 .DS_Store
 /replay.txt
 /.pytrain.history
 /.env
-/cli/pytrain.log*
+
