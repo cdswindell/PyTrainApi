@@ -12,7 +12,7 @@ import os
 import secrets
 import uuid
 from datetime import timedelta, datetime, timezone
-from typing import TypeVar, Annotated
+from typing import TypeVar, Annotated, Any
 
 import jwt
 from dotenv import load_dotenv, find_dotenv
@@ -340,7 +340,7 @@ def get_components(
     contains: str = None,
     is_legacy: bool = None,
     is_tmcc: bool = None,
-) -> list[dict[str, any]]:
+) -> list[dict[str, Any]]:
     states = PyTrainApi.get().pytrain.store.query(scope)
     if states is None:
         headers = {"X-Error": "404"}

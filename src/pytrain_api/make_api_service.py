@@ -121,10 +121,10 @@ class MakeApiService:
             return None
         with open(template, "r") as f:
             template_data = f.read()
-        for key, value in self.config.items():
-            template_data = template_data.replace(key, value)
-        path = Path(self._home, "pytrain_api.bash")
+            for key, value in self.config.items():
+                template_data = template_data.replace(key, value)
         # write the shell script file
+        path = Path(self._home, "pytrain_api.bash")
         if path.exists():
             shutil.copy2(path, path.with_suffix(".bak"))
         with open(path, "w") as f:
@@ -143,8 +143,8 @@ class MakeApiService:
             return None
         with open(template, "r") as f:
             template_data = f.read()
-        for key, value in self.config.items():
-            template_data = template_data.replace(key, value)
+            for key, value in self.config.items():
+                template_data = template_data.replace(key, value)
         tmp = tempfile.NamedTemporaryFile()
         with open(tmp.name, "w") as f:
             f.write(template_data)

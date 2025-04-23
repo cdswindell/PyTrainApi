@@ -23,8 +23,9 @@ from pytrain import (
     TMCC1RRSpeedsEnum,
     TMCC2RRSpeedsEnum,
     TMCC2RailSoundsDialogControl,
+    EngineState,
 )
-from pytrain.db.component_state import ComponentState, EngineState
+from pytrain.db.component_state import ComponentState
 from pytrain.db.prod_info import ProdInfo
 from pytrain.protocol.command_def import CommandDefEnum
 from range_key_dict import RangeKeyDict
@@ -32,7 +33,6 @@ from starlette import status
 
 from .pytrain_api import PyTrainApi
 
-E = TypeVar("E", bound=CommandDefEnum)
 
 TMCC_RR_SPEED_MAP = {
     201: TMCC1RRSpeedsEnum.ROLL,
@@ -78,6 +78,7 @@ class DialogOption(str, Enum):
     TOWER_RANDOM_CHATTER = "tower chatter"
 
 
+E = TypeVar("E", bound=CommandDefEnum)
 Tmcc1DialogToCommand: dict[DialogOption, E] = {
     DialogOption.TOWER_RANDOM_CHATTER: TMCC2EngineCommandEnum.TOWER_CHATTER,
 }
@@ -176,7 +177,7 @@ class PyTrainComponent:
         else:
             return state.as_dict()
 
-    def send(self, request: E, tmcc_id: int, data: int = None) -> dict[str, any]:
+    def send(self, request: E, tmcc_id: int, data: int = None) -> dict[str, Any]:
         try:
             req = CommandReq(request, tmcc_id, data, self.scope).send()
             return {"status": f"{self.scope.title} {req} sent"}
