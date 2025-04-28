@@ -123,6 +123,7 @@ class AccessoryInfo(ComponentInfo):
 
 
 class EngineInfo(ComponentInfoIr):
+    tmcc_id: Annotated[int, Field(title="TMCC ID", description="Assigned TMCC ID", ge=1, le=9999)]
     scope: Component = Component.ENGINE
     control: str | None
     direction: str | None
