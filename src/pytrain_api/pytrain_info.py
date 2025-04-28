@@ -68,6 +68,7 @@ class RouteSwitch(BaseModel):
 
 
 class RouteInfo(ComponentInfo):
+    active: bool | None
     switches: list[RouteSwitch] | None
 
 
