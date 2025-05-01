@@ -37,6 +37,7 @@ from pytrain.pdi.asc2_req import Asc2Req
 from pytrain.pdi.bpc2_req import Bpc2Req
 from pytrain.pdi.constants import PdiCommand, Bpc2Action, Asc2Action
 from pytrain.protocol.command_def import CommandDefEnum
+from pytrain.protocol.tmcc1.tmcc1_constants import TMCC1SyncCommandEnum
 from pytrain.utils.path_utils import find_dir
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import RedirectResponse
@@ -289,12 +290,38 @@ async def echo(on: bool = True):
     return {"status": f"Echo {'enabled' if on else 'disabled'}"}
 
 
+@router.post(
+    "/system/resync",
+    summary="Resynchronize with Base 3",
+    description="Reload all state information from your Lionel Base 3.",
+)
+async def resync():
+    try:
+        CommandReq(TMCC1SyncCommandEnum.RESYNC).send()
+        return {"status": "RESYNC command sent"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @router.post("/system/stop_req")
 async def stop():
     PyTrainApi.get().pytrain.queue_command("tr 99 -s")
     PyTrainApi.get().pytrain.queue_command("en 99 -s")
     PyTrainApi.get().pytrain.queue_command("en 99 -tmcc -s")
     return {"status": "Stop all engines and trains command sent"}
+
+
+@router.post(
+    "/system/update",
+    summary=f"Update {API_NAME}",
+    description="Update {API_NAME} software from PyPi or Git Hub repository.",
+)
+async def update():
+    try:
+        CommandReq(TMCC1SyncCommandEnum.UPDATE).send()
+        return {"status": "UPDATE command sent"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post(
