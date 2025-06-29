@@ -1,4 +1,4 @@
-pytrain-ogr>=1.3.24
+pytrain-ogr>=1.3.25
 fastapi-utils>=0.8.0
 fastapi>=0.115.14
 pyjwt>=2.10.1
@@ -8,4 +8,4 @@ range-key-dict>=1.1.0
 setuptools>=80.9.0
 setuptools_scm>=8.2
 typing-inspect>=0.9.0
-uvicorn>=0.34.3
+uvicorn>=0.35.0
