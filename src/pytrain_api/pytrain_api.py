@@ -167,7 +167,7 @@ class PyTrainApi:
         # if we're a client, we need to give the server time to respond, otherwise, we
         # will connect to it as it is shutting down
         log.info(f"{API_NAME} restarting...")
-        if self._is_server is False:
+        if not self._is_server:
             sleep(10)
         # are we a service or run from the commandline?
         if self.is_service is True:
@@ -219,7 +219,7 @@ class PyTrainApi:
 
     @property
     def is_service(self) -> bool:
-        if is_linux() is False:
+        if not is_linux():
             return False
         stat = subprocess.call("systemctl is-active --quiet  pytrain_api.service".split())
         return stat == 0
@@ -228,7 +228,7 @@ class PyTrainApi:
     def command_line_parser(cls) -> PyTrainArgumentParser:
         from . import get_version
 
-        prog = "pytrain_api" if is_package() else "endpoints.py"
+        prog = "pytrain_api" if is_package() else "pytrain_api.py"
         parser = PyTrainArgumentParser(add_help=False)
 
         secrets = parser.add_argument_group(title="Management")
