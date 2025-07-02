@@ -412,7 +412,7 @@ class Accessory(PyTrainComponent):
         speed: Annotated[int, Query(description="Speed (0 - 100)", ge=0, le=100)] = None,
     ):
         if speed is not None:
-            req = Amc2Req(tmcc_id, PdiCommand.AMC2_SET, Amc2Action.MOTOR, motor=motor - 1, speed=speed)
+            req = Amc2Req(tmcc_id, PdiCommand.AMC2_SET, Amc2Action.MOTOR, motor = motor-1, speed=speed)
             req.send()
             return {"status": f"Setting Amc2 {tmcc_id} Motor {motor} Speed to {speed}"}
         return None
