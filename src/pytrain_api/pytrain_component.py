@@ -12,18 +12,18 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, TypeVar
 
-from fastapi import Path, HTTPException
+from fastapi import HTTPException, Path
 from pytrain import (
-    CommandScope,
     CommandReq,
-    TMCC1EngineCommandEnum,
-    TMCC2EngineCommandEnum,
-    SequenceCommandEnum,
-    TMCC2EffectsControl,
-    TMCC1RRSpeedsEnum,
-    TMCC2RRSpeedsEnum,
-    TMCC2RailSoundsDialogControl,
+    CommandScope,
     EngineState,
+    SequenceCommandEnum,
+    TMCC1EngineCommandEnum,
+    TMCC1RRSpeedsEnum,
+    TMCC2EffectsControl,
+    TMCC2EngineCommandEnum,
+    TMCC2RailSoundsDialogControl,
+    TMCC2RRSpeedsEnum,
 )
 from pytrain.db.component_state import ComponentState
 from pytrain.db.prod_info import ProdInfo
@@ -32,7 +32,6 @@ from range_key_dict import RangeKeyDict
 from starlette import status
 
 from .pytrain_api import PyTrainApi
-
 
 TMCC_RR_SPEED_MAP = {
     201: TMCC1RRSpeedsEnum.ROLL,
@@ -79,10 +78,12 @@ class DialogOption(str, Enum):
 
 
 E = TypeVar("E", bound=CommandDefEnum)
+# noinspection PyTypeHints
 Tmcc1DialogToCommand: dict[DialogOption, E] = {
     DialogOption.TOWER_RANDOM_CHATTER: TMCC2EngineCommandEnum.TOWER_CHATTER,
 }
 
+# noinspection PyTypeHints
 Tmcc2DialogToCommand: dict[DialogOption, E] = {
     DialogOption.ENGINEER_ACK: TMCC2RailSoundsDialogControl.ENGINEER_ACK,
     DialogOption.ENGINEER_ID: TMCC2RailSoundsDialogControl.ENGINEER_ID,
@@ -199,7 +200,7 @@ class PyTrainComponent:
                 cmd_req = cmd_def
             else:
                 cmd_req = CommandReq.build(cmd_def, tmcc_id, data, self.scope)
-            if submit is True:
+            if submit:
                 repeat = repeat if repeat and repeat >= 1 else 1
                 duration = duration if duration is not None else 0
                 delay = delay if delay is not None else 0
@@ -238,9 +239,9 @@ class PyTrainEngine(PyTrainComponent):
         except ValueError:
             pass
         tmcc = self.tmcc(tmcc_id)
-        if immediate is True:
+        if immediate:
             cmd_def = TMCC1EngineCommandEnum.ABSOLUTE_SPEED if tmcc is True else TMCC2EngineCommandEnum.ABSOLUTE_SPEED
-        elif dialog is True:
+        elif dialog:
             cmd_def = SequenceCommandEnum.RAMPED_SPEED_DIALOG_SEQ
         else:
             cmd_def = SequenceCommandEnum.RAMPED_SPEED_SEQ
@@ -297,7 +298,7 @@ class PyTrainEngine(PyTrainComponent):
             )
 
     def startup(self, tmcc_id: int, dialog: bool = False):
-        if self.tmcc(tmcc_id) is True:
+        if self.tmcc(tmcc_id):
             cmd = TMCC1EngineCommandEnum.START_UP_IMMEDIATE
         else:
             cmd = (
@@ -307,7 +308,7 @@ class PyTrainEngine(PyTrainComponent):
         return {"status": f"{self.scope.title} {tmcc_id} starting up..."}
 
     def shutdown(self, tmcc_id: int, dialog: bool = False):
-        if self.tmcc(tmcc_id) is True:
+        if self.tmcc(tmcc_id):
             cmd = TMCC1EngineCommandEnum.SHUTDOWN_IMMEDIATE
         else:
             cmd = (

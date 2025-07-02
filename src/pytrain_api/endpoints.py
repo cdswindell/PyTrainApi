@@ -11,31 +11,32 @@ import logging
 import os
 import secrets
 import uuid
-from datetime import timedelta, datetime, timezone
-from typing import TypeVar, Annotated, Any
+from datetime import datetime, timedelta, timezone
+from typing import Annotated, Any, TypeVar
 
 import jwt
-from dotenv import load_dotenv, find_dotenv
-from fastapi import HTTPException, Request, APIRouter, Path, Query, Depends, status, FastAPI, Security, Body
+from dotenv import find_dotenv, load_dotenv
+from fastapi import APIRouter, Body, Depends, FastAPI, HTTPException, Path, Query, Request, Security, status
 from fastapi.openapi.docs import get_swagger_ui_html
-from fastapi.responses import JSONResponse, FileResponse
-from fastapi.security import OAuth2PasswordBearer, APIKeyHeader
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.security import APIKeyHeader, OAuth2PasswordBearer
 from fastapi_utils.cbv import cbv
-from jwt import InvalidSignatureError, ExpiredSignatureError
+from jwt import ExpiredSignatureError, InvalidSignatureError
 from pydantic import BaseModel, ValidationError
 from pytrain import (
-    CommandScope,
-    TMCC1SwitchCommandEnum,
-    CommandReq,
-    TMCC1HaltCommandEnum,
     PROGRAM_NAME,
-    TMCC1RouteCommandEnum,
+    CommandReq,
+    CommandScope,
     TMCC1AuxCommandEnum,
+    TMCC1HaltCommandEnum,
+    TMCC1RouteCommandEnum,
+    TMCC1SwitchCommandEnum,
 )
 from pytrain import get_version as pytrain_get_version
+from pytrain.pdi.amc2_req import Amc2Req
 from pytrain.pdi.asc2_req import Asc2Req
 from pytrain.pdi.bpc2_req import Bpc2Req
-from pytrain.pdi.constants import PdiCommand, Bpc2Action, Asc2Action
+from pytrain.pdi.constants import Amc2Action, Asc2Action, Bpc2Action, PdiCommand
 from pytrain.protocol.command_def import CommandDefEnum
 from pytrain.protocol.tmcc1.tmcc1_constants import TMCC1SyncCommandEnum
 from pytrain.utils.path_utils import find_dir
@@ -46,17 +47,17 @@ from starlette.staticfiles import StaticFiles
 from . import get_version
 from .pytrain_api import API_NAME, PyTrainApi
 from .pytrain_component import (
-    PyTrainComponent,
-    PyTrainEngine,
     AuxOption,
     BellOption,
     Component,
     DialogOption,
     HornOption,
     OnOffOption,
+    PyTrainComponent,
+    PyTrainEngine,
     SmokeOption,
 )
-from .pytrain_info import RouteInfo, SwitchInfo, AccessoryInfo, EngineInfo, TrainInfo, BlockInfo, ProductInfo
+from .pytrain_info import AccessoryInfo, BlockInfo, EngineInfo, ProductInfo, RouteInfo, SwitchInfo, TrainInfo
 
 log = logging.getLogger(__name__)
 
@@ -171,10 +172,10 @@ FAVICON_PATH = None
 APPLE_ICON_PATH = None
 STATIC_DIR = find_dir("static", (".", "../"))
 if STATIC_DIR:
-    if os.path.isfile(f"{STATIC_DIR}/favicon.ico") is True:
+    if os.path.isfile(f"{STATIC_DIR}/favicon.ico"):
         app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
         FAVICON_PATH = f"{STATIC_DIR}/favicon.ico"
-    if os.path.isfile(f"{STATIC_DIR}/apple-touch-icon.png") is True:
+    if os.path.isfile(f"{STATIC_DIR}/apple-touch-icon.png"):
         APPLE_ICON_PATH = FAVICON_PATH = f"{STATIC_DIR}/apple-touch-icon.png"
 
 
@@ -401,6 +402,30 @@ class Accessory(PyTrainComponent):
     @router.get("/accessory/{tmcc_id}")
     async def get_accessory(self, tmcc_id: Annotated[int, Accessory.id_path()]) -> AccessoryInfo:
         return AccessoryInfo(**super().get(tmcc_id))
+
+    @router.post("/accessory/{tmcc_id}/amc2_motor_req")
+    async def amc2_motor(
+        self,
+        tmcc_id: Annotated[int, Accessory.id_path()],
+        motor: Annotated[int, Query(description="Motor (1 - 2)", ge=1, le=2)],
+        state: Annotated[OnOffOption, Query(description="On or Off")] = None,
+        speed: Annotated[int, Query(description="Speed (0 - 100)", ge=0, le=100)] = None,
+    ):
+        if speed is not None:
+            req = Amc2Req(tmcc_id, PdiCommand.AMC2_SET, Amc2Action.MOTOR, motor=motor - 1, speed=speed)
+            req.send()
+            return {"status": f"Setting Amc2 {tmcc_id} Motor {motor} Speed to {speed}"}
+        return None
+
+    @router.post("/accessory/{tmcc_id}/amc2_lamp_req")
+    async def amc2_lamp(
+        self,
+        tmcc_id: Annotated[int, Accessory.id_path()],
+        lamp: Annotated[int, Query(description="Lamp (1 - 4)", ge=1, le=4)],
+        state: Annotated[OnOffOption, Query(description="On or Off")] = None,
+        level: Annotated[int, Query(description="Brightness Level (0 - 100)", ge=0, le=100)] = None,
+    ):
+        pass
 
     @router.post("/accessory/{tmcc_id}/asc2_req")
     async def asc2(
@@ -665,7 +690,7 @@ class Engine(PyTrainEngine):
         hold: Annotated[bool, Query(title="refuel", description="If true, perform refuel operation")] = False,
         duration: Annotated[int, Query(description="Refueling time (seconds)", ge=3)] = 3,
     ):
-        if hold is True:
+        if hold:
             duration = duration if duration and duration > 3 else 3
         else:
             duration = None
@@ -873,7 +898,7 @@ class Train(PyTrainEngine):
         hold: Annotated[bool, Query(title="refuel", description="If true, perform refuel operation")] = False,
         duration: Annotated[int, Query(description="Refueling time (seconds)", ge=3)] = 3,
     ):
-        if hold is True:
+        if hold:
             duration = duration if duration and duration > 3 else 3
         else:
             duration = None
