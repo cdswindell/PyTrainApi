@@ -411,11 +411,17 @@ class Accessory(PyTrainComponent):
         state: Annotated[OnOffOption, Query(description="On or Off")] = None,
         speed: Annotated[int, Query(description="Speed (0 - 100)", ge=0, le=100)] = None,
     ):
+        if state:
+            CommandReq(TMCC1AuxCommandEnum.NUMERIC, tmcc_id, data=motor).send()
+            CommandReq(
+                TMCC1AuxCommandEnum.AUX1_OPT_ONE if state == OnOffOption.ON else TMCC1AuxCommandEnum.AUX2_OPT_ONE,
+                tmcc_id,
+            ).send()
+            return {"status": f"Setting Amc2 {tmcc_id} Motor {motor} to {state.name}"}
         if speed is not None:
-            req = Amc2Req(tmcc_id, PdiCommand.AMC2_SET, Amc2Action.MOTOR, motor = motor-1, speed=speed)
-            req.send()
+            Amc2Req(tmcc_id, PdiCommand.AMC2_SET, Amc2Action.MOTOR, motor=motor - 1, speed=speed).send()
             return {"status": f"Setting Amc2 {tmcc_id} Motor {motor} Speed to {speed}"}
-        return None
+        raise HTTPException(status_code=400, detail="Must specify either motor state or speed.")
 
     @router.post("/accessory/{tmcc_id}/amc2_lamp_req")
     async def amc2_lamp(
@@ -425,7 +431,17 @@ class Accessory(PyTrainComponent):
         state: Annotated[OnOffOption, Query(description="On or Off")] = None,
         level: Annotated[int, Query(description="Brightness Level (0 - 100)", ge=0, le=100)] = None,
     ):
-        pass
+        if state:
+            CommandReq(TMCC1AuxCommandEnum.NUMERIC, tmcc_id, data=lamp + 2).send()
+            CommandReq(
+                TMCC1AuxCommandEnum.AUX1_OPT_ONE if state == OnOffOption.ON else TMCC1AuxCommandEnum.AUX2_OPT_ONE,
+                tmcc_id,
+            ).send()
+            return {"status": f"Setting Amc2 {tmcc_id} Lamp {lamp} to {state.name}"}
+        if level is not None:
+            Amc2Req(tmcc_id, PdiCommand.AMC2_SET, Amc2Action.LAMP, lamp=lamp - 1, level=level).send()
+            return {"status": f"Setting Amc2 {tmcc_id} Lamp {lamp} Speed to {level}"}
+        raise HTTPException(status_code=400, detail="Must specify either lamp state or level.")
 
     @router.post("/accessory/{tmcc_id}/asc2_req")
     async def asc2(
