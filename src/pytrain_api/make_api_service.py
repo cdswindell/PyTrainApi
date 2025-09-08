@@ -22,7 +22,7 @@ from typing import Dict
 from pytrain import is_linux
 from pytrain.utils.path_utils import find_dir, find_file
 
-from . import is_package, get_version
+from . import get_version, is_package
 from .pytrain_api import API_NAME
 
 
@@ -50,6 +50,10 @@ class MakeApiService:
             args = self.command_line_parser().parse_args()
         self._args = args
 
+        if args.remove is True:
+            self.deactivate_and_remove_services()
+            return
+
         self._template_dir = find_dir("static", (".", "../", "src"))
         if self._template_dir is None:
             print("\nUnable to locate directory with installation templates. Exiting")
@@ -65,32 +69,32 @@ class MakeApiService:
         if self._user is None:
             print("\nA valid Raspberry Pi username is required")
             return
-        elif self.validate_username(self._user) is False:
+        elif not self.validate_username(self._user):
             print(f"\nUser '{self._user}' does not exist on this system. Exiting.")
             return
 
-        # if server, verify a base 3 and/or ser2 is specified
+        # if server, verify base 3 and/or ser2 is specified
         self._ser2 = args.ser2 is True
         if args.base is None:
             self._base_ip = None
         else:
             self._base_ip = args.base if args.base and args.base != "search" else "search"
             if self._base_ip != "search":
-                if self.is_valid_ip(self._base_ip) is False:
+                if not self.is_valid_ip(self._base_ip):
                     print(f"\nInvalid IP address '{self._base_ip}'. Exiting")
                     return
             else:
                 self._base_ip = ""  # an empty value causes PyTrain to search for the base
         if args.mode == "server" and args.base is None and args.ser2 is False:
-            print("\nA Lionel Base IP address or Ser2 is required when configuring as a server. Exiting")
+            print("\nA Lionel Base 3 IP address or LCS Ser2 is required when configuring as a server. Exiting")
             return
 
         # verify client args
         if args.mode == "client":
             if self._base_ip is not None:
-                print("\nA Lionel Base IP address is not required when configuring as a client. Continuing")
+                print("\nA Lionel Base 3 IP address is not required when configuring as a client. Continuing")
             if args.ser2 is True:
-                print("\nA Ser2 is not required when configuring as a client. Continuing")
+                print("\nAn LCS Ser2 is not required when configuring as a client. Continuing")
 
         self._exe = "pytrain_api" if is_package() else "cli/pytrain_api.py"
         self._cmd_line = self.command_line
@@ -134,7 +138,7 @@ class MakeApiService:
         return path
 
     def install_service(self) -> str | None:
-        if is_linux() is False:
+        if not is_linux():
             print(f"\nPlease run {self._prog} from a Raspberry Pi. Exiting")
             return None
         template = find_file("pytrain_api.service.template", (".", "../", "src"))
@@ -187,6 +191,39 @@ class MakeApiService:
             )
             print(f"\n{API_NAME} service started...")
         return service
+
+    @staticmethod
+    def is_service_present(service: str) -> bool:
+        cmd = f"sudo systemctl status {service}.service"
+        result = subprocess.run(cmd.split(), capture_output=True)
+        if result.returncode == 4 or os.path.exists(f"/etc/systemd/system/{service}.service") is False:
+            return False
+        else:
+            return True
+
+    @staticmethod
+    def deactivate_service(service: str) -> None:
+        subprocess.run(f"sudo systemctl stop {service}.service".split())
+        subprocess.run(f"sudo systemctl disable {service}.service".split())
+        subprocess.run(f"sudo rm -fr /etc/systemd/system/{service}.service".split())
+        subprocess.run("sudo systemctl daemon-reload".split())
+        subprocess.run("sudo systemctl reset-failed".split())
+
+    def deactivate_and_remove_services(self):
+        if platform.system().lower() != "linux":
+            print(f"\nPlease run {self._prog} from a Raspberry Pi. Exiting")
+            return
+
+        if not self.is_service_present("pytrain_api"):
+            print(f"\nNo {API_NAME} server is currently running. Exiting")
+            return
+        if self.confirm(f"Are you sure you want to deactivate and remove {API_NAME} server?"):
+            path = Path(self._home, "pytrain_api.bash")
+            if path.exists():
+                print(f"\nRemoving {path}...")
+                path.unlink(missing_ok=True)
+            print(f"\nDeactivating {API_NAME} server service...")
+            self.deactivate_service("pytrain_api")
 
     @property
     def is_client(self) -> bool:
@@ -266,6 +303,11 @@ class MakeApiService:
             const="server",
             dest="mode",
             help=f"Configure this node as a {API_NAME} server",
+        )
+        mode_group.add_argument(
+            "-remove",
+            action="store_true",
+            help=f"Deactivate and remove any existing {API_NAME} server service",
         )
         mode_group.set_defaults(mode="client")
         server_opts = parser.add_argument_group("Server options")
