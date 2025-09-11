@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from pydantic import BaseModel, Field, model_validator, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from .pytrain_component import Component
 
@@ -67,9 +67,14 @@ class RouteSwitch(BaseModel):
     position: str
 
 
+class SubRoute(BaseModel):
+    route: int
+
+
 class RouteInfo(ComponentInfo):
     active: bool | None
     switches: list[RouteSwitch] | None
+    routes: list[SubRoute] | None
 
 
 class SwitchInfo(ComponentInfo):
