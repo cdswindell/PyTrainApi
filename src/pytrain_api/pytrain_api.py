@@ -20,7 +20,7 @@ from typing import cast
 
 import uvicorn
 from dotenv import find_dotenv, load_dotenv
-from pytrain import PyTrain, PyTrainExitStatus, is_linux, PROGRAM_NAME
+from pytrain import PROGRAM_NAME, PyTrain, PyTrainExitStatus, is_linux
 from pytrain.utils.argument_parser import PyTrainArgumentParser
 
 from . import is_package
@@ -58,7 +58,7 @@ class PyTrainApi:
 
     def __init__(self, cmd_line: list[str] | None = None) -> None:
         from . import get_version
-        from .endpoints import app, API_SERVER
+        from .endpoints import API_SERVER, app
 
         if self._initialized:
             return
@@ -170,7 +170,7 @@ class PyTrainApi:
         if not self._is_server:
             sleep(10)
         # are we a service or run from the commandline?
-        if self.is_service is True:
+        if self.is_service:
             # restart service
             os.system("sudo systemctl restart pytrain_api.service")
         else:
@@ -286,7 +286,7 @@ class PyTrainApi:
 
     @staticmethod
     def write_env() -> None:
-        from .endpoints import create_secret, create_api_token, DEFAULT_API_SERVER_VALUE
+        from .endpoints import DEFAULT_API_SERVER_VALUE, create_api_token, create_secret
 
         api_server = DEFAULT_API_SERVER_VALUE
         algorithm = "HS256"

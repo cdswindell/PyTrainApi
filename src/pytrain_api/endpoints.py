@@ -573,6 +573,7 @@ async def get_blocks(contains: str = None) -> list[BlockInfo]:
 
 @cbv(router)
 class Block(PyTrainComponent):
+    # noinspection PyTypeHints
     @classmethod
     def id_path(cls, label: str = None, min_val: int = 1, max_val: int = 99) -> Path:
         label = label if label else cls.__name__.replace("PyTrain", "")
@@ -606,6 +607,7 @@ async def get_engines(contains: str = None, is_legacy: bool = None, is_tmcc: boo
 
 @cbv(router)
 class Engine(PyTrainEngine):
+    # noinspection PyTypeHints
     @classmethod
     def id_path(cls, label: str = None, min_val: int = 1, max_val: int = 9999) -> Path:
         label = label if label else cls.__name__.replace("PyTrain", "")
@@ -828,6 +830,17 @@ async def get_trains(contains: str = None, is_legacy: bool = None, is_tmcc: bool
 
 @cbv(router)
 class Train(PyTrainEngine):
+    # noinspection PyTypeHints
+    @classmethod
+    def id_path(cls, label: str = None, min_val: int = 1, max_val: int = 9999) -> Path:
+        label = label if label else cls.__name__.replace("PyTrain", "")
+        return Path(
+            title="TMCC ID",
+            description=f"{label}'s TMCC ID",
+            ge=min_val,
+            le=max_val,
+        )
+
     def __init__(self):
         super().__init__(CommandScope.TRAIN)
 
