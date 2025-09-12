@@ -292,7 +292,20 @@ async def echo(on: bool = True):
 
 
 @router.post(
-    "/system/resync",
+    "/system/reboot_req",
+    summary=f"Reboot {PROGRAM_NAME}",
+    description=f"Reboot {PROGRAM_NAME} server and all clients.",
+)
+async def reboot():
+    try:
+        CommandReq(TMCC1SyncCommandEnum.REBOOT).send()
+        return {"status": "REBOOT command sent"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post(
+    "/system/resync_req",
     summary="Resynchronize with Base 3",
     description="Reload all state information from your Lionel Base 3.",
 )
@@ -300,6 +313,19 @@ async def resync():
     try:
         CommandReq(TMCC1SyncCommandEnum.RESYNC).send()
         return {"status": "RESYNC command sent"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post(
+    "/system/shutdown_req",
+    summary=f"Shutdown {PROGRAM_NAME}",
+    description=f"Shutdown {PROGRAM_NAME} server and all clients.",
+)
+async def shutdown():
+    try:
+        CommandReq(TMCC1SyncCommandEnum.SHUTDOWN).send()
+        return {"status": "SHUTDOWN command sent"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -313,14 +339,31 @@ async def stop():
 
 
 @router.post(
-    "/system/update",
+    "/system/update_req",
     summary=f"Update {API_NAME}",
-    description="Update {API_NAME} software from PyPi or Git Hub repository.",
+    description=f"Update {API_NAME} software from PyPi or Git Hub repository.",
 )
 async def update():
     try:
         CommandReq(TMCC1SyncCommandEnum.UPDATE).send()
         return {"status": "UPDATE command sent"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post(
+    "/system/version_req",
+    summary=f"Get {API_NAME} Version",
+    description=f"Get {API_NAME} software version.",
+)
+async def get_version():
+    try:
+        from . import get_version
+
+        return {
+            "pytrain": pytrain_get_version(),
+            "pytrain_api": get_version(),
+        }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
