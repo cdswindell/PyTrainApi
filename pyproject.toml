@@ -28,7 +28,7 @@ classifiers = [
 license = { file = "LICENSE" }
 
 dependencies = [
-    "pytrain-ogr >= 1.4.37",
+    "pytrain-ogr >= 1.4.38",
     "fastapi >= 0.123.5",
     "fastapi-utils >= 0.8.0",
     "pyjwt >= 2.10.1",
