@@ -443,13 +443,13 @@ class Accessory(PyTrainComponent):
         super().__init__(CommandScope.ACC)
 
     @router.get("/accessory/{tmcc_id}")
-    async def get_accessory(self, tmcc_id: Annotated[int, Accessory.id_path()]) -> AccessoryInfo:
+    async def get_accessory(self, tmcc_id: Annotated[int, PyTrainComponent.id_path()]) -> AccessoryInfo:
         return AccessoryInfo(**super().get(tmcc_id))
 
     @router.post("/accessory/{tmcc_id}/amc2_motor_req")
     async def amc2_motor(
         self,
-        tmcc_id: Annotated[int, Accessory.id_path()],
+        tmcc_id: Annotated[int, PyTrainComponent.id_path()],
         motor: Annotated[int, Query(description="Motor (1 - 2)", ge=1, le=2)],
         state: Annotated[OnOffOption, Query(description="On or Off")] = None,
         speed: Annotated[int, Query(description="Speed (0 - 100)", ge=0, le=100)] = None,
@@ -469,7 +469,7 @@ class Accessory(PyTrainComponent):
     @router.post("/accessory/{tmcc_id}/amc2_lamp_req")
     async def amc2_lamp(
         self,
-        tmcc_id: Annotated[int, Accessory.id_path()],
+        tmcc_id: Annotated[int, PyTrainComponent.id_path()],
         lamp: Annotated[int, Query(description="Lamp (1 - 4)", ge=1, le=4)],
         state: Annotated[OnOffOption, Query(description="On or Off")] = None,
         level: Annotated[int, Query(description="Brightness Level (0 - 100)", ge=0, le=100)] = None,
@@ -489,7 +489,7 @@ class Accessory(PyTrainComponent):
     @router.post("/accessory/{tmcc_id}/asc2_req")
     async def asc2(
         self,
-        tmcc_id: Annotated[int, Accessory.id_path()],
+        tmcc_id: Annotated[int, PyTrainComponent.id_path()],
         state: Annotated[OnOffOption, Query(description="On or Off")],
         duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
@@ -518,7 +518,7 @@ class Accessory(PyTrainComponent):
     @router.post("/accessory/{tmcc_id}/boost_req")
     async def boost(
         self,
-        tmcc_id: Annotated[int, Accessory.id_path()],
+        tmcc_id: Annotated[int, PyTrainComponent.id_path()],
         duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
         self.do_request(TMCC1AuxCommandEnum.BOOST, tmcc_id, duration=duration)
@@ -528,7 +528,7 @@ class Accessory(PyTrainComponent):
     @router.post("/accessory/{tmcc_id}/bpc2_req")
     async def bpc2(
         self,
-        tmcc_id: Annotated[int, Accessory.id_path()],
+        tmcc_id: Annotated[int, PyTrainComponent.id_path()],
         state: Annotated[OnOffOption, Query(description="On or Off")],
     ):
         try:
@@ -542,7 +542,7 @@ class Accessory(PyTrainComponent):
     @router.post("/accessory/{tmcc_id}/brake_req")
     async def brake(
         self,
-        tmcc_id: Annotated[int, Accessory.id_path()],
+        tmcc_id: Annotated[int, PyTrainComponent.id_path()],
         duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
         self.do_request(TMCC1AuxCommandEnum.BRAKE, tmcc_id, duration=duration)
@@ -552,7 +552,7 @@ class Accessory(PyTrainComponent):
     @router.post("/accessory/{tmcc_id}/front_coupler_req")
     async def front_coupler(
         self,
-        tmcc_id: Annotated[int, Accessory.id_path()],
+        tmcc_id: Annotated[int, PyTrainComponent.id_path()],
         duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
         self.do_request(TMCC1AuxCommandEnum.FRONT_COUPLER, tmcc_id, duration=duration)
@@ -562,7 +562,7 @@ class Accessory(PyTrainComponent):
     @router.post("/accessory/{tmcc_id}/numeric_req")
     async def numeric(
         self,
-        tmcc_id: Annotated[int, Accessory.id_path()],
+        tmcc_id: Annotated[int, PyTrainComponent.id_path()],
         number: Annotated[int, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
         duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
@@ -573,7 +573,7 @@ class Accessory(PyTrainComponent):
     @router.post("/accessory/{tmcc_id}/rear_coupler_req")
     async def rear_coupler(
         self,
-        tmcc_id: Annotated[int, Accessory.id_path()],
+        tmcc_id: Annotated[int, PyTrainComponent.id_path()],
         duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
         self.do_request(TMCC1AuxCommandEnum.REAR_COUPLER, tmcc_id, duration=duration)
@@ -583,7 +583,7 @@ class Accessory(PyTrainComponent):
     @router.post("/accessory/{tmcc_id}/speed_req/{speed}")
     async def speed(
         self,
-        tmcc_id: Annotated[int, Accessory.id_path()],
+        tmcc_id: Annotated[int, PyTrainComponent.id_path()],
         speed: Annotated[int, Path(description="Relative speed (-5 - 5)", ge=-5, le=5)],
         duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
@@ -594,7 +594,7 @@ class Accessory(PyTrainComponent):
     @router.post("/accessory/{tmcc_id}/{aux_req}")
     async def operate_accessory(
         self,
-        tmcc_id: Annotated[int, Accessory.id_path()],
+        tmcc_id: Annotated[int, PyTrainComponent.id_path()],
         aux_req: Annotated[AuxOption, Path(description="Aux 1, Aux2, or Aux 3")],
         duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
