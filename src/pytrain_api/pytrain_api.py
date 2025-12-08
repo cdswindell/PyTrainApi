@@ -221,7 +221,7 @@ class PyTrainApi:
     def is_service(self) -> bool:
         if not is_linux():
             return False
-        stat = subprocess.call("systemctl is-active --quiet  pytrain_api.service".split())
+        stat = subprocess.call("systemctl is-active --quiet pytrain_api.service".split())
         return stat == 0
 
     @classmethod
