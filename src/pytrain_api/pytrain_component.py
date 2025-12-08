@@ -421,7 +421,7 @@ class PyTrainEngine(PyTrainComponent):
             self.do_request(TMCC1EngineCommandEnum.VOLUME_DOWN, tmcc_id)
         else:
             self.do_request(TMCC2EngineCommandEnum.VOLUME_DOWN, tmcc_id)
-        return {"status": f"{self.scope.title} {tmcc_id} volume up..."}
+        return {"status": f"{self.scope.title} {tmcc_id} volume down..."}
 
     def blow_horn(self, tmcc_id: int, option: HornOption, intensity: int = 10, duration: float = None):
         if self.is_tmcc(tmcc_id):
