@@ -872,7 +872,7 @@ class Route(PyTrainComponent):
         super().__init__(CommandScope.ROUTE)
 
     @router.get("/route/{tmcc_id}", response_model=RouteInfo)
-    async def get_route(self, tmcc_id: Annotated[int, Route.id_path()]):
+    async def get_route(self, tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Route")]):
         return RouteInfo(**super().get(tmcc_id))
 
     @router.post("/route/{tmcc_id}/fire_req")
