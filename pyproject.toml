@@ -28,8 +28,8 @@ classifiers = [
 license = { file = "LICENSE" }
 
 dependencies = [
-    "pytrain-ogr >= 1.4.42",
-    "fastapi >= 0.124.0",
+    "pytrain-ogr >= 1.4.46",
+    "fastapi >= 0.124.2",
     "fastapi-utils >= 0.8.0",
     "pyjwt >= 2.10.1",
     "python-dotenv >= 1.1.1",
@@ -74,10 +74,10 @@ Homepage = "https://github.com/cdswindell/PyTrainApi"
 Source = "https://github.com/cdswindell/PyTrainApi"
 Issues = "https://github.com/cdswindell/PyTrainApi/issues"
 
+[tool.ruff]
+line-length = 120
+extend-exclude = ["test"]
+
 [tool.ruff.lint]
 select = ["E", "F", "W"]
 ignore = ["F403", "F405"]
-line-length = 120
-
-[tool.ruff]
-extend-exclude = ["test"]
