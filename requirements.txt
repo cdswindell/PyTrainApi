@@ -1,6 +1,6 @@
-pytrain-ogr>=1.4.46
+pytrain-ogr>=1.4.58
 fastapi-utils>=0.8.0
-fastapi>=0.124.2
+fastapi>=0.124.4
 pyjwt>=2.10.1
 python-dotenv>=1.2.1
 python_multipart>=0.0.20
