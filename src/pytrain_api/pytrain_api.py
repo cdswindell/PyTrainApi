@@ -183,6 +183,7 @@ class PyTrainApi:
         os.system(f"cd {os.getcwd()}; pip install -U pip")
         if is_package():
             # upgrade from Pypi
+            log.info(f"Executing: cd {os.getcwd()}; pip install -U {API_PACKAGE}")
             os.system(f"cd {os.getcwd()}; pip install -U {API_PACKAGE}")
         else:
             # upgrade from github
