@@ -9,11 +9,11 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal, Union
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from .pytrain_component import Component
+from .pytrain_component import Component, HornOption
 
 
 class ProductInfo(BaseModel):
@@ -150,6 +150,40 @@ class TrainInfo(EngineInfo):
     scope: Component = Component.TRAIN
     flags: int | None
     components: dict[int, str] | None
+
+
+class HornGrade(BaseModel):
+    option: Literal[HornOption.GRADE]
+
+
+class HornSound(BaseModel):
+    option: Literal[HornOption.SOUND]
+    duration: float | None = Field(
+        None,
+        gt=0.0,
+        description="Duration (seconds)",
+    )
+
+
+class HornQuilling(BaseModel):
+    option: Literal[HornOption.QUILLING]
+    intensity: int = Field(
+        10,
+        ge=0,
+        le=15,
+        description="Quilling horn intensity (Legacy engines only)",
+    )
+    duration: float | None = Field(
+        None,
+        gt=0.0,
+        description="Duration (seconds)",
+    )
+
+
+HornCommand = Annotated[
+    Union[HornSound, HornGrade, HornQuilling],
+    Field(discriminator="option"),
+]
 
 
 class SpeedCommand(BaseModel):
