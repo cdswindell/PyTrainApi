@@ -821,15 +821,9 @@ class Engine(PyTrainEngine):
     ):
         return self.dialog(tmcc_id, dialog)
 
-    @router.post("/engine/{tmcc_id:int}/forward_req", tags=["Legacy"], name="Engine.ForwardReq")
-    async def forward_req(
-        self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
-    ):
-        return super().forward(tmcc_id)
-
+    @legacy_post(router, "/engine/{tmcc_id:int}/forward_req", name="Engine.ForwardReq")
     @mobile_post(router, "/engine/{tmcc_id:int}/forward", name="Engine.Forward")
-    async def forward_cmd(
+    async def forward_req(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
     ):
@@ -843,7 +837,7 @@ class Engine(PyTrainEngine):
     ):
         return super().front_coupler(tmcc_id)
 
-    @router.post("/engine/{tmcc_id:int}/horn_req", tags=["Legacy"])
+    @legacy_post(router, "/engine/{tmcc_id:int}/horn_req", name="Engine.BlowHornReq")
     async def blow_horn_req(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
@@ -906,7 +900,7 @@ class Engine(PyTrainEngine):
     ):
         return super().rear_coupler(tmcc_id)
 
-    @router.post("/engine/{tmcc_id:int}/reset_req", tags=["Legacy"])
+    @legacy_post(router, "/engine/{tmcc_id:int}/reset_req", name="Engine.ResetReq")
     async def reset(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
@@ -980,7 +974,7 @@ class Engine(PyTrainEngine):
     ):
         return super().smoke(tmcc_id, level=level)
 
-    @router.post("/engine/{tmcc_id:int}/speed_req/{speed}", tags=["Legacy"])
+    @legacy_post(router, "/engine/{tmcc_id:int}/speed_req/{speed}", name="Engine.SpeedReq")
     async def speed_req(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
@@ -1216,7 +1210,7 @@ class Switch(PyTrainComponent):
         ):
             return super().rear_coupler(tmcc_id)
 
-        @router.post("/train/{tmcc_id:int}/horn_req")
+        @legacy_post(router, "/train/{tmcc_id:int}/horn_req", name="Train.BlowHornReq")
         async def blow_horn(
             self,
             tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
