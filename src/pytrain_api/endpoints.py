@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -177,11 +178,30 @@ def get_api_token(api_key: str = Security(api_key_header)) -> bool:
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid API key")
 
 
+_CAMEL_RE = re.compile(r"(?<!^)(?=[A-Z])")
+
+
+def _split_camel(word: str) -> str:
+    """
+    Split CamelCase words into space-separated words.
+    Examples:
+      VolumeUp -> Volume Up
+      Aux1On   -> Aux1 On
+    """
+    return _CAMEL_RE.sub(" ", word)
+
+
 def _summary_from_name(name: str) -> str:
-    # "Engine.Forward" -> "Engine Forward"
-    # "Engine.Horn" -> "Engine Horn"
+    """
+    Convert dotted endpoint names into human-friendly summaries.
+
+    Examples:
+      Engine.Forward      -> Engine Forward
+      Engine.VolumeUp     -> Engine Volume Up
+      Train.FrontCoupler  -> Train Front Coupler
+    """
     parts = [p for p in name.split(".") if p]
-    return " ".join(parts)
+    return " ".join(_split_camel(p) for p in parts)
 
 
 def mobile_post(
@@ -761,11 +781,7 @@ class Engine(PyTrainEngine):
 
     @router.post("/engine/{tmcc_id:int}/front_coupler_req", tags=["Legacy"])
     @mobile_post(
-        router,
-        "/engine/{tmcc_id:int}/front_coupler",
-        operation_id="Engine_front_coupler",
-        name="Engine.FrontCoupler",
-        summary="Front Coupler",
+        router, "/engine/{tmcc_id:int}/front_coupler", operation_id="Engine_front_coupler", name="Engine.FrontCoupler"
     )
     async def front_coupler(
         self,
@@ -822,11 +838,7 @@ class Engine(PyTrainEngine):
 
     @router.post("/engine/{tmcc_id:int}/rear_coupler_req", tags=["Legacy"])
     @mobile_post(
-        router,
-        "/engine/{tmcc_id:int}/rear_coupler",
-        operation_id="Engine_rear_coupler",
-        name="Engine.RearCoupler",
-        summary="Rear Coupler",
+        router, "/engine/{tmcc_id:int}/rear_coupler", operation_id="Engine_rear_coupler", name="Engine.RearCoupler"
     )
     async def rear_coupler(
         self,
@@ -951,7 +963,6 @@ class Engine(PyTrainEngine):
         "/engine/{tmcc_id:int}/toggle_direction",
         operation_id="Engine_toggle_direction",
         name="Engine.ToggleDirection",
-        summary="Toggle Direction",
     )
     async def toggle_direction(
         self,
@@ -961,11 +972,7 @@ class Engine(PyTrainEngine):
 
     @router.post("/engine/{tmcc_id:int}/volume_down_req", tags=["Legacy"])
     @mobile_post(
-        router,
-        "/engine/{tmcc_id:int}/volume_down",
-        operation_id="Engine_volume_down",
-        name="Engine.VolumeDown",
-        summary="Volume Down",
+        router, "/engine/{tmcc_id:int}/volume_down", operation_id="Engine_volume_down", name="Engine.VolumeDown"
     )
     async def volume_down(
         self,
@@ -974,13 +981,7 @@ class Engine(PyTrainEngine):
         return super().volume_down(tmcc_id)
 
     @router.post("/engine/{tmcc_id:int}/volume_up_req", tags=["Legacy"])
-    @mobile_post(
-        router,
-        "/engine/{tmcc_id:int}/volume_up",
-        operation_id="Engine_volume_up",
-        name="Engine.VolumeUp",
-        summary="Volume Up",
-    )
+    @mobile_post(router, "/engine/{tmcc_id:int}/volume_up", operation_id="Engine_volume_up", name="Engine.VolumeUp")
     async def volume_up(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
