@@ -11,9 +11,9 @@ from __future__ import annotations
 
 from typing import Annotated, Any, Literal, Union
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from .pytrain_component import Component, HornOption
+from .pytrain_component import Component
 
 
 class ProductInfo(BaseModel):
@@ -153,31 +153,21 @@ class TrainInfo(EngineInfo):
 
 
 class HornGrade(BaseModel):
-    option: Literal[HornOption.GRADE]
+    model_config = ConfigDict(extra="forbid")
+    option: Literal["grade"]
 
 
 class HornSound(BaseModel):
-    option: Literal[HornOption.SOUND]
-    duration: float | None = Field(
-        None,
-        gt=0.0,
-        description="Duration (seconds)",
-    )
+    model_config = ConfigDict(extra="forbid")
+    option: Literal["sound"]
+    duration: float | None = Field(None, gt=0.0, description="Duration (seconds)")
 
 
 class HornQuilling(BaseModel):
-    option: Literal[HornOption.QUILLING]
-    intensity: int = Field(
-        10,
-        ge=0,
-        le=15,
-        description="Quilling horn intensity (Legacy engines only)",
-    )
-    duration: float | None = Field(
-        None,
-        gt=0.0,
-        description="Duration (seconds)",
-    )
+    model_config = ConfigDict(extra="forbid")
+    option: Literal["quilling"]
+    intensity: int = Field(10, ge=0, le=15, description="Quilling horn intensity (Legacy engines only)")
+    duration: float | None = Field(None, gt=0.0, description="Duration (seconds)")
 
 
 HornCommand = Annotated[
