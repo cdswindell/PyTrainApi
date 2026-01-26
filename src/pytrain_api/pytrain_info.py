@@ -182,7 +182,7 @@ class ResetCommand(BaseModel):
         description="If true, perform a long/held reset",
     )
     duration: float | None = Field(
-        0,
+        None,
         gt=0.0,
         description="Optional duration (seconds) for hold reset",
     )
