@@ -1078,7 +1078,7 @@ class Route(PyTrainComponent):
         return RouteInfo(**super().get(tmcc_id))
 
     @router.post("/route/{tmcc_id}/fire_req", tags=["Legacy"])
-    @mobile_post(router, "/route/{tmcc_id}/fire", operation_id="Route_fire", name="Route.Fire")
+    @mobile_post(router, "/route/{tmcc_id}/fire", name="Route.Fire")
     async def fire(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Route")],
@@ -1176,18 +1176,16 @@ class Switch(PyTrainComponent):
         ):
             return super().dialog(tmcc_id, option)
 
-        @router.post("/train/{tmcc_id:int}/forward_req")
-        @router.post("/train/{tmcc_id:int}/forward", operation_id="Train_forward", name="Train.Forward")
+        @legacy_post(router, "/train/{tmcc_id:int}/forward_req", name="Train.ForwardReq")
+        @mobile_post(router, "/train/{tmcc_id:int}/forward", name="Train.Forward")
         async def forward(
             self,
             tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
         ):
             return super().forward(tmcc_id)
 
-        @router.post("/train/{tmcc_id:int}/front_coupler_req")
-        @router.post(
-            "/train/{tmcc_id:int}/front_coupler", operation_id="Train_front_coupler", name="Train.FrontCoupler"
-        )
+        @legacy_post(router, "/train/{tmcc_id:int}/front_coupler_req", name="Train.FrontCouplerReq")
+        @router.post("/train/{tmcc_id:int}/front_coupler", name="Train.FrontCoupler")
         async def front_coupler(
             self,
             tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
@@ -1243,8 +1241,8 @@ class Switch(PyTrainComponent):
                 duration = None
             return super().reset(tmcc_id, duration)
 
-        @router.post("/train/{tmcc_id:int}/reverse_req")
-        @router.post("/train/{tmcc_id:int}/reverse", operation_id="Train_reverse", name="Train.Reverse")
+        @legacy_post(router, "/train/{tmcc_id:int}/reverse_req", name="Train.ReverseReq")
+        @router.post("/train/{tmcc_id:int}/reverse", name="Train.Reverse")
         async def reverse(
             self,
             tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
@@ -1280,7 +1278,7 @@ class Switch(PyTrainComponent):
         ):
             return super().speed(tmcc_id, speed, immediate=immediate, dialog=dialog)
 
-        @router.post("/train/{tmcc_id:int}/speed", operation_id="Train_speed", name="Train.Speed")
+        @router.post("/train/{tmcc_id:int}/speed", name="Train.Speed")
         async def speed_cmd(
             self,
             tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
