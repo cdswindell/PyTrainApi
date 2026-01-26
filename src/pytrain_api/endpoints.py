@@ -755,11 +755,14 @@ class Engine(PyTrainEngine):
     async def blow_horn_cmd(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
-        cmd: HornCommand = Body(...),
+        cmd: HornCommand = Body(..., discriminator="option"),
     ):
+        # Convert string -> HornOption for your existing implementation
+        option = HornOption(cmd.option)
+
         intensity = getattr(cmd, "intensity", None)
         duration = getattr(cmd, "duration", None)
-        return super().blow_horn(tmcc_id, cmd.option, intensity, duration)
+        return super().blow_horn(tmcc_id, option, intensity, duration)
 
     @router.get("/engine/{tmcc_id:int}/info", operation_id="Engine_info", name="Engine.Info")
     async def get_info(
