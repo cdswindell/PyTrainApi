@@ -12,7 +12,7 @@ import os
 import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Annotated, Any, TypeVar
+from typing import Annotated, Any, Callable, TypeVar
 
 import jwt
 from dotenv import find_dotenv, load_dotenv
@@ -73,6 +73,7 @@ from .pytrain_info import (
 log = logging.getLogger(__name__)
 
 E = TypeVar("E", bound=CommandDefEnum)
+F = TypeVar("F", bound=Callable[..., Any])
 
 DEFAULT_API_SERVER_VALUE = "[SERVER DOMAIN/IP ADDRESS NAME YOU GAVE TO ALEXA SKILL]"
 
@@ -174,6 +175,35 @@ def get_api_token(api_key: str = Security(api_key_header)) -> bool:
                 return True
     log.warning(f"Invalid Access attempt: payload: {payload} key: {api_key}")
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid API key")
+
+
+def _summary_from_name(name: str) -> str:
+    # "Engine.Forward" -> "Engine Forward"
+    # "Engine.Horn" -> "Engine Horn"
+    parts = [p for p in name.split(".") if p]
+    return " ".join(parts)
+
+
+def mobile_post(
+    api: APIRouter,
+    path: str,
+    *,
+    operation_id: str,
+    name: str,
+    summary: str | None = None,
+    **kwargs: Any,
+) -> Callable[[F], F]:
+    if summary is None:
+        summary = _summary_from_name(name)
+
+    return api.post(
+        path,
+        tags=["Mobile"],
+        operation_id=operation_id,
+        name=name,
+        summary=summary,
+        **kwargs,
+    )
 
 
 router = APIRouter(prefix="/pytrain/v1", dependencies=[Depends(get_api_token)])
@@ -722,7 +752,7 @@ class Engine(PyTrainEngine):
         return super().dialog(tmcc_id, option)
 
     @router.post("/engine/{tmcc_id:int}/forward_req", tags=["Legacy"])
-    @router.post("/engine/{tmcc_id:int}/forward", operation_id="Engine_forward", name="Engine.Forward", tags=["Mobile"])
+    @mobile_post(router, "/engine/{tmcc_id:int}/forward", operation_id="Engine_forward", name="Engine.Forward")
     async def forward(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
@@ -730,11 +760,12 @@ class Engine(PyTrainEngine):
         return super().forward(tmcc_id)
 
     @router.post("/engine/{tmcc_id:int}/front_coupler_req", tags=["Legacy"])
-    @router.post(
+    @mobile_post(
+        router,
         "/engine/{tmcc_id:int}/front_coupler",
         operation_id="Engine_front_coupler",
         name="Engine.FrontCoupler",
-        tags=["Mobile"],
+        summary="Front Coupler",
     )
     async def front_coupler(
         self,
@@ -752,7 +783,7 @@ class Engine(PyTrainEngine):
     ):
         return super().blow_horn(tmcc_id, option, intensity, duration)
 
-    @router.post("/engine/{tmcc_id:int}/horn", operation_id="Engine_horn", name="Engine.Horn", tags=["Mobile"])
+    @mobile_post(router, "/engine/{tmcc_id:int}/horn", operation_id="Engine_horn", name="Engine.Horn")
     async def blow_horn_cmd(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
@@ -790,11 +821,12 @@ class Engine(PyTrainEngine):
         return super().momentum(tmcc_id, level)
 
     @router.post("/engine/{tmcc_id:int}/rear_coupler_req", tags=["Legacy"])
-    @router.post(
+    @mobile_post(
+        router,
         "/engine/{tmcc_id:int}/rear_coupler",
         operation_id="Engine_rear_coupler",
         name="Engine.RearCoupler",
-        tags=["Mobile"],
+        summary="Rear Coupler",
     )
     async def rear_coupler(
         self,
@@ -815,12 +847,7 @@ class Engine(PyTrainEngine):
             duration = None
         return super().reset(tmcc_id, duration)
 
-    @router.post(
-        "/engine/{tmcc_id:int}/reset",
-        operation_id="Engine_reset",
-        name="Engine.Reset",
-        tags=["Mobile"],
-    )
+    @mobile_post(router, "/engine/{tmcc_id:int}/reset", operation_id="Engine_reset", name="Engine.Reset")
     async def reset_cmd(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
@@ -836,7 +863,7 @@ class Engine(PyTrainEngine):
         )
 
     @router.post("/engine/{tmcc_id:int}/reverse_req", tags=["Legacy"])
-    @router.post("/engine/{tmcc_id:int}/reverse", operation_id="Engine_reverse", name="Engine.Reverse", tags=["Mobile"])
+    @mobile_post(router, "/engine/{tmcc_id:int}/reverse", operation_id="Engine_reverse", name="Engine.Reverse")
     async def reverse(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
@@ -851,12 +878,7 @@ class Engine(PyTrainEngine):
     ):
         return super().shutdown(tmcc_id, dialog=dialog)
 
-    @router.post(
-        "/engine/{tmcc_id:int}/shutdown",
-        operation_id="Engine_shutdown",
-        name="Engine.Shutdown",
-        tags=["Mobile"],
-    )
+    @mobile_post(router, "/engine/{tmcc_id:int}/shutdown", operation_id="Engine_shutdown", name="Engine.Shutdown")
     async def shutdown_cmd(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
@@ -888,7 +910,7 @@ class Engine(PyTrainEngine):
     ):
         return super().speed(tmcc_id, speed, immediate=immediate, dialog=dialog)
 
-    @router.post("/engine/{tmcc_id:int}/speed", operation_id="Engine_speed", name="Engine.Speed", tags=["Mobile"])
+    @mobile_post(router, "/engine/{tmcc_id:int}/speed", operation_id="Engine_speed", name="Engine.Speed")
     async def speed_cmd(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
@@ -904,12 +926,7 @@ class Engine(PyTrainEngine):
     ):
         return super().startup(tmcc_id, dialog=dialog)
 
-    @router.post(
-        "/engine/{tmcc_id:int}/startup",
-        operation_id="Engine_startup",
-        name="Engine.Startup",
-        tags=["Mobile"],
-    )
+    @mobile_post(router, "/engine/{tmcc_id:int}/startup", operation_id="Engine_startup", name="Engine.Startup")
     async def startup_cmd(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
@@ -921,7 +938,7 @@ class Engine(PyTrainEngine):
         return super().startup(tmcc_id, dialog=dialog)
 
     @router.post("/engine/{tmcc_id:int}/stop_req", tags=["Legacy"])
-    @router.post("/engine/{tmcc_id:int}/stop", operation_id="Engine_stop", name="Engine.Stop", tags=["Mobile"])
+    @mobile_post(router, "/engine/{tmcc_id:int}/stop", operation_id="Engine_stop", name="Engine.Stop")
     async def stop(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
@@ -929,6 +946,13 @@ class Engine(PyTrainEngine):
         return super().stop(tmcc_id)
 
     @router.post("/engine/{tmcc_id:int}/toggle_direction_req", tags=["Legacy"])
+    @mobile_post(
+        router,
+        "/engine/{tmcc_id:int}/toggle_direction",
+        operation_id="Engine_toggle_direction",
+        name="Engine.ToggleDirection",
+        summary="Toggle Direction",
+    )
     async def toggle_direction(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
@@ -936,11 +960,12 @@ class Engine(PyTrainEngine):
         return super().toggle_direction(tmcc_id)
 
     @router.post("/engine/{tmcc_id:int}/volume_down_req", tags=["Legacy"])
-    @router.post(
+    @mobile_post(
+        router,
         "/engine/{tmcc_id:int}/volume_down",
         operation_id="Engine_volume_down",
         name="Engine.VolumeDown",
-        tags=["Mobile"],
+        summary="Volume Down",
     )
     async def volume_down(
         self,
@@ -949,11 +974,12 @@ class Engine(PyTrainEngine):
         return super().volume_down(tmcc_id)
 
     @router.post("/engine/{tmcc_id:int}/volume_up_req", tags=["Legacy"])
-    @router.post(
+    @mobile_post(
+        router,
         "/engine/{tmcc_id:int}/volume_up",
         operation_id="Engine_volume_up",
         name="Engine.VolumeUp",
-        tags=["Mobile"],
+        summary="Volume Up",
     )
     async def volume_up(
         self,
@@ -987,7 +1013,7 @@ class Route(PyTrainComponent):
         return RouteInfo(**super().get(tmcc_id))
 
     @router.post("/route/{tmcc_id}/fire_req", tags=["Legacy"])
-    @router.post("/route/{tmcc_id}/fire", operation_id="Route_fire", name="Route.Fire", tags=["Mobile"])
+    @mobile_post(router, "/route/{tmcc_id}/fire", operation_id="Route_fire", name="Route.Fire")
     async def fire(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Route")],
