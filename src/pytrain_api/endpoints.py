@@ -57,7 +57,16 @@ from .pytrain_component import (
     PyTrainEngine,
     SmokeOption,
 )
-from .pytrain_info import AccessoryInfo, BlockInfo, EngineInfo, ProductInfo, RouteInfo, SwitchInfo, TrainInfo
+from .pytrain_info import (
+    AccessoryInfo,
+    BlockInfo,
+    EngineInfo,
+    ProductInfo,
+    RouteInfo,
+    SpeedCommand,
+    SwitchInfo,
+    TrainInfo,
+)
 
 log = logging.getLogger(__name__)
 
@@ -801,8 +810,17 @@ class Engine(PyTrainEngine):
     ):
         return super().smoke(tmcc_id, level=level)
 
+    async def _set_speed(
+        self,
+        tmcc_id: int,
+        speed: int | str,
+        immediate: bool | None,
+        dialog: bool | None,
+    ):
+        return super().speed(tmcc_id, speed, immediate=immediate, dialog=dialog)
+
     @router.post("/engine/{tmcc_id:int}/speed_req/{speed}")
-    async def speed(
+    async def speed_req(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
         speed: Annotated[
@@ -813,6 +831,19 @@ class Engine(PyTrainEngine):
         dialog: bool = None,
     ):
         return super().speed(tmcc_id, speed, immediate=immediate, dialog=dialog)
+
+    @router.post("/engine/{tmcc_id:int}/speed")
+    async def speed(
+        self,
+        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
+        cmd: SpeedCommand = Body(...),
+    ):
+        return await self._set_speed(
+            tmcc_id,
+            cmd.speed,
+            cmd.immediate,
+            cmd.dialog,
+        )
 
     @router.post("/engine/{tmcc_id:int}/startup_req")
     async def startup(
@@ -1060,10 +1091,11 @@ class Switch(PyTrainComponent):
             return super().smoke(tmcc_id, level=level)
 
         @router.post("/train/{tmcc_id:int}/speed_req/{speed}")
+        @router.post("/train/{tmcc_id:int}/speed")
         async def speed(
             self,
             tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
-            speed: int | str,
+            speed: int | str = Query(..., description="New speed"),
             immediate: bool = None,
             dialog: bool = None,
         ):

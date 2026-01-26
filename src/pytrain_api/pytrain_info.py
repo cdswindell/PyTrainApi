@@ -150,3 +150,18 @@ class TrainInfo(EngineInfo):
     scope: Component = Component.TRAIN
     flags: int | None
     components: dict[int, str] | None
+
+
+class SpeedCommand(BaseModel):
+    speed: int | str = Field(
+        ...,
+        description="New speed (0 to 195, roll, restricted, slow, medium, limited, normal, highball)",
+    )
+    immediate: bool | None = Field(
+        None,
+        description="If true, apply speed change immediately (if supported)",
+    )
+    dialog: bool | None = Field(
+        None,
+        description="If true, include dialog sounds (if supported)",
+    )
