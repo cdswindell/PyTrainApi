@@ -1046,7 +1046,6 @@ class Switch(PyTrainComponent):
             return super().blow_horn(tmcc_id, option, intensity, duration)
 
         @router.post("/train/{tmcc_id:int}/reset_req")
-        @router.post("/train/{tmcc_id:int}/reset_req")
         async def reset(
             self,
             tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
