@@ -816,25 +816,20 @@ class Engine(PyTrainEngine):
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
         speed: Annotated[
             int | str,
-            Path(description="New speed (0 to 195, roll, restricted, slow, medium, limited, normal, highball"),
+            Path(description="New speed (0 to 195, roll, restricted, slow, medium, limited, normal, highball)"),
         ],
         immediate: bool = None,
         dialog: bool = None,
     ):
         return super().speed(tmcc_id, speed, immediate=immediate, dialog=dialog)
 
-    @router.post("/engine/{tmcc_id:int}/speed")
+    @router.post("/engine/{tmcc_id:int}/speed", operation_id="Engine_speed", name="Engine.Speed")
     async def speed_cmd(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
         cmd: SpeedCommand = Body(...),
     ):
-        return await self._set_speed(
-            tmcc_id,
-            cmd.speed,
-            cmd.immediate,
-            cmd.dialog,
-        )
+        return await self._set_speed(tmcc_id, cmd.speed, cmd.immediate, cmd.dialog)
 
     @router.post("/engine/{tmcc_id:int}/startup_req")
     async def startup(
@@ -1094,7 +1089,7 @@ class Switch(PyTrainComponent):
         ):
             return super().speed(tmcc_id, speed, immediate=immediate, dialog=dialog)
 
-        @router.post("/train/{tmcc_id:int}/speed")
+        @router.post("/train/{tmcc_id:int}/speed", operation_id="Train_speed", name="Train.Speed")
         async def speed_cmd(
             self,
             tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
