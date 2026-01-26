@@ -836,6 +836,14 @@ class Engine(PyTrainEngine):
     ):
         return super().momentum(tmcc_id, level)
 
+    @mobile_post(router, "/engine/{tmcc_id:int}/momentum", operation_id="Engine_momentum", name="Engine.Momentum")
+    async def momentum_cmd(
+        self,
+        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
+        level: int = Query(..., ge=0, le=7, description="Momentum level (0 - 7)"),
+    ):
+        return super().momentum(tmcc_id, level)
+
     @router.post("/engine/{tmcc_id:int}/rear_coupler_req", tags=["Legacy"])
     @mobile_post(
         router, "/engine/{tmcc_id:int}/rear_coupler", operation_id="Engine_rear_coupler", name="Engine.RearCoupler"
@@ -906,6 +914,22 @@ class Engine(PyTrainEngine):
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
         level: SmokeOption,
+    ):
+        return super().smoke(tmcc_id, level=level)
+
+    @mobile_post(
+        router,
+        "/engine/{tmcc_id:int}/smoke",
+        operation_id="Engine_smoke",
+        name="Engine.Smoke",
+    )
+    async def smoke_cmd(
+        self,
+        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
+        level: SmokeOption = Query(
+            ...,
+            description="Smoke output level",
+        ),
     ):
         return super().smoke(tmcc_id, level=level)
 
