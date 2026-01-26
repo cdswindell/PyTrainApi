@@ -805,16 +805,9 @@ class Engine(PyTrainEngine):
     ):
         return super().brake(tmcc_id, duration)
 
-    @router.post("/engine/{tmcc_id:int}/dialog_req", tags=["Legacy"])
-    async def dialog_req(
-        self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
-        dialog: DialogOption = Query(..., description="Dialog effect"),
-    ):
-        return self.dialog(tmcc_id, dialog)
-
+    @legacy_post(router, "/engine/{tmcc_id:int}/dialog_req", name="Engine.DialogReq")
     @mobile_post(router, "/engine/{tmcc_id:int}/dialog", name="Engine.Dialog")
-    async def dialog_cmd(
+    async def dialog_req(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
         dialog: DialogOption = Query(..., description="Dialog effect"),
@@ -876,16 +869,9 @@ class Engine(PyTrainEngine):
     ):
         return super().numeric_req(tmcc_id, number, duration)
 
-    @router.post("/engine/{tmcc_id:int}/momentum_req", tags=["Legacy"])
-    async def momentum(
-        self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
-        level: Annotated[int, Query(description="Momentum level (0 - 7)", ge=0, le=7)] = None,
-    ):
-        return super().momentum(tmcc_id, level)
-
+    @legacy_post(router, "/engine/{tmcc_id:int}/momentum_req", name="Engine.MomentumReq")
     @mobile_post(router, "/engine/{tmcc_id:int}/momentum", name="Engine.Momentum")
-    async def momentum_cmd(
+    async def momentum(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
         level: int = Query(..., ge=0, le=7, description="Momentum level (0 - 7)"),
@@ -936,16 +922,9 @@ class Engine(PyTrainEngine):
     ):
         return super().reverse(tmcc_id)
 
-    @router.post("/engine/{tmcc_id:int}/shutdown_req", tags=["Legacy"])
-    async def shutdown_req(
-        self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
-        dialog: bool = False,
-    ):
-        return super().shutdown(tmcc_id, dialog=dialog)
-
+    @legacy_post(router, "/engine/{tmcc_id:int}/shutdown_req", name="Engine.ShutdownReq")
     @mobile_post(router, "/engine/{tmcc_id:int}/shutdown", name="Engine.Shutdown")
-    async def shutdown_cmd(
+    async def shutdown(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
         dialog: bool = Query(
@@ -955,8 +934,8 @@ class Engine(PyTrainEngine):
     ):
         return super().shutdown(tmcc_id, dialog=dialog)
 
-    @router.post("/engine/{tmcc_id:int}/smoke_level_req", tags=["Legacy"])
-    async def smoke_level(
+    @legacy_post(router, "/engine/{tmcc_id:int}/smoke_level_req", name="Engine.SmokeLevelReq")
+    async def smoke_req(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
         level: SmokeOption,
@@ -995,14 +974,7 @@ class Engine(PyTrainEngine):
     ):
         return await self._set_speed(tmcc_id, cmd.speed, cmd.immediate, cmd.dialog)
 
-    @router.post("/engine/{tmcc_id:int}/startup_req", tags=["Legacy"])
-    async def startup_req(
-        self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
-        dialog: bool = False,
-    ):
-        return super().startup(tmcc_id, dialog=dialog)
-
+    @legacy_post(router, "/engine/{tmcc_id:int}/startup_req", name="Engine.StartupReq")
     @mobile_post(router, "/engine/{tmcc_id:int}/startup", name="Engine.Startup")
     async def startup_cmd(
         self,
