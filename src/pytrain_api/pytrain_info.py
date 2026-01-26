@@ -176,6 +176,18 @@ HornCommand = Annotated[
 ]
 
 
+class ResetCommand(BaseModel):
+    hold: bool = Field(
+        False,
+        description="If true, perform a long/held reset",
+    )
+    duration: float | None = Field(
+        0,
+        gt=0.0,
+        description="Optional duration (seconds) for hold reset",
+    )
+
+
 class SpeedCommand(BaseModel):
     speed: int | str = Field(
         ...,

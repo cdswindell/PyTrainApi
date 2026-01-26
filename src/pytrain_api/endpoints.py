@@ -63,6 +63,7 @@ from .pytrain_info import (
     EngineInfo,
     HornCommand,
     ProductInfo,
+    ResetCommand,
     RouteInfo,
     SpeedCommand,
     SwitchInfo,
@@ -814,6 +815,26 @@ class Engine(PyTrainEngine):
             duration = None
         return super().reset(tmcc_id, duration)
 
+    @router.post(
+        "/engine/{tmcc_id:int}/reset",
+        operation_id="Engine_reset",
+        name="Engine.Reset",
+        tags=["Mobile"],
+    )
+    async def reset_cmd(
+        self,
+        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
+        cmd: ResetCommand | None = Body(None),
+    ):
+        # Apply defaults if body omitted
+        if cmd is None:
+            cmd = ResetCommand(duration=None, hold=False)
+
+        return super().reset(
+            tmcc_id,
+            duration=cmd.duration,
+        )
+
     @router.post("/engine/{tmcc_id:int}/reverse_req", tags=["Legacy"])
     @router.post("/engine/{tmcc_id:int}/reverse", operation_id="Engine_reverse", name="Engine.Reverse", tags=["Mobile"])
     async def reverse(
@@ -823,10 +844,26 @@ class Engine(PyTrainEngine):
         return super().reverse(tmcc_id)
 
     @router.post("/engine/{tmcc_id:int}/shutdown_req", tags=["Legacy"])
-    async def shutdown(
+    async def shutdown_req(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
         dialog: bool = False,
+    ):
+        return super().shutdown(tmcc_id, dialog=dialog)
+
+    @router.post(
+        "/engine/{tmcc_id:int}/shutdown",
+        operation_id="Engine_shutdown",
+        name="Engine.Shutdown",
+        tags=["Mobile"],
+    )
+    async def shutdown_cmd(
+        self,
+        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
+        dialog: bool = Query(
+            False,
+            description="If true, include shutdown dialog",
+        ),
     ):
         return super().shutdown(tmcc_id, dialog=dialog)
 
@@ -860,10 +897,26 @@ class Engine(PyTrainEngine):
         return await self._set_speed(tmcc_id, cmd.speed, cmd.immediate, cmd.dialog)
 
     @router.post("/engine/{tmcc_id:int}/startup_req", tags=["Legacy"])
-    async def startup(
+    async def startup_req(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
         dialog: bool = False,
+    ):
+        return super().startup(tmcc_id, dialog=dialog)
+
+    @router.post(
+        "/engine/{tmcc_id:int}/startup",
+        operation_id="Engine_startup",
+        name="Engine.Startup",
+        tags=["Mobile"],
+    )
+    async def startup_cmd(
+        self,
+        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
+        dialog: bool = Query(
+            False,
+            description="If true, include startup dialog",
+        ),
     ):
         return super().startup(tmcc_id, dialog=dialog)
 
@@ -883,6 +936,12 @@ class Engine(PyTrainEngine):
         return super().toggle_direction(tmcc_id)
 
     @router.post("/engine/{tmcc_id:int}/volume_down_req", tags=["Legacy"])
+    @router.post(
+        "/engine/{tmcc_id:int}/volume_down",
+        operation_id="Engine_volume_down",
+        name="Engine.VolumeDown",
+        tags=["Mobile"],
+    )
     async def volume_down(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
@@ -890,6 +949,12 @@ class Engine(PyTrainEngine):
         return super().volume_down(tmcc_id)
 
     @router.post("/engine/{tmcc_id:int}/volume_up_req", tags=["Legacy"])
+    @router.post(
+        "/engine/{tmcc_id:int}/volume_up",
+        operation_id="Engine_volume_up",
+        name="Engine.VolumeUp",
+        tags=["Mobile"],
+    )
     async def volume_up(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
