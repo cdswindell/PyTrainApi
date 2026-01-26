@@ -231,6 +231,15 @@ class PyTrainEngine(PyTrainComponent):
     def tmcc(self, tmcc_id: int) -> str:
         return " -tmcc" if self.is_tmcc(tmcc_id) else ""
 
+    async def _set_speed(
+        self,
+        tmcc_id: int,
+        speed: int | str,
+        immediate: bool | None,
+        dialog: bool | None,
+    ):
+        return self.speed(tmcc_id, speed, immediate=immediate, dialog=dialog)
+
     def speed(self, tmcc_id: int, speed: int | str, immediate: bool = False, dialog: bool = False):
         # convert string numbers to ints
         try:

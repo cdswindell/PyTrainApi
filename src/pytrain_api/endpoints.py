@@ -810,15 +810,6 @@ class Engine(PyTrainEngine):
     ):
         return super().smoke(tmcc_id, level=level)
 
-    async def _set_speed(
-        self,
-        tmcc_id: int,
-        speed: int | str,
-        immediate: bool | None,
-        dialog: bool | None,
-    ):
-        return super().speed(tmcc_id, speed, immediate=immediate, dialog=dialog)
-
     @router.post("/engine/{tmcc_id:int}/speed_req/{speed}")
     async def speed_req(
         self,
@@ -1055,6 +1046,7 @@ class Switch(PyTrainComponent):
             return super().blow_horn(tmcc_id, option, intensity, duration)
 
         @router.post("/train/{tmcc_id:int}/reset_req")
+        @router.post("/train/{tmcc_id:int}/reset_req")
         async def reset(
             self,
             tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
@@ -1091,15 +1083,25 @@ class Switch(PyTrainComponent):
             return super().smoke(tmcc_id, level=level)
 
         @router.post("/train/{tmcc_id:int}/speed_req/{speed}")
-        @router.post("/train/{tmcc_id:int}/speed")
-        async def speed(
+        async def speed_req(
             self,
             tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
-            speed: int | str = Query(..., description="New speed"),
+            speed: Annotated[
+                int | str,
+                Path(description="New speed (0 to 195, roll, restricted, slow, medium, limited, normal, highball)"),
+            ],
             immediate: bool = None,
             dialog: bool = None,
         ):
             return super().speed(tmcc_id, speed, immediate=immediate, dialog=dialog)
+
+        @router.post("/train/{tmcc_id:int}/speed")
+        async def speed(
+            self,
+            tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
+            cmd: SpeedCommand = Body(...),
+        ):
+            return await self._set_speed(tmcc_id, cmd.speed, cmd.immediate, cmd.dialog)
 
         @router.post("/train/{tmcc_id:int}/startup_req")
         async def startup(
