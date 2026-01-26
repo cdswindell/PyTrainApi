@@ -824,7 +824,7 @@ class Engine(PyTrainEngine):
         return super().speed(tmcc_id, speed, immediate=immediate, dialog=dialog)
 
     @router.post("/engine/{tmcc_id:int}/speed")
-    async def speed(
+    async def speed_cmd(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
         cmd: SpeedCommand = Body(...),
@@ -1095,7 +1095,7 @@ class Switch(PyTrainComponent):
             return super().speed(tmcc_id, speed, immediate=immediate, dialog=dialog)
 
         @router.post("/train/{tmcc_id:int}/speed")
-        async def speed(
+        async def speed_cmd(
             self,
             tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
             cmd: SpeedCommand = Body(...),
