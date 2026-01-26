@@ -720,6 +720,7 @@ class Engine(PyTrainEngine):
         return super().dialog(tmcc_id, option)
 
     @router.post("/engine/{tmcc_id:int}/forward_req")
+    @router.post("/engine/{tmcc_id:int}/forward", operation_id="Engine_forward", name="Engine.Forward")
     async def forward(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
@@ -727,6 +728,7 @@ class Engine(PyTrainEngine):
         return super().forward(tmcc_id)
 
     @router.post("/engine/{tmcc_id:int}/front_coupler_req")
+    @router.post("/engine/{tmcc_id:int}/front_coupler", operation_id="Engine_front_coupler", name="Engine.FrontCoupler")
     async def front_coupler(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
@@ -743,7 +745,7 @@ class Engine(PyTrainEngine):
     ):
         return super().blow_horn(tmcc_id, option, intensity, duration)
 
-    @router.get("/engine/{tmcc_id:int}/info")
+    @router.get("/engine/{tmcc_id:int}/info", operation_id="Engine_info", name="Engine.Info")
     async def get_info(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
@@ -768,6 +770,7 @@ class Engine(PyTrainEngine):
         return super().momentum(tmcc_id, level)
 
     @router.post("/engine/{tmcc_id:int}/rear_coupler_req")
+    @router.post("/engine/{tmcc_id:int}/rear_coupler", operation_id="Engine_rear_coupler", name="Engine.RearCoupler")
     async def rear_coupler(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
@@ -788,6 +791,7 @@ class Engine(PyTrainEngine):
         return super().reset(tmcc_id, duration)
 
     @router.post("/engine/{tmcc_id:int}/reverse_req")
+    @router.post("/engine/{tmcc_id:int}/reverse", operation_id="Engine_reverse", name="Engine.Reverse")
     async def reverse(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
@@ -840,6 +844,7 @@ class Engine(PyTrainEngine):
         return super().startup(tmcc_id, dialog=dialog)
 
     @router.post("/engine/{tmcc_id:int}/stop_req")
+    @router.post("/engine/{tmcc_id:int}/stop", operation_id="Engine_stop", name="Engine.Stop")
     async def stop(
         self,
         tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Engine", max_val=9999)],
@@ -893,6 +898,7 @@ class Route(PyTrainComponent):
         return RouteInfo(**super().get(tmcc_id))
 
     @router.post("/route/{tmcc_id}/fire_req")
+    @router.post("/route/{tmcc_id}/fire", operation_id="Route_fire", name="Route.Fire")
     async def fire(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Route")],
@@ -991,6 +997,7 @@ class Switch(PyTrainComponent):
             return super().dialog(tmcc_id, option)
 
         @router.post("/train/{tmcc_id:int}/forward_req")
+        @router.post("/train/{tmcc_id:int}/forward", operation_id="Train_forward", name="Train.Forward")
         async def forward(
             self,
             tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
@@ -998,6 +1005,9 @@ class Switch(PyTrainComponent):
             return super().forward(tmcc_id)
 
         @router.post("/train/{tmcc_id:int}/front_coupler_req")
+        @router.post(
+            "/train/{tmcc_id:int}/front_coupler", operation_id="Train_front_coupler", name="Train.FrontCoupler"
+        )
         async def front_coupler(
             self,
             tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
@@ -1054,6 +1064,7 @@ class Switch(PyTrainComponent):
             return super().reset(tmcc_id, duration)
 
         @router.post("/train/{tmcc_id:int}/reverse_req")
+        @router.post("/train/{tmcc_id:int}/reverse", operation_id="Train_reverse", name="Train.Reverse")
         async def reverse(
             self,
             tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
