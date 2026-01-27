@@ -153,6 +153,7 @@ class PyTrainComponent:
 
     """
 
+    # noinspection PyTypeHints
     @classmethod
     def id_path(cls, label: str = None, min_val: int = 1, max_val: int = 99) -> Path:
         label = label if label else cls.__name__.replace("PyTrain", "")
