@@ -214,7 +214,6 @@ def get_api_token(api_key: str = Security(api_key_header)) -> bool:
         # API_KEYS might be:
         #  - a dict {guid: key}
         #  - a set/list of keys
-        print(API_KEYS)
         try:
             if isinstance(API_KEYS, dict):
                 if api_key in API_KEYS.values():
@@ -1015,7 +1014,7 @@ class Engine(PyTrainEngine):
         number: Annotated[int | None, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
         duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
-        return super().aux_req(tmcc_id, aux_req, number, duration)
+        return super().aux(tmcc_id, aux_req, number, duration)
 
     @mobile_post(router, "/engine/{tmcc_id:int}/aux", name="Engine.Aux")
     async def aux_cmd(
@@ -1023,7 +1022,7 @@ class Engine(PyTrainEngine):
         tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
         cmd: AuxCommand = Body(...),
     ):
-        return super().aux_req(tmcc_id, cmd.aux_req, cmd.number, cmd.duration)
+        return super().aux(tmcc_id, cmd.aux_req, cmd.number, cmd.duration)
 
     @legacy_post(router, "/engine/{tmcc_id:int}/bell_req", name="Engine.BellReq")
     async def ring_bell_req(
@@ -1540,7 +1539,7 @@ class Switch(PyTrainComponent):
             number: Annotated[int, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
             duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
         ):
-            return super().aux_req(tmcc_id, aux_req, number, duration)
+            return super().aux(tmcc_id, aux_req, number, duration)
 
 
 app.include_router(router)

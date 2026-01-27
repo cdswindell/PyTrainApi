@@ -448,7 +448,7 @@ class PyTrainEngine(PyTrainComponent):
                 self.do_request(TMCC2EngineCommandEnum.QUILLING_HORN, tmcc_id, intensity, duration=duration)
         return {"status": f"{self.scope.title} {tmcc_id} blowing horn..."}
 
-    def aux_req(self, tmcc_id, aux: AuxOption, number, duration):
+    def aux(self, tmcc_id, aux: AuxOption, number, duration):
         if self.is_tmcc(tmcc_id):
             cmd = TMCC1EngineCommandEnum.by_name(f"{aux.name}_OPTION_ONE")
             cmd2 = TMCC1EngineCommandEnum.NUMERIC
