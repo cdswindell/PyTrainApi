@@ -191,6 +191,7 @@ class PyTrainComponent:
         cmd_def: E | CommandReq,
         tmcc_id: int = None,
         data: int = None,
+        scope: CommandScope = None,
         submit: bool = True,
         repeat: int = 1,
         duration: float = 0,
@@ -200,7 +201,8 @@ class PyTrainComponent:
             if isinstance(cmd_def, CommandReq):
                 cmd_req = cmd_def
             else:
-                cmd_req = CommandReq.build(cmd_def, tmcc_id, data, self.scope)
+                scope = scope or self.scope
+                cmd_req = CommandReq.build(cmd_def, tmcc_id, data, scope)
             if submit:
                 repeat = repeat if repeat and repeat >= 1 else 1
                 duration = duration if duration is not None else 0
@@ -414,6 +416,12 @@ class PyTrainEngine(PyTrainComponent):
             elif level == SmokeOption.HIGH:
                 self.do_request(TMCC2EffectsControl.SMOKE_HIGH, tmcc_id)
         return {"status": f"{self.scope.title} {tmcc_id} Smoke: {level}..."}
+
+    def stop_all(self) -> dict:
+        self.do_request(TMCC1EngineCommandEnum.STOP_IMMEDIATE, 99)
+        self.do_request(TMCC2EngineCommandEnum.STOP_IMMEDIATE, 99)
+        self.do_request(TMCC2EngineCommandEnum.STOP_IMMEDIATE, 99, scope=CommandScope.TRAIN)
+        return {"status": "Sent 'stop' command to all engines and trains..."}
 
     def toggle_direction(self, tmcc_id: int):
         if self.is_tmcc(tmcc_id):

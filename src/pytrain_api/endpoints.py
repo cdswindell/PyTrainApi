@@ -32,6 +32,7 @@ from pytrain import (
     TMCC1HaltCommandEnum,
     TMCC1RouteCommandEnum,
     TMCC1SwitchCommandEnum,
+    TMCC2EngineCommandEnum,
 )
 from pytrain import get_version as pytrain_get_version
 from pytrain.pdi.amc2_req import Amc2Req
@@ -39,7 +40,7 @@ from pytrain.pdi.asc2_req import Asc2Req
 from pytrain.pdi.bpc2_req import Bpc2Req
 from pytrain.pdi.constants import Amc2Action, Asc2Action, Bpc2Action, PdiCommand
 from pytrain.protocol.command_def import CommandDefEnum
-from pytrain.protocol.tmcc1.tmcc1_constants import TMCC1SyncCommandEnum
+from pytrain.protocol.tmcc1.tmcc1_constants import TMCC1EngineCommandEnum, TMCC1SyncCommandEnum
 from pytrain.utils.path_utils import find_dir
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import RedirectResponse
@@ -629,12 +630,13 @@ async def shutdown():
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/system/stop_req")
-async def stop():
-    PyTrainApi.get().pytrain.queue_command("tr 99 -s")
-    PyTrainApi.get().pytrain.queue_command("en 99 -s")
-    PyTrainApi.get().pytrain.queue_command("en 99 -tmcc -s")
-    return {"status": "Stop all engines and trains command sent"}
+@legacy_post(router, "/system/stop_all_req", name="System.StopAllReq", summary="Stop All Engines and Trains")
+@mobile_post(router, "/system/stop_all", name="System.StopAll", summary="Stop All Engines and Trains")
+async def stop_all():
+    CommandReq(TMCC1EngineCommandEnum.STOP_IMMEDIATE, 99).send()
+    CommandReq(TMCC2EngineCommandEnum.STOP_IMMEDIATE, 99).send()
+    CommandReq(TMCC2EngineCommandEnum.STOP_IMMEDIATE, 99, scope=CommandScope.TRAIN).send()
+    return {"status": "Sent 'stop' command to all engines and trains..."}
 
 
 @legacy_post(
