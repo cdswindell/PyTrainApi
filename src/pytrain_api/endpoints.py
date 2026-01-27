@@ -60,6 +60,7 @@ from .pytrain_component import (
 )
 from .pytrain_info import (
     AccessoryInfo,
+    AuxCommand,
     BellCommand,
     BlockInfo,
     EngineInfo,
@@ -1142,15 +1143,23 @@ class Engine(PyTrainEngine):
     ):
         return super().volume_up(tmcc_id)
 
-    @router.post("/engine/{tmcc_id:int}/{aux_req}", tags=["Legacy"])
+    @legacy_post(router, "/engine/{tmcc_id:int}/{aux_req}", name="Engine.AuxReq")
     async def aux_req(
         self,
         tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
         aux_req: Annotated[AuxOption, Path(description="Aux 1, Aux2, or Aux 3")],
-        number: Annotated[int, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
-        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+        number: Annotated[int | None, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
+        duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
         return super().aux_req(tmcc_id, aux_req, number, duration)
+
+    @mobile_post(router, "/engine/{tmcc_id:int}/aux", name="Engine.Aux")
+    async def aux_cmd(
+        self,
+        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        cmd: AuxCommand = Body(...),
+    ):
+        return super().aux_req(tmcc_id, cmd.aux_req, cmd.number, cmd.duration)
 
 
 @router.get("/routes", response_model=list[RouteInfo])

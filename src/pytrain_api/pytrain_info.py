@@ -13,7 +13,7 @@ from typing import Annotated, Any, Literal, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from .pytrain_component import BellOption, Component, HornOption
+from .pytrain_component import AuxOption, BellOption, Component, HornOption
 
 
 class ProductInfo(BaseModel):
@@ -242,3 +242,11 @@ class SpeedCommand(BaseModel):
         None,
         description="If true, include dialog sounds (if supported)",
     )
+
+
+class AuxCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    aux_req: AuxOption = Field(..., description="Aux 1, Aux2, or Aux 3")
+    number: int | None = Field(None, ge=0, le=9, description="Optional number (0 - 9)")
+    duration: float | None = Field(None, gt=0.0, description="Optional duration (seconds)")
