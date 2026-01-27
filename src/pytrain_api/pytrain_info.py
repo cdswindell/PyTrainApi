@@ -213,7 +213,7 @@ class BellDing(BaseModel):
 
 
 BellCommand = Annotated[
-    Union[BellToggle, BellOn, BellOff, BellOnce],
+    Union[BellToggle, BellOn, BellOff, BellOnce, BellDing],
     Field(discriminator="option"),
 ]
 
