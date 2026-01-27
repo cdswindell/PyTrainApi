@@ -864,7 +864,7 @@ class Engine(PyTrainEngine):
     async def blow_horn_cmd(
         self,
         tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
-        cmd: HornCommand = Body(...),
+        cmd: Annotated[HornCommand, Body(..., discriminator="option")],
     ):
         option = cmd.option
         intensity = getattr(cmd, "intensity", None)
