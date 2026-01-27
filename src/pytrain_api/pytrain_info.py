@@ -201,6 +201,17 @@ class BellOnce(BaseModel):
     )
 
 
+class BellDing(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    option: Literal[BellOption.DING]
+    ding: int | None = Field(
+        None,
+        ge=0,
+        le=3,
+        description="Ding number (0-3)",
+    )
+
+
 BellCommand = Annotated[
     Union[BellToggle, BellOn, BellOff, BellOnce],
     Field(discriminator="option"),

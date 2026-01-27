@@ -108,10 +108,11 @@ class AuxOption(str, Enum):
 
 
 class BellOption(str, Enum):
-    TOGGLE = "toggle"
+    DING = "ding"
     OFF = "off"
     ON = "on"
     ONCE = "once"
+    TOGGLE = "toggle"
 
 
 class Component(str, Enum):
@@ -380,7 +381,7 @@ class PyTrainEngine(PyTrainComponent):
             self.do_request(TMCC2EngineCommandEnum.REVERSE_DIRECTION, tmcc_id)
         return {"status": f"{self.scope.title} {tmcc_id} reverse..."}
 
-    def ring_bell(self, tmcc_id: int, option: BellOption | None, duration: float = None):
+    def ring_bell(self, tmcc_id: int, option: BellOption | None, duration: float = None, ding: int = 0):
         if self.is_tmcc(tmcc_id):
             self.do_request(TMCC1EngineCommandEnum.RING_BELL, tmcc_id)
         else:
@@ -391,7 +392,10 @@ class PyTrainEngine(PyTrainComponent):
             elif option == BellOption.OFF:
                 self.do_request(TMCC2EngineCommandEnum.BELL_OFF, tmcc_id)
             elif option == BellOption.ONCE:
-                self.do_request(TMCC2EngineCommandEnum.BELL_ONE_SHOT_DING, tmcc_id, 3, duration=duration)
+                self.do_request(TMCC2EngineCommandEnum.BELL_ONE_SHOT_DING, tmcc_id, 0, duration=duration)
+            elif option == BellOption.DING:
+                ding = ding if ding is not None and 0 <= ding <= 3 else 0
+                self.do_request(TMCC2EngineCommandEnum.BELL_ONE_SHOT_DING, tmcc_id, ding)
         return {"status": f"{self.scope.title} {tmcc_id} ringing bell..."}
 
     def smoke(self, tmcc_id: int, level: SmokeOption):

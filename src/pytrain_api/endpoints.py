@@ -803,7 +803,8 @@ class Engine(PyTrainEngine):
         cmd: BellCommand = Body(...),
     ):
         duration = getattr(cmd, "duration", None)
-        return super().ring_bell(tmcc_id, cmd.option, duration)
+        ding = getattr(cmd, "ding", None)
+        return super().ring_bell(tmcc_id, cmd.option, duration, ding)
 
     @legacy_post(router, "/engine/{tmcc_id:int}/boost_req", name="Engine.BoostReq")
     @mobile_post(router, "/engine/{tmcc_id:int}/boost", name="Engine.Boost")
