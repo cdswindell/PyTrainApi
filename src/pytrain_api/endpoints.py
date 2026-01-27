@@ -221,6 +221,10 @@ def _summary_from_name(name: str) -> str:
     return " ".join(_split_camel(p) for p in parts)
 
 
+def infer_category(name: str) -> str:
+    return name.split(".", 1)[0] if name else "Misc"
+
+
 def mobile_post(
     api: APIRouter,
     path: str,
@@ -228,6 +232,7 @@ def mobile_post(
     name: str,
     operation_id: str | None = None,
     summary: str | None = None,
+    category: str | None = None,
     **kwargs: Any,
 ) -> Callable[[F], F]:
     if operation_id is None:
@@ -236,9 +241,11 @@ def mobile_post(
     if summary is None:
         summary = _summary_from_name(name)
 
+    category = category or infer_category(name)
+
     return api.post(
         path,
-        tags=["Mobile"],
+        tags=[f"Mobile.{category}"],
         name=name,
         operation_id=operation_id,
         summary=summary,
@@ -253,6 +260,7 @@ def legacy_post(
     name: str,
     operation_id: str | None = None,
     summary: str | None = None,
+    category: str | None = None,
     **kwargs: Any,
 ) -> Callable[[F], F]:
     if operation_id is None:
@@ -261,9 +269,11 @@ def legacy_post(
     if summary is None:
         summary = _summary_from_name(name)
 
+    category = category or infer_category(name)
+
     return api.post(
         path,
-        tags=["Legacy"],
+        tags=[f"Legacy.{category}"],
         operation_id=operation_id,
         name=name,
         summary=summary,
@@ -1017,6 +1027,15 @@ class Engine(PyTrainEngine):
     ) -> ProductInfo:
         return ProductInfo(**super().get_engine_info(tmcc_id))
 
+    @legacy_post(router, "/engine/{tmcc_id:int}/momentum_req", name="Engine.MomentumReq")
+    @mobile_post(router, "/engine/{tmcc_id:int}/momentum", name="Engine.Momentum")
+    async def momentum(
+        self,
+        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        level: int = Query(..., ge=0, le=7, description="Momentum level (0 - 7)"),
+    ):
+        return super().momentum(tmcc_id, level)
+
     @legacy_post(router, "/engine/{tmcc_id:int}/numeric_req", name="Engine.NumericReq")
     async def numeric_req(
         self,
@@ -1033,15 +1052,6 @@ class Engine(PyTrainEngine):
         cmd: Annotated[NumericCommand, Body(...)],
     ):
         return super().numeric(tmcc_id, cmd.number, cmd.duration)
-
-    @legacy_post(router, "/engine/{tmcc_id:int}/momentum_req", name="Engine.MomentumReq")
-    @mobile_post(router, "/engine/{tmcc_id:int}/momentum", name="Engine.Momentum")
-    async def momentum(
-        self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
-        level: int = Query(..., ge=0, le=7, description="Momentum level (0 - 7)"),
-    ):
-        return super().momentum(tmcc_id, level)
 
     @legacy_post(router, "/engine/{tmcc_id:int}/rear_coupler_req", name="Engine.RearCouplerReq")
     @mobile_post(router, "/engine/{tmcc_id:int}/rear_coupler", name="Engine.RearCoupler")
