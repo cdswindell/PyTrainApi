@@ -205,7 +205,7 @@ class PyTrainComponent:
                 repeat = repeat if repeat and repeat >= 1 else 1
                 duration = duration if duration is not None else 0
                 delay = delay if delay is not None else 0
-                interval = 0.2 if duration > 0 else None
+                interval = 200 if duration > 0 else None
                 cmd_req.send(repeat=repeat, delay=delay, duration=duration, interval=interval)
             return cmd_req
         except Exception as e:
