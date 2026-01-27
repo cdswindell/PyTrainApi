@@ -801,13 +801,10 @@ class Engine(PyTrainEngine):
         self,
         tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
         cmd: BellCommand | None = Body(
-            None,
+            ...,
             description="Bell command; omit body to toggle",
         ),
     ):
-        if cmd is None:
-            return super().ring_bell(tmcc_id, None, None)
-
         duration = getattr(cmd, "duration", None)
         return super().ring_bell(tmcc_id, cmd.option, duration)
 
