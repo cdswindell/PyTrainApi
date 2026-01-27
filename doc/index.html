@@ -1,0 +1,28 @@
+<!--
+  ~
+  ~ PyTrainApi: a restful API for controlling Lionel Legacy engines, trains, switches, and accessories
+  ~
+  ~ Copyright (c) 2024-2026 Dave Swindell <pytraininfo.gmail.com> 
+  ~
+  ~ SPDX-License-Identifier: LPGL
+  ~
+  ~
+  -->
+<!DOCTYPE html>
+<html lang="english">
+<head>
+    <title>PyTrain API</title>
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist/swagger-ui.css">
+</head>
+<body>
+<div id="swagger-ui"></div>
+
+<script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
+<script>
+    SwaggerUIBundle({
+      url: "openapi.json",
+      dom_id: "#swagger-ui",
+    });
+</script>
+</body>
+</html>
