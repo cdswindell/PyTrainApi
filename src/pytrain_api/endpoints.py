@@ -386,10 +386,38 @@ async def halt():
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post(
+@legacy_post(
+    router,
+    "/system/debug_req",
+    summary="Enable/Disable Debugging Mode",
+    description=f"Enable/disable {PROGRAM_NAME} debugging mode. ",
+    name="System.DebugReq",
+)
+@mobile_post(
+    router,
+    "/system/debug",
+    summary="Enable/Disable Debugging Mode",
+    description=f"Enable/disable {PROGRAM_NAME} debugging mode. ",
+    name="System.Debug",
+)
+async def debug(on: bool = True):
+    PyTrainApi.get().pytrain.queue_command(f"debug {'on' if on else 'off'}")
+    return {"status": f"Debugging {'enabled' if on else 'disabled'}"}
+
+
+@legacy_post(
+    router,
     "/system/echo_req",
     summary="Enable/Disable Command Echoing",
     description=f"Enable/disable echoing of {PROGRAM_NAME} commands to log file. ",
+    name="System.EchoReq",
+)
+@mobile_post(
+    router,
+    "/system/echo",
+    summary="Enable/Disable Command Echoing",
+    description=f"Enable/disable echoing of {PROGRAM_NAME} commands to log file. ",
+    name="System.Echo",
 )
 async def echo(on: bool = True):
     PyTrainApi.get().pytrain.queue_command(f"echo {'on' if on else 'off'}")
