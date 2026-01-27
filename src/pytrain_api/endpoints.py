@@ -312,6 +312,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 @app.exception_handler(ValueError)
 async def validation_exception_handler(request: Request, exc: ValidationError):
     detail = ""
+    print(f"ValueError: {exc} {type(exc)}")
     for error in exc.errors():
         detail += "; " if detail else ""
         detail += error["msg"]
