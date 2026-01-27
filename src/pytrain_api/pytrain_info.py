@@ -130,10 +130,12 @@ class AccessoryInfo(ComponentInfo):
 class EngineInfo(ComponentInfoIr):
     tmcc_id: Annotated[int, Field(title="TMCC ID", description="Assigned TMCC ID", ge=1, le=9999)]
     scope: Component = Component.ENGINE
+    bt_id: str | None
     control: str | None
     direction: str | None
     engine_class: str | None
     engine_type: str | None
+    fuel_level: int | None
     labor: int | None
     max_speed: int | None
     momentum: int | None
@@ -142,7 +144,9 @@ class EngineInfo(ComponentInfoIr):
     sound_type: str | None
     speed: int | None
     speed_limit: int | None
+    target_speed: int | None
     train_brake: int | None
+    water_level: int | None
     year: int | None
 
 
