@@ -311,12 +311,14 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 # noinspection PyUnusedLocal
 @app.exception_handler(ValueError)
 async def validation_exception_handler(request: Request, exc: ValidationError):
-    detail = ""
-    print(f"ValueError: {exc} {type(exc)}")
-    for error in exc.errors():
-        detail += "; " if detail else ""
-        detail += error["msg"]
-    detail = detail.replace("Value error, ", "")
+    if isinstance(exc, ValidationError):
+        detail = ""
+        for error in exc.errors():
+            detail += "; " if detail else ""
+            detail += error["msg"]
+        detail = detail.replace("Value error, ", "")
+    else:
+        detail = str(exc)
     return JSONResponse(
         content={"detail": detail},
         status_code=status.HTTP_404_NOT_FOUND,
