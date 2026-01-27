@@ -86,6 +86,8 @@ DEFAULT_API_SERVER_VALUE = "[SERVER DOMAIN/IP ADDRESS NAME YOU GAVE TO ALEXA SKI
 API_KEYS: dict[str, str] = dict()
 
 # Load environment variables that drive behavior
+print("API_TOKENS present pre-load?", "API_TOKENS" in os.environ)
+print("API_TOKENS pre-load value:", repr(os.environ.get("API_TOKENS")))
 load_dotenv(find_dotenv())
 SECRET_KEY = os.environ.get("SECRET_KEY")
 SECRET_PHRASE = os.environ.get("SECRET_PHRASE") if os.environ.get("SECRET_PHRASE") else "PYTRAINAPI"
