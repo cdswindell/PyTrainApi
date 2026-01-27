@@ -235,14 +235,9 @@ def mobile_post(
     category: str | None = None,
     **kwargs: Any,
 ) -> Callable[[F], F]:
-    if operation_id is None:
-        operation_id = _operation_id_from_name(name)
-
-    if summary is None:
-        summary = _summary_from_name(name)
-
+    operation_id = operation_id or _operation_id_from_name(name)
+    summary = summary or _summary_from_name(name)
     category = category or infer_category(name)
-
     return api.post(
         path,
         tags=[f"Mobile.{category}"],
@@ -391,7 +386,7 @@ def pytrain_doc():
     "/system/halt",
     summary="Emergency Stop",
     description="Stops all engines and trains, in their tracks; turns off all power districts.",
-    tags=["Legacy", "Mobile"],
+    tags=["Legacy.System", "Mobile.System"],
     operation_id="system_halt",
     name="System.Halt",
 )
@@ -860,7 +855,7 @@ class Block(PyTrainComponent):
 
 @router.get(
     "/engines",
-    tags=["Legacy", "Mobile"],
+    tags=["Legacy.Engine", "Mobile.Engine"],
     operation_id="engines_list",
     name="Engines.List",
     summary="List all engines",
@@ -895,7 +890,7 @@ class Engine(PyTrainEngine):
 
     @router.get(
         "/engine/{tmcc_id:int}",
-        tags=["Legacy", "Mobile"],
+        tags=["Legacy.Engine", "Mobile.Engine"],
         operation_id="engine_get",
         name="Engine.Get",
         summary="Get engine state",
@@ -1016,7 +1011,7 @@ class Engine(PyTrainEngine):
 
     @router.get(
         "/engine/{tmcc_id:int}/info",
-        tags=["Legacy", "Mobile"],
+        tags=["Legacy.Engine", "Mobile.Engine"],
         name="Engine.Info",
         operation_id="engine_info",
         summary="Get engine product information",
@@ -1186,7 +1181,7 @@ class Route(PyTrainComponent):
     async def get_route(self, tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Route")]):
         return RouteInfo(**super().get(tmcc_id))
 
-    @router.post("/route/{tmcc_id}/fire_req", tags=["Legacy"])
+    @legacy_post(router, "/route/{tmcc_id}/fire_req", name="Route.FireReq")
     @mobile_post(router, "/route/{tmcc_id}/fire", name="Route.Fire")
     async def fire(
         self,
