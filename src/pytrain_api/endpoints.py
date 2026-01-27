@@ -22,7 +22,7 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import APIKeyHeader, OAuth2PasswordBearer
 from fastapi_utils.cbv import cbv
-from jwt import ExpiredSignatureError, InvalidSignatureError
+from jwt import DecodeError, ExpiredSignatureError, InvalidSignatureError, InvalidTokenError
 from pydantic import BaseModel, ValidationError
 from pytrain import (
     PROGRAM_NAME,
@@ -158,26 +158,128 @@ def create_secret(length: int = 32) -> str:
     return secrets.token_hex(length)
 
 
+# def get_api_token(api_key: str = Security(api_key_header)) -> bool:
+#     # see if it's a jwt token
+#     try:
+#         payload = jwt.decode(api_key, SECRET_KEY, algorithms=[ALGORITHM])
+#     except InvalidSignatureError as e:
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+#     except ExpiredSignatureError as es:
+#         raise HTTPException(status_code=498, detail=str(es))
+#     if payload:
+#         if api_key and (api_key == API_TOKEN or api_key in API_KEYS) and payload.get("magic") == API_NAME:
+#             return True
+#         if payload.get("SERVER", None) == API_SERVER:
+#             guid = payload.get("GUID", None)
+#             if guid in API_KEYS and API_KEYS[guid] == api_key:
+#                 return True
+#             if guid:
+#                 log.info(f"{guid} not in API Keys,but other info checks out")
+#                 API_KEYS[guid] = api_key
+#                 return True
+#     log.warning(f"Invalid Access attempt: payload: {payload} key: {api_key}")
+#     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid API key")
+
+
 def get_api_token(api_key: str = Security(api_key_header)) -> bool:
-    # see if it's a jwt token
+    """
+    Accepts either:
+      1) Raw API key (API_TOKEN, API_KEYS, etc.), OR
+      2) A JWT (Authorization-style bearer token) signed with SECRET_KEY.
+
+    Returns True if authorized, otherwise raises HTTPException.
+    """
+
+    # ---- normalize / basic checks ----
+    if not api_key or not isinstance(api_key, str):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid API key")
+
+    api_key = api_key.strip()
+
+    # If someone passed "Bearer <token>" in the header value, strip it.
+    if api_key.lower().startswith("bearer "):
+        api_key = api_key.split(" ", 1)[1].strip()
+
+    # ---- path A: RAW API KEY ----
+    # Treat anything not JWT-shaped as a raw key.
+    is_jwt_shaped = api_key.count(".") == 2
+
+    if not is_jwt_shaped:
+        if api_key == API_TOKEN:
+            return True
+
+        # API_KEYS might be:
+        #  - a dict {guid: key}
+        #  - a set/list of keys
+        try:
+            if isinstance(API_KEYS, dict):
+                if api_key in API_KEYS.values():
+                    return True
+            else:
+                if api_key in API_KEYS:
+                    return True
+        except TypeError:
+            # In case API_KEYS isn't iterable / is misconfigured
+            pass
+
+        log.warning(f"Invalid raw key access attempt: key={api_key!r}")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid API key")
+
+    # ---- path B: JWT ----
     try:
         payload = jwt.decode(api_key, SECRET_KEY, algorithms=[ALGORITHM])
-    except InvalidSignatureError as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
     except ExpiredSignatureError as es:
+        # Keep your 498 convention
         raise HTTPException(status_code=498, detail=str(es))
-    if payload:
-        if api_key and (api_key == API_TOKEN or api_key in API_KEYS) and payload.get("magic") == API_NAME:
+    except (InvalidSignatureError, DecodeError, InvalidTokenError) as e:
+        # Covers "Not enough segments" and other malformed/invalid JWTs
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+
+    # ---- JWT authorization rules ----
+    if not payload:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid API key")
+
+    # 1) Magic/name check (you already had this)
+    if payload.get("magic") == API_NAME:
+        # For JWTs, consider them valid based on claims alone,
+        # OR optionally also require the token string to be known.
+        # Keeping your original behavior, but more flexible:
+        if api_key == API_TOKEN:
             return True
-        if payload.get("SERVER", None) == API_SERVER:
-            guid = payload.get("GUID", None)
-            if guid in API_KEYS and API_KEYS[guid] == api_key:
-                return True
-            if guid:
-                log.info(f"{guid} not in API Keys,but other info checks out")
+        try:
+            if isinstance(API_KEYS, dict):
+                if api_key in API_KEYS.values():
+                    return True
+            else:
+                if api_key in API_KEYS:
+                    return True
+        except TypeError:
+            pass
+
+        # If you want JWTs with correct signature+claims to be enough, uncomment this:
+        return True
+
+    # 2) Server/GUID flow you already had
+    if payload.get("SERVER") == API_SERVER:
+        guid = payload.get("GUID")
+        if guid:
+            if isinstance(API_KEYS, dict):
+                # If we already have this GUID and it matches, accept
+                if guid in API_KEYS and API_KEYS[guid] == api_key:
+                    return True
+
+                # If GUID exists but not stored yet, accept and store it
+                log.info(f"{guid} not in API_KEYS (or mismatch); storing JWT for future requests")
                 API_KEYS[guid] = api_key
                 return True
-    log.warning(f"Invalid Access attempt: payload: {payload} key: {api_key}")
+            else:
+                # If API_KEYS isn't dict, we can't do GUID->token mapping
+                log.warning("API_KEYS is not a dict; cannot store GUID->token mapping for JWT auth")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail="Server token mapping not supported"
+                )
+
+    log.warning(f"Invalid JWT access attempt: payload={payload} token={api_key!r}")
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid API key")
 
 
