@@ -894,7 +894,6 @@ class Engine(PyTrainEngine):
         tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
         cmd: Annotated[NumericCommand, Body(...)],
     ):
-        print(f"Received numeric command for engine {tmcc_id}: Number={cmd.number}, Duration={cmd.duration}")
         return super().numeric(tmcc_id, cmd.number, cmd.duration)
 
     @legacy_post(router, "/engine/{tmcc_id:int}/momentum_req", name="Engine.MomentumReq")
