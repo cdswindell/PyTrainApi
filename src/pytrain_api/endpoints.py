@@ -774,7 +774,13 @@ class Block(PyTrainComponent):
         return BlockInfo(**super().get(block_id))
 
 
-@router.get("/engines")
+@router.get(
+    "/engines",
+    tags=["Legacy", "Mobile"],
+    operation_id="engines_list",
+    name="Engines.List",
+    summary="List all engines",
+)
 async def get_engines(contains: str = None, is_legacy: bool = None, is_tmcc: bool = None) -> list[EngineInfo]:
     return [
         EngineInfo(**d)
@@ -803,7 +809,13 @@ class Engine(PyTrainEngine):
     def __init__(self):
         super().__init__(CommandScope.ENGINE)
 
-    @router.get("/engine/{tmcc_id:int}")
+    @router.get(
+        "/engine/{tmcc_id:int}",
+        tags=["Legacy", "Mobile"],
+        operation_id="engine_get",
+        name="Engine.Get",
+        summary="Get engine state",
+    )
     async def get_engine(
         self,
         tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
@@ -900,7 +912,13 @@ class Engine(PyTrainEngine):
         duration = getattr(cmd, "duration", None)
         return super().blow_horn(tmcc_id, option, intensity, duration)
 
-    @router.get("/engine/{tmcc_id:int}/info", name="Engine.Info")
+    @router.get(
+        "/engine/{tmcc_id:int}/info",
+        tags=["Legacy", "Mobile"],
+        name="Engine.Info",
+        operation_id="engine_info",
+        summary="Get engine product information",
+    )
     async def get_info(
         self,
         tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
