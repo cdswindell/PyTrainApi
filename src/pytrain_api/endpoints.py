@@ -211,6 +211,7 @@ def get_api_token(api_key: str = Security(api_key_header)) -> bool:
         # API_KEYS might be:
         #  - a dict {guid: key}
         #  - a set/list of keys
+        print(API_KEYS)
         try:
             if isinstance(API_KEYS, dict):
                 if api_key in API_KEYS.values():
