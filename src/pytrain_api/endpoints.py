@@ -800,10 +800,7 @@ class Engine(PyTrainEngine):
     async def ring_bell_cmd(
         self,
         tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
-        cmd: BellCommand | None = Body(
-            ...,
-            description="Bell command; omit body to toggle",
-        ),
+        cmd: BellCommand | None = Body(...),
     ):
         duration = getattr(cmd, "duration", None)
         return super().ring_bell(tmcc_id, cmd.option, duration)
