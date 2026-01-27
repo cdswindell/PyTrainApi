@@ -13,7 +13,7 @@ from typing import Annotated, Any, Literal, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from .pytrain_component import Component
+from .pytrain_component import Component, HornOption
 
 
 class ProductInfo(BaseModel):
@@ -154,18 +154,18 @@ class TrainInfo(EngineInfo):
 
 class HornGrade(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    option: Literal["grade"]
+    option: Literal[HornOption.GRADE]
 
 
 class HornSound(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    option: Literal["sound"]
+    option: Literal[HornOption.SOUND]
     duration: float | None = Field(None, gt=0.0, description="Duration (seconds)")
 
 
 class HornQuilling(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    option: Literal["quilling"]
+    option: Literal[HornOption.QUILLING]
     intensity: int = Field(10, ge=0, le=15, description="Quilling horn intensity (Legacy engines only)")
     duration: float | None = Field(None, gt=0.0, description="Duration (seconds)")
 
@@ -177,15 +177,8 @@ HornCommand = Annotated[
 
 
 class ResetCommand(BaseModel):
-    hold: bool = Field(
-        False,
-        description="If true, perform a long/held reset",
-    )
-    duration: float | None = Field(
-        None,
-        gt=0.0,
-        description="Optional duration (seconds) for hold reset",
-    )
+    hold: bool = Field(False, description="If true, perform refuel (held reset)")
+    duration: float | None = Field(None, gt=0.0, description="Optional duration (seconds) for refuel")
 
 
 class SpeedCommand(BaseModel):
