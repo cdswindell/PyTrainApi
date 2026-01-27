@@ -102,7 +102,7 @@ else:
 if not API_SERVER or API_SERVER == DEFAULT_API_SERVER_VALUE:
     log.error("API_SERVER not set in .env; Alexa skill will not work")
 
-print(f"API_TOKENS: {API_TOKENS}, {os.environ.get('API_TOKENS')}")
+print(f"API_TOKENS: {API_TOKENS}, {os.environ.get('API_TOKENS')}, {os.environ.get('API_SERVER')}")
 if API_TOKENS:
     tokens = API_TOKENS.split(",")
     for token in tokens:
