@@ -86,13 +86,11 @@ DEFAULT_API_SERVER_VALUE = "[SERVER DOMAIN/IP ADDRESS NAME YOU GAVE TO ALEXA SKI
 API_KEYS: dict[str, str] = dict()
 
 # Load environment variables that drive behavior
-print("API_TOKENS present pre-load?", "API_TOKENS" in os.environ)
-print("API_TOKENS pre-load value:", repr(os.environ.get("API_TOKENS")))
 load_dotenv(find_dotenv())
 SECRET_KEY = os.environ.get("SECRET_KEY")
 SECRET_PHRASE = os.environ.get("SECRET_PHRASE") if os.environ.get("SECRET_PHRASE") else "PYTRAINAPI"
 API_TOKEN = os.environ.get("API_TOKEN")
-API_TOKENS = os.environ.get("API_TOKENS")
+UNSECURE_TOKENS = os.environ.get("UNSECURE_TOKENS")
 ALGORITHM = os.environ.get("ALGORITHM")
 API_SERVER = os.environ.get("API_SERVER")
 ALEXA_TOKEN_EXP_MIN = os.environ.get("ALEXA_TOKEN_EXP_MIN")
@@ -104,10 +102,10 @@ else:
 if not API_SERVER or API_SERVER == DEFAULT_API_SERVER_VALUE:
     log.error("API_SERVER not set in .env; Alexa skill will not work")
 
-print(f"API_TOKENS: {API_TOKENS}")
-print(f"API_TOKENS: {API_TOKENS}, {os.environ.get('API_TOKENS')}, {find_dotenv()}")
-if API_TOKENS:
-    tokens = API_TOKENS.split(",")
+print(f"UNSECURE_TOKENS: {UNSECURE_TOKENS}")
+print(f"UNSECURE_TOKENS: {UNSECURE_TOKENS}, {os.environ.get('API_TOKENS')}, {find_dotenv()}")
+if UNSECURE_TOKENS:
+    tokens = UNSECURE_TOKENS.split(",")
     for token in tokens:
         token = token.strip()
         API_KEYS[token] = token

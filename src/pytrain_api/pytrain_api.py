@@ -321,5 +321,5 @@ class PyTrainApi:
             f.write(f"ALEXA_TOKEN_EXP_MIN={alexa_exp}\n")
             log.info("Creating API_TOKEN...")
             f.write(f'API_TOKEN="{create_api_token(secret=secret)}"\n')
-            f.write("API_TOKENS=\n")
+            f.write("UNSECURE_TOKENS=\n")
             f.write(f'API_SERVER="{api_server}"\n')
