@@ -177,6 +177,7 @@ class PyTrainComponent:
             headers = {"X-Error": "404"}
             raise HTTPException(status_code=404, headers=headers, detail=f"{self.scope.title} {tmcc_id} not found")
         else:
+            print(state.as_dict())
             return state.as_dict()
 
     def send(self, request: E, tmcc_id: int, data: int = None) -> dict[str, Any]:
