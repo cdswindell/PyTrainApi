@@ -896,6 +896,24 @@ class Engine(PyTrainEngine):
     ) -> EngineInfo:
         return EngineInfo(**super().get(tmcc_id))
 
+    @legacy_post(router, "/engine/{tmcc_id:int}/{aux_req}", name="Engine.AuxReq")
+    async def aux_req(
+        self,
+        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        aux_req: Annotated[AuxOption, Path(description="Aux 1, Aux2, or Aux 3")],
+        number: Annotated[int | None, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
+        duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
+    ):
+        return super().aux_req(tmcc_id, aux_req, number, duration)
+
+    @mobile_post(router, "/engine/{tmcc_id:int}/aux", name="Engine.Aux")
+    async def aux_cmd(
+        self,
+        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        cmd: AuxCommand = Body(...),
+    ):
+        return super().aux_req(tmcc_id, cmd.aux_req, cmd.number, cmd.duration)
+
     @legacy_post(router, "/engine/{tmcc_id:int}/bell_req", name="Engine.BellReq")
     async def ring_bell_req(
         self,
@@ -1142,24 +1160,6 @@ class Engine(PyTrainEngine):
         tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
     ):
         return super().volume_up(tmcc_id)
-
-    @legacy_post(router, "/engine/{tmcc_id:int}/{aux_req}", name="Engine.AuxReq")
-    async def aux_req(
-        self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
-        aux_req: Annotated[AuxOption, Path(description="Aux 1, Aux2, or Aux 3")],
-        number: Annotated[int | None, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
-        duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
-    ):
-        return super().aux_req(tmcc_id, aux_req, number, duration)
-
-    @mobile_post(router, "/engine/{tmcc_id:int}/aux", name="Engine.Aux")
-    async def aux_cmd(
-        self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
-        cmd: AuxCommand = Body(...),
-    ):
-        return super().aux_req(tmcc_id, cmd.aux_req, cmd.number, cmd.duration)
 
 
 @router.get("/routes", response_model=list[RouteInfo])
