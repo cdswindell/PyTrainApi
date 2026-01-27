@@ -454,6 +454,28 @@ async def reboot():
 
 @legacy_post(
     router,
+    "/system/restart_req",
+    summary=f"Restart {PROGRAM_NAME}",
+    description=f"Restart {PROGRAM_NAME} server and all clients.",
+    name="System.RestartReq",
+)
+@mobile_post(
+    router,
+    "/system/restart",
+    summary=f"Restart {PROGRAM_NAME}",
+    description=f"Restart {PROGRAM_NAME} server and all clients.",
+    name="System.Restart",
+)
+async def restart():
+    try:
+        CommandReq(TMCC1SyncCommandEnum.RESTART).send()
+        return {"status": "RESTART command sent"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@legacy_post(
+    router,
     "/system/resync_req",
     summary="Resynchronize with Base 3",
     description="Reload all state information from your Lionel Base 3.",
