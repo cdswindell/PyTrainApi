@@ -1006,16 +1006,6 @@ class Engine(PyTrainEngine):
     ) -> EngineInfo:
         return EngineInfo(**super().get(tmcc_id))
 
-    @legacy_post(router, "/engine/{tmcc_id:int}/{aux_req}", name="Engine.AuxReq")
-    async def aux_req(
-        self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
-        aux_req: Annotated[AuxOption, Path(description="Aux 1, Aux2, or Aux 3")],
-        number: Annotated[int | None, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
-        duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
-    ):
-        return super().aux(tmcc_id, aux_req, number, duration)
-
     @mobile_post(router, "/engine/{tmcc_id:int}/aux", name="Engine.Aux")
     async def aux_cmd(
         self,
@@ -1270,6 +1260,16 @@ class Engine(PyTrainEngine):
         tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
     ):
         return super().volume_up(tmcc_id)
+
+    @legacy_post(router, "/engine/{tmcc_id:int}/{aux_req}", name="Engine.AuxReq")
+    async def aux_req(
+        self,
+        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        aux_req: Annotated[AuxOption, Path(description="Aux 1, Aux2, or Aux 3")],
+        number: Annotated[int | None, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
+        duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
+    ):
+        return super().aux(tmcc_id, aux_req, number, duration)
 
 
 @router.get("/routes", response_model=list[RouteInfo])
