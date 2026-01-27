@@ -802,7 +802,7 @@ class Engine(PyTrainEngine):
         tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
         cmd: Annotated[BellCommand, Body(..., discriminator="option")],
     ):
-        option = BellOption(cmd.option)
+        option = cmd.option
         duration = getattr(cmd, "duration", None)
         ding = getattr(cmd, "ding", None)
         return super().ring_bell(tmcc_id, option, duration, ding)
