@@ -102,8 +102,8 @@ else:
 if not API_SERVER or API_SERVER == DEFAULT_API_SERVER_VALUE:
     log.error("API_SERVER not set in .env; Alexa skill will not work")
 
-print(f"UNSECURE_TOKENS: {UNSECURE_TOKENS}")
-print(f"UNSECURE_TOKENS: {UNSECURE_TOKENS}, {os.environ.get('API_TOKENS')}, {find_dotenv()}")
+# UNSECURE_TOKENS allows you to specify a comma-separated list of tokens that will bypass the API_TOKEN check.
+# This is useful for testing, but should never be used in production.
 if UNSECURE_TOKENS:
     tokens = UNSECURE_TOKENS.split(",")
     for token in tokens:
