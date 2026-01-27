@@ -802,9 +802,10 @@ class Engine(PyTrainEngine):
         tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
         cmd: BellCommand = Body(...),
     ):
+        option = BellOption(cmd.option)
         duration = getattr(cmd, "duration", None)
         ding = getattr(cmd, "ding", None)
-        return super().ring_bell(tmcc_id, cmd.option, duration, ding)
+        return super().ring_bell(tmcc_id, option, duration, ding)
 
     @legacy_post(router, "/engine/{tmcc_id:int}/boost_req", name="Engine.BoostReq")
     @mobile_post(router, "/engine/{tmcc_id:int}/boost", name="Engine.Boost")

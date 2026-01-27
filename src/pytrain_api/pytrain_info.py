@@ -13,7 +13,7 @@ from typing import Annotated, Any, Literal, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from .pytrain_component import BellOption, Component, HornOption
+from .pytrain_component import Component, HornOption
 
 
 class ProductInfo(BaseModel):
@@ -178,22 +178,22 @@ HornCommand = Annotated[
 
 class BellToggle(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    option: Literal[BellOption.TOGGLE]
+    option: Literal["toggle"]
 
 
 class BellOn(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    option: Literal[BellOption.ON]
+    option: Literal["on"]
 
 
 class BellOff(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    option: Literal[BellOption.OFF]
+    option: Literal["off"]
 
 
 class BellOnce(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    option: Literal[BellOption.ONCE]
+    option: Literal["once"]
     duration: float | None = Field(
         None,
         gt=0.0,
@@ -203,7 +203,7 @@ class BellOnce(BaseModel):
 
 class BellDing(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    option: Literal[BellOption.DING]
+    option: Literal["ding"]
     ding: int | None = Field(
         None,
         ge=0,
