@@ -218,6 +218,12 @@ BellCommand = Annotated[
 ]
 
 
+class NumericCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    number: int = Field(..., description="Number (0 - 9)", ge=0, le=9)
+    duration: float | None = Field(None, gt=0.0, description="Optional duration (seconds)")
+
+
 class ResetCommand(BaseModel):
     hold: bool = Field(False, description="If true, perform refuel (held reset)")
     duration: float | None = Field(None, gt=0.0, description="Optional duration (seconds) for refuel")

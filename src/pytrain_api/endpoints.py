@@ -64,6 +64,7 @@ from .pytrain_info import (
     BlockInfo,
     EngineInfo,
     HornCommand,
+    NumericCommand,
     ProductInfo,
     ResetCommand,
     RouteInfo,
@@ -878,14 +879,22 @@ class Engine(PyTrainEngine):
     ) -> ProductInfo:
         return ProductInfo(**super().get_engine_info(tmcc_id))
 
-    @router.post("/engine/{tmcc_id:int}/numeric_req", tags=["Legacy"])
+    @legacy_post(router, "/engine/{tmcc_id:int}/numeric_req", name="Engine.NumericReq")
     async def numeric_req(
         self,
         tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
-        number: Annotated[int, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
+        number: Annotated[int, Query(description="Number (0 - 9)", ge=0, le=9)],
         duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
-        return super().numeric_req(tmcc_id, number, duration)
+        return super().numeric(tmcc_id, number, duration)
+
+    @mobile_post(router, "/engine/{tmcc_id:int}/numeric", name="Engine.Numeric")
+    async def numeric_cmd(
+        self,
+        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        cmd: Annotated[NumericCommand, Body(...)],
+    ):
+        return super().numeric(tmcc_id, cmd.number, cmd.duration)
 
     @legacy_post(router, "/engine/{tmcc_id:int}/momentum_req", name="Engine.MomentumReq")
     @mobile_post(router, "/engine/{tmcc_id:int}/momentum", name="Engine.Momentum")
@@ -1169,7 +1178,7 @@ class Switch(PyTrainComponent):
             number: Annotated[int, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
             duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
         ):
-            return super().numeric_req(tmcc_id, number, duration)
+            return super().numeric(tmcc_id, number, duration)
 
         @router.post("/train/{tmcc_id:int}/rear_coupler_req")
         async def rear_coupler(

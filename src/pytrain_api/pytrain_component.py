@@ -469,7 +469,7 @@ class PyTrainEngine(PyTrainComponent):
                 detail=f"Aux option '{aux.value}' not supported on {self.scope.title} {tmcc_id}",
             )
 
-    def numeric_req(self, tmcc_id, number, duration) -> dict:
+    def numeric(self, tmcc_id, number, duration) -> dict:
         if self.is_tmcc(tmcc_id):
             cmd = TMCC1EngineCommandEnum.NUMERIC
         else:
