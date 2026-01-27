@@ -108,7 +108,8 @@ if UNSECURE_TOKENS:
     tokens = UNSECURE_TOKENS.split(",")
     for token in tokens:
         token = token.strip()
-        API_KEYS[token] = token
+        if token:
+            API_KEYS[token] = token
 
 
 class Token(BaseModel):
