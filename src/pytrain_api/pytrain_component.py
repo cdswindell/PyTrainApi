@@ -205,9 +205,7 @@ class PyTrainComponent:
                 repeat = repeat if repeat and repeat >= 1 else 1
                 duration = duration if duration is not None else 0
                 delay = delay if delay is not None else 0
-                interval = 200 if duration > 0 else None
-                print(f"Sending {cmd_req}: repeat={repeat}, delay={delay}, duration={duration}, interval={interval}")
-                cmd_req.send(repeat=repeat, delay=delay, duration=duration, interval=interval)
+                cmd_req.send(repeat=repeat, delay=delay, duration=duration)
             return cmd_req
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
