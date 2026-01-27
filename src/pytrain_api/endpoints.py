@@ -634,7 +634,6 @@ async def shutdown():
 @mobile_post(router, "/system/stop_all", name="System.StopAll", summary="Stop All Engines and Trains")
 async def stop_all():
     CommandReq(TMCC1EngineCommandEnum.STOP_IMMEDIATE, 99).send()
-    CommandReq(TMCC2EngineCommandEnum.STOP_IMMEDIATE, 99).send()
     CommandReq(TMCC2EngineCommandEnum.STOP_IMMEDIATE, 99, scope=CommandScope.TRAIN).send()
     return {"status": "Sent 'stop' command to all engines and trains..."}
 

@@ -419,7 +419,6 @@ class PyTrainEngine(PyTrainComponent):
 
     def stop_all(self) -> dict:
         self.do_request(TMCC1EngineCommandEnum.STOP_IMMEDIATE, 99)
-        self.do_request(TMCC2EngineCommandEnum.STOP_IMMEDIATE, 99)
         self.do_request(TMCC2EngineCommandEnum.STOP_IMMEDIATE, 99, scope=CommandScope.TRAIN)
         return {"status": "Sent 'stop' command to all engines and trains..."}
 
