@@ -380,6 +380,9 @@ def pytrain_doc():
     "/system/halt",
     summary="Emergency Stop",
     description="Stops all engines and trains, in their tracks; turns off all power districts.",
+    tags=["Legacy", "Mobile"],
+    operation_id="system_halt",
+    name="System.Halt",
 )
 async def halt():
     try:
@@ -427,10 +430,19 @@ async def echo(on: bool = True):
     return {"status": f"Echo {'enabled' if on else 'disabled'}"}
 
 
-@router.post(
+@legacy_post(
+    router,
     "/system/reboot_req",
     summary=f"Reboot {PROGRAM_NAME}",
     description=f"Reboot {PROGRAM_NAME} server and all clients.",
+    name="System.RebootReq",
+)
+@mobile_post(
+    router,
+    "/system/reboot",
+    summary=f"Reboot {PROGRAM_NAME}",
+    description=f"Reboot {PROGRAM_NAME} server and all clients.",
+    name="System.Reboot",
 )
 async def reboot():
     try:
@@ -440,10 +452,19 @@ async def reboot():
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post(
+@legacy_post(
+    router,
     "/system/resync_req",
     summary="Resynchronize with Base 3",
     description="Reload all state information from your Lionel Base 3.",
+    name="System.ResyncReq",
+)
+@mobile_post(
+    router,
+    "/system/resync",
+    summary="Resynchronize with Base 3",
+    description="Reload all state information from your Lionel Base 3.",
+    name="System.Resync",
 )
 async def resync():
     try:
@@ -453,10 +474,19 @@ async def resync():
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post(
+@legacy_post(
+    router,
     "/system/shutdown_req",
     summary=f"Shutdown {PROGRAM_NAME}",
     description=f"Shutdown {PROGRAM_NAME} server and all clients.",
+    name="System.ShutdownReq",
+)
+@mobile_post(
+    router,
+    "/system/shutdown",
+    summary=f"Shutdown {PROGRAM_NAME}",
+    description=f"Shutdown {PROGRAM_NAME} server and all clients.",
+    name="System.Shutdown",
 )
 async def shutdown():
     try:
@@ -474,10 +504,19 @@ async def stop():
     return {"status": "Stop all engines and trains command sent"}
 
 
-@router.post(
+@legacy_post(
+    router,
     "/system/update_req",
     summary=f"Update {API_NAME}",
     description=f"Update {API_NAME} software from PyPi or Git Hub repository.",
+    name="System.UpdateReq",
+)
+@mobile_post(
+    router,
+    "/system/update",
+    summary=f"Update {API_NAME}",
+    description=f"Update {API_NAME} software from PyPi or Git Hub repository.",
+    name="System.Update",
 )
 async def update():
     try:
@@ -487,10 +526,19 @@ async def update():
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post(
+@legacy_post(
+    router,
     "/system/version_req",
     summary=f"Get {API_NAME} Version",
     description=f"Get {API_NAME} software version.",
+    name="System.VersionReq",
+)
+@mobile_post(
+    router,
+    "/system/version",
+    summary=f"Get {API_NAME} Version",
+    description=f"Get {API_NAME} software version.",
+    name="System.Version",
 )
 async def get_version():
     try:
