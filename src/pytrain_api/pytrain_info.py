@@ -13,7 +13,7 @@ from typing import Annotated, Any, Literal, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from .pytrain_component import Component, HornOption
+from .pytrain_component import BellOption, Component, HornOption
 
 
 class ProductInfo(BaseModel):
@@ -172,6 +172,37 @@ class HornQuilling(BaseModel):
 
 HornCommand = Annotated[
     Union[HornSound, HornGrade, HornQuilling],
+    Field(discriminator="option"),
+]
+
+
+class BellToggle(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    option: Literal[BellOption.TOGGLE]
+
+
+class BellOn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    option: Literal[BellOption.ON]
+
+
+class BellOff(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    option: Literal[BellOption.OFF]
+
+
+class BellOnce(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    option: Literal[BellOption.ONCE]
+    duration: float | None = Field(
+        None,
+        gt=0.0,
+        description="Duration (seconds) for one-shot bell",
+    )
+
+
+BellCommand = Annotated[
+    Union[BellToggle, BellOn, BellOff, BellOnce],
     Field(discriminator="option"),
 ]
 

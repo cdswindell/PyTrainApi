@@ -380,7 +380,7 @@ class PyTrainEngine(PyTrainComponent):
             self.do_request(TMCC2EngineCommandEnum.REVERSE_DIRECTION, tmcc_id)
         return {"status": f"{self.scope.title} {tmcc_id} reverse..."}
 
-    def ring_bell(self, tmcc_id: int, option: BellOption, duration: float = None):
+    def ring_bell(self, tmcc_id: int, option: BellOption | None, duration: float = None):
         if self.is_tmcc(tmcc_id):
             self.do_request(TMCC1EngineCommandEnum.RING_BELL, tmcc_id)
         else:

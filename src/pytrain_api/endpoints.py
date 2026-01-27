@@ -60,6 +60,7 @@ from .pytrain_component import (
 )
 from .pytrain_info import (
     AccessoryInfo,
+    BellCommand,
     BlockInfo,
     EngineInfo,
     HornCommand,
@@ -780,14 +781,35 @@ class Engine(PyTrainEngine):
     ) -> EngineInfo:
         return EngineInfo(**super().get(tmcc_id))
 
-    @router.post("/engine/{tmcc_id:int}/bell_req", tags=["Legacy"])
-    async def ring_bell(
+    @legacy_post(router, "/engine/{tmcc_id:int}/bell_req", name="Engine.BellReq")
+    async def ring_bell_req(
         self,
         tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
-        option: Annotated[BellOption, Query(description="Bell effect")],
-        duration: Annotated[float, Query(description="Duration (seconds, only with 'once' option)", gt=0.0)] = None,
+        option: Annotated[
+            BellOption | None,
+            Query(description="Bell effect (omit to toggle)"),
+        ] = None,
+        duration: Annotated[
+            float | None,
+            Query(description="Duration (seconds, only with 'once' option)", gt=0.0),
+        ] = None,
     ):
         return super().ring_bell(tmcc_id, option, duration)
+
+    @mobile_post(router, "/engine/{tmcc_id:int}/bell", name="Engine.Bell")
+    async def ring_bell_cmd(
+        self,
+        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        cmd: BellCommand | None = Body(
+            None,
+            description="Bell command; omit body to toggle",
+        ),
+    ):
+        if cmd is None:
+            return super().ring_bell(tmcc_id, None, None)
+
+        duration = getattr(cmd, "duration", None)
+        return super().ring_bell(tmcc_id, cmd.option, duration)
 
     @legacy_post(router, "/engine/{tmcc_id:int}/boost_req", name="Engine.BoostReq")
     @mobile_post(router, "/engine/{tmcc_id:int}/boost", name="Engine.Boost")
