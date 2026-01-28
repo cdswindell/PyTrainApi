@@ -10,16 +10,19 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, TypeVar
+from typing import Any, Callable, TypeVar
 
 from fastapi import HTTPException, Path
 from pytrain import (
+    AccessoryState,
     CommandReq,
     CommandScope,
     EngineState,
     SequenceCommandEnum,
+    TMCC1AuxCommandEnum,
     TMCC1EngineCommandEnum,
     TMCC1RRSpeedsEnum,
+    TMCC1SwitchCommandEnum,
     TMCC2EffectsControl,
     TMCC2EngineCommandEnum,
     TMCC2RailSoundsDialogControl,
@@ -27,6 +30,10 @@ from pytrain import (
 )
 from pytrain.db.component_state import ComponentState
 from pytrain.db.prod_info import ProdInfo
+from pytrain.pdi.amc2_req import Amc2Req
+from pytrain.pdi.asc2_req import Asc2Req
+from pytrain.pdi.bpc2_req import Bpc2Req
+from pytrain.pdi.constants import Amc2Action, Asc2Action, Bpc2Action, PdiCommand
 from pytrain.protocol.command_def import CommandDefEnum
 from range_key_dict import RangeKeyDict
 from starlette import status
@@ -143,6 +150,11 @@ class SmokeOption(str, Enum):
     HIGH = "high"
 
 
+class SwitchPosition(str, Enum):
+    THRU = "thru"
+    OUT = "out"
+
+
 class PyTrainComponent:
     """
     Represents a component of the PyTrain system as exchanged via the API.
@@ -167,13 +179,14 @@ class PyTrainComponent:
     def __init__(self, scope: CommandScope):
         super().__init__()
         self._scope = scope
+        self._state_store = PyTrainApi.get().pytrain.store
 
     @property
     def scope(self) -> CommandScope:
         return self._scope
 
     def get(self, tmcc_id: int) -> dict[str, Any]:
-        state: ComponentState = PyTrainApi.get().pytrain.store.query(self.scope, tmcc_id)
+        state: ComponentState = self._state_store.query(self.scope, tmcc_id)
         if state is None:
             headers = {"X-Error": "404"}
             raise HTTPException(status_code=404, headers=headers, detail=f"{self.scope.title} {tmcc_id} not found")
@@ -213,9 +226,124 @@ class PyTrainComponent:
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
 
-    @staticmethod
-    def queue_command(cmd: str):
-        PyTrainApi.get().pytrain.queue_command(cmd)
+
+class PyTrainAccessory(PyTrainComponent):
+    def __init__(self, scope: CommandScope):
+        super().__init__(scope=scope)
+
+    def enforce_strict(self, tmcc_id: int, label: str, is_valid: Callable[[AccessoryState], bool]) -> None:
+        acc_state = self._state_store.query(self.scope, tmcc_id)
+        if acc_state is None:
+            headers = {"X-Error": "404"}
+            raise HTTPException(status_code=404, headers=headers, detail=f"{label} {tmcc_id} not found")
+        if not is_valid(acc_state):
+            ia = "an" if label.startswith("A") else "a"
+            raise HTTPException(status_code=400, detail=f"{self.scope.title} {tmcc_id} is not {ia} {label}")
+
+    def amc2_motor(
+        self,
+        tmcc_id: int,
+        motor: int,
+        state: OnOffOption | None,
+        speed: int | None,
+        strict: bool = False,
+    ) -> dict[str, str]:
+        if strict:
+            self.enforce_strict(tmcc_id, "AMC2", lambda x: x.is_amc2)
+        if state:
+            self.do_request(TMCC1AuxCommandEnum.NUMERIC, tmcc_id, data=motor)
+            self.do_request(
+                TMCC1AuxCommandEnum.AUX1_OPT_ONE if state == OnOffOption.ON else TMCC1AuxCommandEnum.AUX2_OPT_ONE,
+                tmcc_id,
+            )
+            return {"status": f"Setting AMC2 {tmcc_id} Motor {motor} to {state.name}"}
+        if speed is not None:
+            Amc2Req(tmcc_id, PdiCommand.AMC2_SET, Amc2Action.MOTOR, motor=motor - 1, speed=speed).send()
+            return {"status": f"Setting AMC2 {tmcc_id} Motor {motor} Speed to {speed}"}
+        raise HTTPException(status_code=400, detail="Must specify either motor state or speed.")
+
+    def amc2_lamp(
+        self,
+        tmcc_id: int,
+        lamp: int,
+        state: OnOffOption | None,
+        level: int | None,
+        strict: bool = False,
+    ) -> dict[str, str]:
+        if strict:
+            self.enforce_strict(tmcc_id, "AMC2", lambda x: x.is_amc2)
+        if state:
+            self.do_request(TMCC1AuxCommandEnum.NUMERIC, tmcc_id, data=lamp + 2)
+            self.do_request(
+                TMCC1AuxCommandEnum.AUX1_OPT_ONE if state == OnOffOption.ON else TMCC1AuxCommandEnum.AUX2_OPT_ONE,
+                tmcc_id,
+            )
+            return {"status": f"Setting AMC2 {tmcc_id} Lamp {lamp} to {state.name}"}
+        if level is not None:
+            Amc2Req(tmcc_id, PdiCommand.AMC2_SET, Amc2Action.LAMP, lamp=lamp - 1, level=level).send()
+            return {"status": f"Setting AMC2 {tmcc_id} Lamp {lamp} Level to {level}"}
+        raise HTTPException(status_code=400, detail="Must specify either lamp state or level.")
+
+    def asc2(self, tmcc_id: int, state: OnOffOption, duration: float = None, strict: bool = False) -> dict[str, str]:
+        if strict:
+            self.enforce_strict(tmcc_id, "ASC2", lambda x: x.is_asc2)
+        try:
+            duration = duration if duration is not None and duration > 0.0 else 0
+            int_state = 0 if state == OnOffOption.OFF else 1
+            d = f" for {duration} second(s)" if duration else ""
+            # adjust time and duration parameters
+            if int_state == 1:
+                if duration > 2.5:
+                    time = 0.600
+                    duration -= time
+                elif 0.0 < duration <= 2.55:
+                    time = duration
+                    duration = 0
+                else:
+                    time = 0
+            else:
+                time = duration = 0.0
+            req = Asc2Req(tmcc_id, PdiCommand.ASC2_SET, Asc2Action.CONTROL1, values=int_state, time=time)
+            req.send(duration=duration)
+            return {"status": f"Sending Asc2 {tmcc_id} {state.name}{d}"}
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
+    def bpc2(self, tmcc_id: int, state: OnOffOption, strict: bool = False) -> dict[str, str]:
+        if strict:
+            self.enforce_strict(tmcc_id, "BPC2", lambda x: x.is_bpc2)
+        try:
+            int_state = 0 if state == OnOffOption.OFF else 1
+            Bpc2Req(tmcc_id, PdiCommand.BPC2_SET, Bpc2Action.CONTROL3, state=int_state).send()
+            return {"status": f"Sending Bpc2 {tmcc_id} {state.name}"}
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
+    def open_coupler(self, tmcc_id: int, coupler: TMCC1AuxCommandEnum, duration: float | None = None) -> dict[str, str]:
+        self.do_request(coupler, tmcc_id, duration=duration)
+        d = f" for {duration} second(s)" if duration else ""
+        ct = coupler.title.replace("_", " ")
+        return {"status": f"Sending open {ct} request to {self.scope.title} {tmcc_id}{d}"}
+
+    def boost(self, tmcc_id: int, duration: float = None) -> dict[str, str]:
+        self.do_request(TMCC1AuxCommandEnum.BOOST, tmcc_id, duration=duration)
+        d = f" for {duration} second(s)" if duration else ""
+        return {"status": f"Sending Boost request to {self.scope.title} {tmcc_id}{d}"}
+
+    def brake(self, tmcc_id: int, duration: float = None) -> dict[str, str]:
+        self.do_request(TMCC1AuxCommandEnum.BRAKE, tmcc_id, duration=duration)
+        d = f" for {duration} second(s)" if duration else ""
+        return {"status": f"Sending Brake request to {self.scope.title} {tmcc_id}{d}"}
+
+
+class PyTrainSwitch(PyTrainComponent):
+    def __init__(self, scope: CommandScope):
+        super().__init__(scope=scope)
+
+    def throw(self, tmcc_id: int, position: SwitchPosition) -> dict[str, str]:
+        pos = TMCC1SwitchCommandEnum.OUT if position == SwitchPosition.OUT else TMCC1SwitchCommandEnum.THRU
+        self.do_request(pos, tmcc_id)
+        return {"status": f"Throwing {self.scope.title} {tmcc_id} {position.value}"}
 
 
 class PyTrainEngine(PyTrainComponent):
@@ -227,7 +355,7 @@ class PyTrainEngine(PyTrainComponent):
         return "engine" if self.scope == CommandScope.ENGINE else "train"
 
     def is_tmcc(self, tmcc_id: int) -> bool:
-        state = PyTrainApi.get().pytrain.store.query(self.scope, tmcc_id)
+        state = self._state_store.query(self.scope, tmcc_id)
         if isinstance(state, ComponentState):
             return state.is_tmcc if state else True
         return True
@@ -241,10 +369,10 @@ class PyTrainEngine(PyTrainComponent):
         speed: int | str,
         immediate: bool | None,
         dialog: bool | None,
-    ):
+    ) -> dict[str, str]:
         return self.speed(tmcc_id, speed, immediate=immediate, dialog=dialog)
 
-    def speed(self, tmcc_id: int, speed: int | str, immediate: bool = False, dialog: bool = False):
+    def speed(self, tmcc_id: int, speed: int | str, immediate: bool = False, dialog: bool = False) -> dict[str, str]:
         # convert string numbers to ints
         try:
             if isinstance(speed, str) and speed.isdigit() is True:
@@ -505,7 +633,7 @@ class PyTrainEngine(PyTrainComponent):
         return {"status": f"Sending Brake request to {self.scope.title} {tmcc_id}{d}"}
 
     def get_engine_info(self, tmcc_id) -> dict:
-        state = PyTrainApi.get().pytrain.store.query(self.scope, tmcc_id)
+        state = self._state_store.query(self.scope, tmcc_id)
         engine_info = dict()
         if isinstance(state, EngineState) and state.bt_id:
             info = ProdInfo.get_info(state.bt_id)

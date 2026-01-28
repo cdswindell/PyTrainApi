@@ -13,7 +13,7 @@ from typing import Annotated, Any, Literal, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from .pytrain_component import AuxOption, BellOption, Component, HornOption
+from .pytrain_component import AuxOption, BellOption, Component, HornOption, OnOffOption
 
 
 class ProductInfo(BaseModel):
@@ -108,11 +108,13 @@ class AccessoryInfo(ComponentInfo):
             for field in {"aux", "aux1", "aux2"}:
                 if field not in data:
                     data[field] = None
-            if "block" in data:
-                data["aux"] = data["block"]
-                del data["block"]
+            if "state" in data:
+                data["aux"] = data["state"]
+                del data["state"]
             if "type" not in data:
                 data["type"] = "accessory"
+            if "lcs" not in data:
+                data["lcs"] = None
         return data
 
     # noinspection PyMethodParameters
@@ -122,9 +124,73 @@ class AccessoryInfo(ComponentInfo):
 
     scope: Component = Component.ACCESSORY
     type: str | None
+    lcs: str | None
     aux: str | None
     aux1: str | None
     aux2: str | None
+
+
+STRICT_AMC2 = """
+    Enforce AMC2 validation. When true, the TMCC ID must resolve to a defined AMC2;
+    otherwise the request fails. When false, the command is sent without validation.
+"""
+
+
+class Amc2MotorStateCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    mode: Literal["state"] = Field("state", description="Set motor on/off")
+    motor: int = Field(..., ge=1, le=2, description="Motor (1 - 2)")
+    state: OnOffOption = Field(..., description="On or Off")
+    strict: bool = Field(True, description=STRICT_AMC2)
+
+
+class Amc2MotorSpeedCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    mode: Literal["speed"] = Field("speed", description="Set motor speed")
+    motor: int = Field(..., ge=1, le=2, description="Motor (1 - 2)")
+    speed: int = Field(..., ge=0, le=100, description="Speed (0 - 100)")
+    strict: bool = Field(True, description=STRICT_AMC2)
+
+
+Amc2MotorCommand = Annotated[
+    Union[Amc2MotorStateCommand, Amc2MotorSpeedCommand],
+    Field(discriminator="mode"),
+]
+
+
+class Amc2LampStateCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    mode: Literal["state"] = Field("state", description="Set lamp on/off")
+    lamp: int = Field(..., ge=1, le=4, description="Lamp (1 - 4)")
+    state: OnOffOption = Field(..., description="On or Off")
+    strict: bool = Field(True, description=STRICT_AMC2)
+
+
+class Amc2LampLevelCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    mode: Literal["level"] = Field("level", description="Set lamp brightness")
+    lamp: int = Field(..., ge=1, le=4, description="Lamp (1 - 4)")
+    level: int = Field(..., ge=0, le=100, description="Brightness level (0 - 100)")
+    strict: bool = Field(True, description=STRICT_AMC2)
+
+
+Amc2LampCommand = Annotated[
+    Union[Amc2LampStateCommand, Amc2LampLevelCommand],
+    Field(discriminator="mode"),
+]
+
+
+class Asc2Command(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    state: OnOffOption = Field(..., description="On or Off")
+    duration: float | None = Field(None, gt=0.0, description="Optional duration (seconds)", examples=[None])
+    strict: bool = Field(True, description=STRICT_AMC2.replace("AMC2", "ASC2"))
+
+
+class Bpc2Command(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    state: OnOffOption = Field(..., description="On or Off")
+    strict: bool = Field(True, description=STRICT_AMC2.replace("AMC2", "BPC2"))
 
 
 class EngineInfo(ComponentInfoIr):
@@ -164,14 +230,14 @@ class HornGrade(BaseModel):
 class HornSound(BaseModel):
     model_config = ConfigDict(extra="forbid")
     option: Literal[HornOption.SOUND]
-    duration: float | None = Field(None, gt=0.0, description="Duration (seconds)")
+    duration: float | None = Field(None, gt=0.0, description="Duration (seconds)", examples=[None])
 
 
 class HornQuilling(BaseModel):
     model_config = ConfigDict(extra="forbid")
     option: Literal[HornOption.QUILLING]
     intensity: int = Field(10, ge=0, le=15, description="Quilling horn intensity (Legacy engines only)")
-    duration: float | None = Field(None, gt=0.0, description="Duration (seconds)")
+    duration: float | None = Field(None, gt=0.0, description="Duration (seconds)", examples=[None])
 
 
 HornCommand = Annotated[
@@ -208,12 +274,7 @@ class BellOnce(BaseModel):
 class BellDing(BaseModel):
     model_config = ConfigDict(extra="forbid")
     option: Literal[BellOption.DING]
-    ding: int | None = Field(
-        None,
-        ge=0,
-        le=3,
-        description="Ding number (0-3)",
-    )
+    ding: int | None = Field(None, ge=0, le=3, description="Ding number (0-3)", examples=[None])
 
 
 BellCommand = Annotated[
@@ -225,12 +286,12 @@ BellCommand = Annotated[
 class NumericCommand(BaseModel):
     model_config = ConfigDict(extra="forbid")
     number: int = Field(..., description="Number (0 - 9)", ge=0, le=9)
-    duration: float | None = Field(None, gt=0.0, description="Optional duration (seconds)")
+    duration: float | None = Field(None, gt=0.0, description="Optional duration (seconds)", examples=[None])
 
 
 class ResetCommand(BaseModel):
     hold: bool = Field(False, description="If true, perform refuel (held reset)")
-    duration: float | None = Field(None, gt=0.0, description="Optional duration (seconds) for refuel")
+    duration: float | None = Field(None, gt=0.0, description="Optional duration (seconds) for refuel", examples=[None])
 
 
 class SpeedCommand(BaseModel):
@@ -239,11 +300,11 @@ class SpeedCommand(BaseModel):
         description="New speed (0 to 195, roll, restricted, slow, medium, limited, normal, highball)",
     )
     immediate: bool | None = Field(
-        None,
+        False,
         description="If true, apply speed change immediately (if supported)",
     )
     dialog: bool | None = Field(
-        None,
+        False,
         description="If true, include dialog sounds (if supported)",
     )
 
@@ -252,5 +313,5 @@ class AuxCommand(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     aux_req: AuxOption = Field(..., description="Aux 1, Aux2, or Aux 3")
-    number: int | None = Field(None, ge=0, le=9, description="Optional number (0 - 9)")
-    duration: float | None = Field(None, gt=0.0, description="Optional duration (seconds)")
+    number: int | None = Field(None, ge=0, le=9, description="Optional number (0 - 9)", examples=[None])
+    duration: float | None = Field(None, gt=0.0, description="Optional duration (seconds)", examples=[None])
