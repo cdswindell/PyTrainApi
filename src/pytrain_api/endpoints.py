@@ -851,10 +851,10 @@ class Accessory(PyTrainAccessory):
     @mobile_post(router, "/accessory/{tmcc_id:int}/aux", name="Accessory.Aux")
     async def aux_cmd(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Accessory", max_val=99)],
+        tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
         cmd: AuxCommand = Body(...),
     ):
-        return super().aux(cmd.aux_req, tmcc_id, cmd.number, cmd.duration)
+        return super().aux(tmcc_id, cmd.aux_req, cmd.number, cmd.duration)
 
     @legacy_post(router, "/accessory/{tmcc_id:int}/boost_req", name="Accessory.BoostReq")
     @mobile_post(router, "/accessory/{tmcc_id:int}/boost", name="Accessory.Boost")
@@ -951,7 +951,7 @@ class Accessory(PyTrainAccessory):
         aux_req: Annotated[AuxOption, Path(description="Aux 1, Aux2, or Aux 3")],
         duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
-        return self.aux(aux_req, tmcc_id, None, duration)
+        return self.aux(tmcc_id, aux_req, None, duration)
 
 
 @router.get(

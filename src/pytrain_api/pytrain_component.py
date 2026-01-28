@@ -363,7 +363,7 @@ class PyTrainAccessory(PyTrainComponent):
     def relative_speed(self, tmcc_id: int, speed: int, duration: float = None) -> dict[str, str]:
         return self.do_relative_speed(TMCC1AuxCommandEnum.RELATIVE_SPEED, tmcc_id, speed, duration)
 
-    def aux(self, aux_req: AuxOption, tmcc_id: int, number: int = None, duration: float = None) -> dict[str, str]:
+    def aux(self, tmcc_id: int, aux_req: AuxOption, number: int = None, duration: float = None) -> dict[str, str]:
         cmd = TMCC1AuxCommandEnum.by_name(f"{aux_req.name}_OPT_ONE")
         if cmd:
             if number is not None:
