@@ -424,7 +424,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 
 
 # noinspection PyUnusedLocal
-@app.exception_handler(ValueError)
+@app.exception_handler(ValidationError)
 async def validation_exception_handler(request: Request, exc: ValidationError):
     if isinstance(exc, ValidationError):
         detail = ""
