@@ -17,6 +17,7 @@ from pytrain import (
     AccessoryState,
     CommandReq,
     CommandScope,
+    ComponentStateStore,
     EngineState,
     SequenceCommandEnum,
     TMCC1AuxCommandEnum,
@@ -179,14 +180,20 @@ class PyTrainComponent:
     def __init__(self, scope: CommandScope):
         super().__init__()
         self._scope = scope
-        self._state_store = PyTrainApi.get().pytrain.store
+        self._state_store = None
+
+    @property
+    def state_store(self) -> ComponentStateStore:
+        if self._state_store is None:
+            self._state_store = PyTrainApi.get().pytrain.store
+        return self._state_store
 
     @property
     def scope(self) -> CommandScope:
         return self._scope
 
     def get(self, tmcc_id: int) -> dict[str, Any]:
-        state: ComponentState = self._state_store.query(self.scope, tmcc_id)
+        state: ComponentState = self.state_store.query(self.scope, tmcc_id)
         if state is None:
             headers = {"X-Error": "404"}
             raise HTTPException(status_code=404, headers=headers, detail=f"{self.scope.title} {tmcc_id} not found")
@@ -232,7 +239,7 @@ class PyTrainAccessory(PyTrainComponent):
         super().__init__(scope=scope)
 
     def enforce_strict(self, tmcc_id: int, label: str, is_valid: Callable[[AccessoryState], bool]) -> None:
-        acc_state = self._state_store.query(self.scope, tmcc_id)
+        acc_state = self.state_store.query(self.scope, tmcc_id)
         if acc_state is None:
             headers = {"X-Error": "404"}
             raise HTTPException(status_code=404, headers=headers, detail=f"{label} {tmcc_id} not found")
@@ -355,7 +362,7 @@ class PyTrainEngine(PyTrainComponent):
         return "engine" if self.scope == CommandScope.ENGINE else "train"
 
     def is_tmcc(self, tmcc_id: int) -> bool:
-        state = self._state_store.query(self.scope, tmcc_id)
+        state = self.state_store.query(self.scope, tmcc_id)
         if isinstance(state, ComponentState):
             return state.is_tmcc if state else True
         return True
@@ -633,7 +640,7 @@ class PyTrainEngine(PyTrainComponent):
         return {"status": f"Sending Brake request to {self.scope.title} {tmcc_id}{d}"}
 
     def get_engine_info(self, tmcc_id) -> dict:
-        state = self._state_store.query(self.scope, tmcc_id)
+        state = self.state_store.query(self.scope, tmcc_id)
         engine_info = dict()
         if isinstance(state, EngineState) and state.bt_id:
             info = ProdInfo.get_info(state.bt_id)
