@@ -70,6 +70,7 @@ from .pytrain_info import (
     HornCommand,
     NumericCommand,
     ProductInfo,
+    RelativeSpeedCommand,
     ResetCommand,
     RouteInfo,
     SpeedCommand,
@@ -847,6 +848,14 @@ class Accessory(PyTrainAccessory):
         strict = cmd.strict
         return super().asc2(tmcc_id, state, duration, strict=strict)
 
+    @mobile_post(router, "/accessory/{tmcc_id:int}/aux", name="Accessory.Aux")
+    async def aux_cmd(
+        self,
+        tmcc_id: Annotated[int, Engine.id_path(label="Accessory", max_val=99)],
+        cmd: AuxCommand = Body(...),
+    ):
+        return super().aux(cmd.aux_req, tmcc_id, cmd.number, cmd.duration)
+
     @legacy_post(router, "/accessory/{tmcc_id:int}/boost_req", name="Accessory.BoostReq")
     @mobile_post(router, "/accessory/{tmcc_id:int}/boost", name="Accessory.Boost")
     async def boost(
@@ -904,7 +913,7 @@ class Accessory(PyTrainAccessory):
     @mobile_post(router, "/accessory/{tmcc_id:int}/numeric", name="Accessory.Numeric")
     async def numeric_cmd(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
         cmd: Annotated[NumericCommand, Body(...)],
     ):
         return self.do_numeric(TMCC1AuxCommandEnum.NUMERIC, tmcc_id, cmd.number, cmd.duration)
@@ -918,33 +927,31 @@ class Accessory(PyTrainAccessory):
     ):
         return self.open_coupler(tmcc_id, TMCC1AuxCommandEnum.REAR_COUPLER, duration)
 
-    @router.post("/accessory/{tmcc_id}/speed_req/{speed}")
+    @legacy_post(router, "/accessory/{tmcc_id}/speed_req/{speed}", name="Accessory.SpeedReq")
     async def speed(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
         speed: Annotated[int, Path(description="Relative speed (-5 - 5)", ge=-5, le=5)],
         duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
-        self.do_request(TMCC1AuxCommandEnum.RELATIVE_SPEED, tmcc_id, data=speed, duration=duration)
-        d = f" for {duration} second(s)" if duration else ""
-        return {"status": f"Sending Speed {speed} request to {self.scope.title} {tmcc_id}{d}"}
+        return self.relative_speed(tmcc_id, speed, duration)
 
-    @router.post("/accessory/{tmcc_id}/{aux_req}")
+    @mobile_post(router, "/accessory/{tmcc_id:int}/speed", name="Accessory.Speed")
+    async def speed_cmd(
+        self,
+        tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
+        cmd: RelativeSpeedCommand = Body(...),
+    ):
+        return self.relative_speed(tmcc_id, cmd.speed, cmd.duration)
+
+    @legacy_post(router, "/accessory/{tmcc_id:int}/{aux_req}", name="Accessory.AuxReq")
     async def operate_accessory(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
         aux_req: Annotated[AuxOption, Path(description="Aux 1, Aux2, or Aux 3")],
         duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
-        cmd = TMCC1AuxCommandEnum.by_name(f"{aux_req.name}_OPT_ONE")
-        if cmd:
-            self.do_request(cmd, tmcc_id, duration=duration)
-            d = f" for {duration} second(s)" if duration else ""
-            return {"status": f"Sending {aux_req.name} to {self.scope.title} {tmcc_id}{d}"}
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Aux option '{aux_req.value}' not supported on {self.scope.title} {tmcc_id}",
-        )
+        return self.aux(aux_req, tmcc_id, None, duration)
 
 
 @router.get(
@@ -1014,7 +1021,7 @@ async def get_engines(contains: str = None, is_legacy: bool = None, is_tmcc: boo
 class Engine(PyTrainEngine):
     # noinspection PyTypeHints
     @classmethod
-    def id_path(cls, label: str = None, min_val: int = 1, max_val: int = 9999) -> Path:
+    def id_path(cls, label: str = "Engine", min_val: int = 1, max_val: int = 9999) -> Path:
         label = label if label else cls.__name__.replace("PyTrain", "")
         return Path(
             title="TMCC ID",
@@ -1036,14 +1043,14 @@ class Engine(PyTrainEngine):
     )
     async def get_engine(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
     ) -> EngineInfo:
         return EngineInfo(**super().get(tmcc_id))
 
     @mobile_post(router, "/engine/{tmcc_id:int}/aux", name="Engine.Aux")
     async def aux_cmd(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
         cmd: AuxCommand = Body(...),
     ):
         return super().aux(tmcc_id, cmd.aux_req, cmd.number, cmd.duration)

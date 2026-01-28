@@ -130,10 +130,10 @@ class AccessoryInfo(ComponentInfo):
     aux2: str | None
 
 
-STRICT_AMC2 = """
-    Enforce AMC2 validation. When true, the TMCC ID must resolve to a defined AMC2;
-    otherwise the request fails. When false, the command is sent without validation.
-"""
+STRICT_AMC2 = (
+    "Enforce AMC2 validation. When true, the TMCC ID must resolve to a defined AMC2; "
+    "otherwise the request fails. When false, the command is sent without validation."
+)
 
 
 class Amc2MotorStateCommand(BaseModel):
@@ -191,6 +191,21 @@ class Bpc2Command(BaseModel):
     model_config = ConfigDict(extra="forbid")
     state: OnOffOption = Field(..., description="On or Off")
     strict: bool = Field(True, description=STRICT_AMC2.replace("AMC2", "BPC2"))
+
+
+class RelativeSpeedCommand(BaseModel):
+    speed: int | str = Field(
+        ...,
+        ge=-5,
+        le=5,
+        description="New relative speed (-5 to 5)",
+    )
+    duration: float | None = Field(
+        None,
+        gt=0.0,
+        description="Optional duration (seconds)",
+        examples=[None],
+    )
 
 
 class EngineInfo(ComponentInfoIr):
@@ -297,6 +312,8 @@ class ResetCommand(BaseModel):
 class SpeedCommand(BaseModel):
     speed: int | str = Field(
         ...,
+        ge=0,
+        le=195,
         description="New speed (0 to 195, roll, restricted, slow, medium, limited, normal, highball)",
     )
     immediate: bool | None = Field(

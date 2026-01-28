@@ -207,6 +207,17 @@ class PyTrainComponent:
         d = f" for {duration} second(s)" if duration else ""
         return {"status": f"Sending Numeric {number} to {self.scope.title} {tmcc_id}{d}"}
 
+    def do_relative_speed(
+        self,
+        cmd: CommandDefEnum,
+        tmcc_id: int,
+        speed: int,
+        duration: float = None,
+    ) -> dict[str, str]:
+        self.do_request(cmd, tmcc_id, data=speed, duration=duration)
+        d = f" for {duration} second(s)" if duration else ""
+        return {"status": f"Sending Relative Speed {speed} request to {self.scope.title} {tmcc_id}{d}"}
+
     def send(self, request: E, tmcc_id: int, data: int = None) -> dict[str, Any]:
         try:
             req = CommandReq(request, tmcc_id, data, self.scope).send()
@@ -349,6 +360,24 @@ class PyTrainAccessory(PyTrainComponent):
         d = f" for {duration} second(s)" if duration else ""
         return {"status": f"Sending Brake request to {self.scope.title} {tmcc_id}{d}"}
 
+    def relative_speed(self, tmcc_id: int, speed: int, duration: float = None) -> dict[str, str]:
+        return self.do_relative_speed(TMCC1AuxCommandEnum.RELATIVE_SPEED, tmcc_id, speed, duration)
+
+    def aux(self, aux_req: AuxOption, tmcc_id: int, number: int = None, duration: float = None) -> dict[str, str]:
+        cmd = TMCC1AuxCommandEnum.by_name(f"{aux_req.name}_OPT_ONE")
+        if cmd:
+            if number is not None:
+                self.do_request(cmd, tmcc_id)
+                self.do_request(TMCC1AuxCommandEnum.NUMERIC, tmcc_id, data=number, delay=0.10, duration=duration)
+            else:
+                self.do_request(cmd, tmcc_id, duration=duration)
+            d = f" for {duration} second(s)" if duration else ""
+            return {"status": f"Sending {aux_req.name} to {self.scope.title} {tmcc_id}{d}"}
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Aux option '{aux_req.value}' not supported on {self.scope.title} {tmcc_id}",
+        )
+
 
 class PyTrainSwitch(PyTrainComponent):
     def __init__(self, scope: CommandScope):
@@ -437,6 +466,10 @@ class PyTrainEngine(PyTrainComponent):
                 )
         self.do_request(cmd)
         return {"status": f"{self.scope.title} {tmcc_id} speed now: {speed}"}
+
+    def relative_speed(self, tmcc_id: int, speed: int, duration: float = None) -> dict[str, str]:
+        cmd = TMCC1EngineCommandEnum.RELATIVE_SPEED if self.is_tmcc(tmcc_id) else TMCC2EngineCommandEnum.RELATIVE_SPEED
+        return self.do_relative_speed(cmd, tmcc_id, speed, duration)
 
     def dialog(self, tmcc_id: int, dialog: DialogOption):
         if self.is_tmcc(tmcc_id):
