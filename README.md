@@ -10,7 +10,7 @@ command to launch the **PyTrain Api** and begin serving requests.
 
 **PyTrain Api** runs as a **PyTrain** client connected to another **PyTrain** server, or can act as both
 a **PyTrain** server _and_ a **PyTrain Api** server. And, like **PyTrain**, **PyTrain Api** can run on a Raspberry Pi
-running 64 bit Bookworm distribution or later.
+running 64-bit Bookworm distribution or later.
 
 The **PyTrain Api** endpoints can be viewed
 here: [https://cdswindell.github.io/PyTrainApi/pytrain-api-docs/](https://cdswindell.github.io/PyTrainApi/pytrain-api-docs/)
