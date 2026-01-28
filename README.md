@@ -19,16 +19,18 @@ here: [https://cdswindell.github.io/PyTrainApi/pytrain-api-docs/](https://cdswin
 
 <!-- TOC -->
 
-* [Quick Start](#quick-start)
-    * [Requirements](#requirements)
-    * [Installation](#installation)
-        * [Create a Python Virtual Environment](#create-a-python-virtual-environment)
-        * [Run __PyTrain Api__ Directly](#run-__pytrain-api__-directly)
-        * [Run __PyTrain Api__ from a Development Environment](#run-__pytrain-api__-from-a-development-environment)
-    * [Configuration](#configuration)
-* [Alexa Skill](#alexa-skill)
-    * [Configuration](#configuration)
-    * [Additional Security](#additional-security)
+* [PyTrain API](#pytrain-api)
+    * [Table of Contents](#table-of-contents)
+    * [Quick Start](#quick-start)
+        * [Requirements](#requirements)
+        * [Installation](#installation)
+            * [Create a Python Virtual Environment](#create-a-python-virtual-environment)
+            * [Run __PyTrain Api__ Directly](#run-__pytrain-api__-directly)
+            * [Run __PyTrain Api__ from a Development Environment](#run-__pytrain-api__-from-a-development-environment)
+        * [Configuration](#configuration)
+    * [Alexa Skill](#alexa-skill)
+        * [Configuration](#configuration-1)
+        * [Additional Security](#additional-security)
 
 <!-- TOC -->
 
