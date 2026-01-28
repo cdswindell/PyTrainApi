@@ -892,16 +892,22 @@ class Accessory(PyTrainAccessory):
     ):
         return self.open_coupler(tmcc_id, TMCC1AuxCommandEnum.FRONT_COUPLER, duration)
 
-    @router.post("/accessory/{tmcc_id}/numeric_req")
-    async def numeric(
+    @legacy_post(router, "/accessory/{tmcc_id:int}/numeric_req", name="Accessory.NumericReq")
+    async def numeric_req(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
-        number: Annotated[int, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
-        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+        number: Annotated[int | None, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
+        duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
-        self.do_request(TMCC1AuxCommandEnum.NUMERIC, tmcc_id, data=number, duration=duration)
-        d = f" for {duration} second(s)" if duration else ""
-        return {"status": f"Sending Numeric {number} request to {self.scope.title} {tmcc_id}{d}"}
+        return self.do_numeric(TMCC1AuxCommandEnum.NUMERIC, tmcc_id, number, duration)
+
+    @mobile_post(router, "/accessory/{tmcc_id:int}/numeric", name="Accessory.Numeric")
+    async def numeric_cmd(
+        self,
+        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        cmd: Annotated[NumericCommand, Body(...)],
+    ):
+        return self.do_numeric(TMCC1AuxCommandEnum.NUMERIC, tmcc_id, cmd.number, cmd.duration)
 
     @legacy_post(router, "/accessory/{tmcc_id}/rear_coupler_req", name="Accessory.RearCouplerReq")
     @mobile_post(router, "/accessory/{tmcc_id:int}/rear_coupler", name="Accessory.RearCoupler")
@@ -1158,8 +1164,8 @@ class Engine(PyTrainEngine):
     async def numeric_req(
         self,
         tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
-        number: Annotated[int, Query(description="Number (0 - 9)", ge=0, le=9)],
-        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+        number: Annotated[int | None, Query(description="Number (0 - 9)", ge=0, le=9)],
+        duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
         return super().numeric(tmcc_id, number, duration)
 

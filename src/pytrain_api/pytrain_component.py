@@ -200,6 +200,13 @@ class PyTrainComponent:
         else:
             return state.as_dict()
 
+    def do_numeric(self, cmd: CommandDefEnum, tmcc_id, number, duration) -> dict[str, str]:
+        if cmd not in [TMCC1EngineCommandEnum.NUMERIC, TMCC2EngineCommandEnum.NUMERIC, TMCC1AuxCommandEnum.NUMERIC]:
+            raise HTTPException(status_code=400, detail=f"Invalid command '{cmd}' for numeric request")
+        self.do_request(cmd, tmcc_id, data=number, duration=duration)
+        d = f" for {duration} second(s)" if duration else ""
+        return {"status": f"Sending Numeric {number} to {self.scope.title} {tmcc_id}{d}"}
+
     def send(self, request: E, tmcc_id: int, data: int = None) -> dict[str, Any]:
         try:
             req = CommandReq(request, tmcc_id, data, self.scope).send()
@@ -613,13 +620,8 @@ class PyTrainEngine(PyTrainComponent):
             )
 
     def numeric(self, tmcc_id, number, duration) -> dict:
-        if self.is_tmcc(tmcc_id):
-            cmd = TMCC1EngineCommandEnum.NUMERIC
-        else:
-            cmd = TMCC2EngineCommandEnum.NUMERIC
-        self.do_request(cmd, tmcc_id, data=number, duration=duration)
-        d = f" for {duration} second(s)" if duration else ""
-        return {"status": f"Sending Numeric {number} to {self.scope.title} {tmcc_id}{d}"}
+        cmd = TMCC1EngineCommandEnum.NUMERIC if self.is_tmcc(tmcc_id) else TMCC2EngineCommandEnum.NUMERIC
+        return self.do_numeric(cmd, tmcc_id, number, duration)
 
     def boost(self, tmcc_id, duration) -> dict:
         if self.is_tmcc(tmcc_id):
