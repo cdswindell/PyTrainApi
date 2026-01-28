@@ -7193,7 +7193,7 @@
           "strict": {
             "type": "boolean",
             "title": "Strict",
-            "description": "\n    Enforce AMC2 validation. When true, the TMCC ID must resolve to a defined AMC2;\n    otherwise the request fails. When false, the command is sent without validation.\n",
+            "description": "Enforce AMC2 validation. When true, the TMCC ID must resolve to a defined AMC2; otherwise the request fails. When false, the command is sent without validation.",
             "default": true
           }
         },
@@ -7228,7 +7228,7 @@
           "strict": {
             "type": "boolean",
             "title": "Strict",
-            "description": "\n    Enforce AMC2 validation. When true, the TMCC ID must resolve to a defined AMC2;\n    otherwise the request fails. When false, the command is sent without validation.\n",
+            "description": "Enforce AMC2 validation. When true, the TMCC ID must resolve to a defined AMC2; otherwise the request fails. When false, the command is sent without validation.",
             "default": true
           }
         },
@@ -7266,7 +7266,7 @@
           "strict": {
             "type": "boolean",
             "title": "Strict",
-            "description": "\n    Enforce AMC2 validation. When true, the TMCC ID must resolve to a defined AMC2;\n    otherwise the request fails. When false, the command is sent without validation.\n",
+            "description": "Enforce AMC2 validation. When true, the TMCC ID must resolve to a defined AMC2; otherwise the request fails. When false, the command is sent without validation.",
             "default": true
           }
         },
@@ -7301,7 +7301,7 @@
           "strict": {
             "type": "boolean",
             "title": "Strict",
-            "description": "\n    Enforce AMC2 validation. When true, the TMCC ID must resolve to a defined AMC2;\n    otherwise the request fails. When false, the command is sent without validation.\n",
+            "description": "Enforce AMC2 validation. When true, the TMCC ID must resolve to a defined AMC2; otherwise the request fails. When false, the command is sent without validation.",
             "default": true
           }
         },
@@ -7338,7 +7338,7 @@
           "strict": {
             "type": "boolean",
             "title": "Strict",
-            "description": "\n    Enforce ASC2 validation. When true, the TMCC ID must resolve to a defined ASC2;\n    otherwise the request fails. When false, the command is sent without validation.\n",
+            "description": "Enforce ASC2 validation. When true, the TMCC ID must resolve to a defined ASC2; otherwise the request fails. When false, the command is sent without validation.",
             "default": true
           }
         },
@@ -7642,7 +7642,7 @@
           "strict": {
             "type": "boolean",
             "title": "Strict",
-            "description": "\n    Enforce BPC2 validation. When true, the TMCC ID must resolve to a defined BPC2;\n    otherwise the request fails. When false, the command is sent without validation.\n",
+            "description": "Enforce BPC2 validation. When true, the TMCC ID must resolve to a defined BPC2; otherwise the request fails. When false, the command is sent without validation.",
             "default": true
           }
         },
