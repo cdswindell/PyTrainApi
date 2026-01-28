@@ -1,8 +1,8 @@
 # PyTrain API
 
 This project implements a RESTful API to [PyTrain](https://github.com/cdswindell/PyLegacy). Via the API, you can
-control and operate trains, switches, accessories, and any other equipment that use Lionel's Legacy/TMCC command
-protocol. **PyTrain Api** is used by the **PyTrain** Alexa skill to enables voice-control of your layout.
+control and operate trains, switches, accessories, and any other equipment that uses Lionel's Legacy/TMCC command
+protocol. **PyTrain Api** is used by the **PyTrain** Alexa skill to enable voice-control of your layout.
 
 **PyTrain Api** is developed in pure Python. It uses the [FastAPI](https://fastapi.tiangolo.com) framework and
 includes an ASGI-compliant web server, [Uvicorn](https://www.uvicorn.org). Once installed, it only takes one
@@ -42,7 +42,7 @@ Minimum requirements to use **PyTrain API** are:
 * A network-capable Raspberry Pi 4 or 5 running Raspberry PI OS 64-bit Bookworm
 * A Mac or Windows computer to set up the Raspberry Pi(s)
 * All hardware connected to the same Wi-Fi network
-* Python 3.10 - 3.12 installed (Python 3.11 is standard with the Bookworm release of Raspberry Pi OS)
+* Python 3.10–3.12 installed (Python 3.11 is standard with the Bookworm release of Raspberry Pi OS)
 * Internet access (to download software)
 
 Recommended:
@@ -135,12 +135,12 @@ To see the list of available Api endpoints, open a web browser and go to `http:/
 
 ### Configuration
 
-The **PyTrain Api** endpoints are all protected against unintensional as well as unwanted access. It does so by
+The **PyTrain Api** endpoints are all protected against unintentional as well as unwanted access. It does so by
 requiring an *api token* to be present in the header of each request. Modern programming languages make this
 easy to do.
 
 Api tokens should be kept secure, just like the key to your house, otherwise, anyone could learn and use it.
-For this reasn, ypu must generate the required keys yourself and keep them in a special file, the `.env` file.
+For this reason, ypu must generate the required keys yourself and keep them in a special file, the `.env` file.
 This file must be placed in the same directory you run the **PyTrain Api** program from.
 
 **PyTrain Api** provides a special command to generate a correctly-configured `.env` file and populate it
@@ -158,7 +158,7 @@ pytrin_api -env
 cli/pytrin_api -env
 ```
 
-Use the value assigned to the tag `API_TOKEN` as your secure **PyTrain Api** token. Simply include it in
+Use the value assigned to the tag `API_TOKEN` as your secure **PyTrain Api** token. Include it in
 your request header with the tag `X-API-Key`, and you will be good to go. Below is an example of how to do
 this from Python:
 
@@ -168,8 +168,8 @@ response = requests.post(url, headers=headers)
 ```
 
 You *should not* modify any values in `.env` unless you are using the [Alexa Skill](#alexa-skill) (see below).
-Cnanging other values will
-break **PyTrain Api**. If you do mistakenly modify the file's contents or delete it, you can simply
+Changing other values will
+break **PyTrain Api**. If you do mistakenly modify the file's contents or delete it, you can
 regenerate it using the appropriate command above.
 
 ## Alexa Skill
@@ -179,7 +179,7 @@ using either method described above.
 
 ### Configuration
 
-Before getting into the configuration details, lets look at the moving parts involved:
+Before getting into the configuration details, let's look at the moving parts involved:
 
 1. Your Lionel Base 3. This device is connected to your local network and receives commands from a Cab 2, Cab 3,
    and/or **PyTrain** server. These commands are relayed onto your layout to control your equipment.
@@ -187,29 +187,31 @@ Before getting into the configuration details, lets look at the moving parts inv
 2. Your local network. This can be completely wireless or a hybrid of wired and wireless devices.
 
 3. Your **PyTrain API** server. This is a computer on your local network where you have installed **PyTrain API**.
-   It takes requests from the web in a specific format (HTTP or HTTPS), and relays them to your **PyTrain** server.
+   It takes requests from the web in a specific format (HTTP or HTTPS) and relays them to your **PyTrain** server.
    **PyTrain API** can run on one of your existing computers (Mac or Windows), or, and a small, inexpensive
    [Raspberry Pi](https://www.raspberrypi.com).
 
 4. Your **PyTrain** server. This is another computer on your local network where you have installed
    [**PyTrain**](https://pypi.org/project/pytrain-ogr/). **PyTrain** receives requests from **PyTrain API**
    and relays them to your Lionel Base 3 in the format it requires. It can also take input from a command
-   line (CLI), or be embedded into one or more control panels to operate your layout via physical buttons,
+   line (CLI) or be embedded into one or more control panels to operate your layout via physical buttons,
    lights, dials, and knobs. It should run its own [Raspberry Pi](https://www.raspberrypi.com).
 
 5. An [Alexa](https://www.amazon.com/s?k=alexa&crid=7OAPBGIW11Q4&sprefix=alexa%2Caps%2C107&ref=nb_sb_noss_1).
    This device is a wireless speaker and microphone. It supports *skills*, which are voice-activated apps
-   that runs on Alexa-enabled devices. You can use Alexa skills to perform tasks like telling jokes,
+   that run on Alexa-enabled devices. You can use Alexa skills to perform tasks like telling jokes,
    getting weather updates, or controlling your Lionel layout. It connects to your local network.
 
 6. Your Gateway. This device connects your local network to *the internet*. It may have been provided by
    your Internet Service Provider (ISP), or you may have purchased it yourself. It is the bridge that lets devices
-   on your local network talk to the internet, and lets the internet talk to devices on your local network,
+   on your local network talk to the internet and lets the internet talk to devices on your local network,
    like your Lionel Base 3.
 
 7. Amazon AWS. Amazon runs several large computing facilities around the world. Alexa skills send the voice
    input from your local alexa's to these computers to interpret, then execute software to fulfill your requests. The
-   **PyTrain** Alexa skill runs on these computers, takes yur voice input and then calls back to the **PyTrain API**
+   **PyTrain** Alexa skill, which is named *My Layout*, runs on these computers, takes your voice input and then calls
+   back to the
+   **PyTrain API**
    on your local network to control your layout.
 
 Phew! Although there are a lot of moving parts, getting everything up and running is straightforward,
@@ -217,7 +219,7 @@ thanks to the **PyTrain** software.
 
 Here is what you need to do:
 
-1. Configure 2 Raspberry Pi 4 or 5 computers. Units with WiFi are preferred, as there are less wires.
+1. Configure two Raspberry Pi 4 or 5 computers. Units with Wi-Fi are preferred, as there are fewer wires.
 2. Install **PyTrain** on one of them and start it with the command:
 
 ```aiignore
@@ -245,25 +247,26 @@ cli/pytrain_api
 
 4. Go to your gateway and determine its *external* IP address. This address is assigned by your ISP
    (Comcast, Verizon, Spectrum, etc.). Write it down.
-5. Consult your gateway documentation how to forward port 80 to port 8000 on your **PyTrain API** server.
+5. Consult your gateway documentation on how to forward port 80 to port 8000 on your **PyTrain API** server.
    This will send all traffic from the outside world to port 8000 on your **PyTrain Api** server. You will need
    to repeat this step any time your external IP address changes (see Notes below).
-6. Say the following to your Alexa: *Alexa, Open PyTrain*
+6. Say the following to your Alexa: *Alexa, Open My Layout*
 7. The *PyTrain* skill will ask you for the external IP address of your network. Give it the number
    you wrote down above.
 
 Your **PyTrain** skill is now active and connected to your layout. To test it out, assuming you have an
 engine on the tracks with TMCC ID 67, try the following:
 
-* Ask PyTrain to start up engine 67
+* Ask My Layout to start up engine 67
 * Blow the horn on engine 67
 * toggle the bell on engine 67
 * accelerate engine 67 to speed step 10
 * stop engine 67
 * shut down engine 67 with dialog
 
-As long as you see the *blue light* on your Alexa, the **PyTrain** skill is listening. If the light goes out, simply say
-*Alexa, Open PyTrain*, and speak your request.
+As long as you see the *blue light* on your Alexa, the **PyTrain** *My Layout* skill is listening. If the light goes
+out, say:
+*Alexa, Open My Layout*, and speak your request.
 
 Notes:
 
@@ -271,7 +274,7 @@ Notes:
   automatically update it with your external IP address, should your ISP change it.
   [Netgear](https://kb.netgear.com/23860/How-do-I-set-up-a-NETGEAR-Dynamic-DNS-account-on-my-NETGEAR-router),
   [No-ip.com](https://www.noip.com), and [Dyn.com](https://www.oracle.com/cloud/networking/dns/?er=221886)
-  all provide dynamic dns services at reasonable cost.
+  all provide dynamic dns services at a reasonable cost.
 
 ### Additional Security
 
@@ -284,5 +287,5 @@ to the system running __PyTrain API__. This requires:
 * Install an SSL certificate on your dynamic dns service
 * Configure the certificate and private key on your local proxy server.
 
-These steps are not required but are suggested if you leave your layout unattended and powered on in order
+These steps are not required but are suggested if you leave your layout unattended and powered on
 to prevent unwanted access.
