@@ -8,6 +8,7 @@
 #
 
 import importlib.metadata
+import os
 import sys
 from importlib.metadata import PackageNotFoundError
 
@@ -40,26 +41,33 @@ def is_package() -> bool:
 
 
 def get_version() -> str:
-    #
-    # this should be easier, but it is what it is.
-    # we handle the two major cases; we're running from
-    # the PyTrain pypi package, or we're running from
-    # source retrieved from git...
-    #
-    # we try the package path first...
-    version = None
-    try:
-        # production version
-        version = importlib.metadata.version(API_PACKAGE)
-    except PackageNotFoundError:
-        pass
+    # 0) Explicit override (CI, Docker, manual testing)
+    v = os.getenv("PYTRAIN_API_VERSION")
+    if v:
+        v = v.strip()
+    else:
+        v = None
 
-    # finally, call the method to read it from git
-    if version is None:
-        from setuptools_scm import get_version as get_git_version
+    # 1) Installed package version (PyPI / production)
+    if not v:
+        try:
+            v = importlib.metadata.version(API_PACKAGE)
+        except PackageNotFoundError:
+            v = None
 
-        version = get_git_version(version_scheme="only-version")
+    # 2) Source checkout version via git (development)
+    if not v:
+        try:
+            from setuptools_scm import get_version as get_git_version
 
-    version = version if version.startswith("v") else f"v{version}"
-    version = version.replace(".post0", "")
-    return version
+            v = get_git_version(version_scheme="only-version")
+        except (LookupError, RuntimeError, ImportError):
+            # - not a git repo
+            # - SCM metadata missing
+            # - setuptools_scm not installed
+            v = "0.0.0"
+
+    # Normalize
+    v = v.replace(".post0", "")
+    v = v[1:] if v.startswith("v") else v
+    return v
