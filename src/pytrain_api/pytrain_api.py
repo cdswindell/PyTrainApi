@@ -11,24 +11,30 @@ from __future__ import annotations
 
 import logging
 import os
+import socket
 import subprocess
 import sys
 import threading
 from datetime import datetime
 from time import sleep
-from typing import cast
+from typing import Any, cast
 
 import uvicorn
 from dotenv import find_dotenv, load_dotenv
 from pytrain import PROGRAM_NAME, PyTrain, PyTrainExitStatus, is_linux
 from pytrain.utils.argument_parser import PyTrainArgumentParser
+from pytrain.utils.ip_tools import get_ip_address
+from zeroconf import ServiceInfo, Zeroconf
 
 from . import is_package
 
 log = logging.getLogger(__name__)
 
 API_NAME = "PyTrain Api"
+API_NAME_SHORT = API_NAME.replace(" ", "")
 API_PACKAGE = "pytrain-ogr-api"
+SERVICE_TYPE = f"_{API_NAME_SHORT.lower()}._tcp.local."
+SERVICE_NAME = f"{API_NAME_SHORT}-Server.{SERVICE_TYPE}"
 DEFAULT_API_SERVER_PORT: int = 8000
 
 
@@ -87,16 +93,19 @@ class PyTrainApi:
             elif args.env is True:
                 self.write_env()
                 return
-            # if .env file is empty, create it and restart
 
+            # if .env file is empty, create it and restart
             if not find_dotenv():
                 log.warning("No .env file found, creating one and restarting...")
                 self.write_env()
                 self._is_server = True
                 self.relaunch(PyTrainExitStatus.RESTART)
 
+            self._service_info = self._zeroconf = self._server_ips = None
             pytrain_args = "-api"
             self._is_server = False
+            self._ser2 = False
+            self._base_addr = None
             if args.ser2 is True:
                 pytrain_args += " -ser2"
                 self._is_server = True
@@ -104,10 +113,12 @@ class PyTrainApi:
                     pytrain_args += f" -baudrate {args.baudrate}"
                 if args.port:
                     pytrain_args += f" -port {args.port}"
+                self._ser2 = True
             if args.base is not None:
                 self._is_server = True
                 pytrain_args += " -base"
                 if isinstance(args.base, list) and len(args.base):
+                    self._base_addr = args.base[0]
                     pytrain_args += f" {args.base[0]}"
             elif args.client is True:
                 pytrain_args += " -client"
@@ -123,14 +134,15 @@ class PyTrainApi:
 
             # create a PyTrain process to handle commands
             self._pytrain_server = PyTrain(pytrain_args.split())
-            port = args.api_port if args.api_port else DEFAULT_API_SERVER_PORT
+
+            self._port = args.api_port if args.api_port else DEFAULT_API_SERVER_PORT
             host = args.api_host if args.api_host else "0.0.0.0"
             log.info(f"{API_NAME} {get_version()}")
             if API_SERVER:
                 log.info(f"Starting {API_NAME} server; external access via {API_SERVER}...")
 
             # launch the web server, this starts the API
-            uvicorn.run(app, host=host, port=port, reload=False)
+            uvicorn.run(app, host=host, port=self._port, reload=False)
 
             # Web server exited, process signals from PyTrain server, if any
             if self.pytrain.exit_status:
@@ -223,6 +235,51 @@ class PyTrainApi:
             return False
         stat = subprocess.call("systemctl is-active --quiet pytrain_api.service".split())
         return stat == 0
+
+    def create_service(self):
+        self._zeroconf = Zeroconf()
+        self._service_info = self.register_service(
+            self._ser2 is True,
+            self._base_addr is not None,
+            int(self._port),
+        )
+
+    def register_service(self, ser2: bool, base3: str | None, port: int) -> ServiceInfo:
+        properties = {
+            "version": "1.0",
+            "Ser2": "1" if ser2 is True else "0",
+            "Base3": "1" if base3 is True else "0",
+        }
+        self._server_ips = server_ips = get_ip_address()
+        hostname = socket.gethostname()
+        hostname = hostname if hostname.endswith(".local") else hostname + ".local"
+
+        # Create the ServiceInfo object
+        info = ServiceInfo(
+            SERVICE_TYPE,
+            SERVICE_NAME,
+            addresses=[socket.inet_aton(x) for x in server_ips],
+            port=port,
+            properties=properties,
+            server=hostname,
+        )
+        # register this machine as serving PyTrain, allowing clients to connect for state updates
+        self._zeroconf.register_service(info, allow_name_change=True)
+        log.info(f"{API_NAME} Service registered successfully")
+        return info
+
+    def update_service(self, update: dict[str, Any]) -> None:
+        self._zeroconf.unregister_service(self._service_info)
+        for prop, value in update.items():
+            self._service_info.properties[prop.encode("utf-8")] = str(value).encode("utf-8")
+        self._zeroconf.register_service(self._service_info)
+
+    def shutdown_service(self):
+        if self._service_info and self._zeroconf:
+            self._zeroconf.unregister_service(self._service_info)
+            self._zeroconf.close()
+            self._service_info = self._zeroconf = None
+            log.info(f"{API_NAME} Service unregistered successfully")
 
     @classmethod
     def command_line_parser(cls) -> PyTrainArgumentParser:

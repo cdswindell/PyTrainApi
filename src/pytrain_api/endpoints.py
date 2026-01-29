@@ -7,11 +7,13 @@
 #
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import re
 import secrets
 import uuid
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any, Callable, TypeVar
 
@@ -122,12 +124,29 @@ class Token(BaseModel):
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+@asynccontextmanager
+async def lifespan(fapp: FastAPI):
+    api = PyTrainApi.get()
+
+    # startup
+    await asyncio.to_thread(api.create_service)
+
+    try:
+        yield
+    finally:
+        # shutdown
+        await asyncio.to_thread(api.shutdown_service)
+
+
 app = FastAPI(
     title=f"{PROGRAM_NAME} API",
     description="Operate and control Lionel Legacy/TMCC engines, trains, switches, accessories, routes, "
     "and LCS components",
     version=get_version(),
     docs_url=None,
+    lifespan=lifespan,
 )
 
 api_key_header = APIKeyHeader(name="X-API-Key")
@@ -739,15 +758,15 @@ def get_components(
         raise HTTPException(status_code=404, headers=headers, detail=f"No {scope.label} found")
     else:
         ret = list()
+        contains = contains.lower() if contains else None
         for state in states:
             if is_legacy is not None and state.is_legacy != is_legacy:
                 continue
             if is_tmcc is not None and state.is_tmcc != is_tmcc:
                 continue
             # noinspection PyUnresolvedReferences
-            if contains and state.name and contains.lower() not in state.name.lower():
+            if contains and state and contains not in str(state).lower():
                 continue
-            print(state.as_dict())
             ret.append(state.as_dict())
         if not ret:
             headers = {"X-Error": "404"}
