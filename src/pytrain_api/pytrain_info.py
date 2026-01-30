@@ -251,7 +251,11 @@ class TrainInfo(EngineInfo):
 
 
 class HornGrade(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = command_config(
+        examples=[
+            {"option": "grade"},
+        ]
+    )
     option: Literal[HornOption.GRADE]
 
 
@@ -270,8 +274,8 @@ class HornQuilling(BaseModel):
     model_config = command_config(
         examples=[
             {"option": "quilling", "intensity": 10, "duration": 1.0},
-            {"option": "sound", "duration": 2.0},
-            {"option": "grade"},
+            {"option": "quilling", "duration": 2.0},
+            {"option": "quilling"},
         ]
     )
     option: Literal[HornOption.QUILLING]

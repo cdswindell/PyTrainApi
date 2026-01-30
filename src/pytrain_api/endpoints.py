@@ -1230,13 +1230,13 @@ class Engine(PyTrainEngine):
         return super().rear_coupler(tmcc_id)
 
     @legacy_post(router, "/engine/{tmcc_id:int}/reset_req", name="Engine.ResetReq")
-    async def reset(
+    async def reset_req(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
         hold: Annotated[bool, Query(title="refuel", description="If true, perform refuel operation")] = False,
         duration: Annotated[int | None, Query(description="Refueling time (seconds)", ge=3)] = 3,
     ):
-        duration = duration if hold else None
+        duration = (duration if duration and duration >= 3 else 3) if hold else None
         return super().reset(tmcc_id, duration)
 
     @mobile_post(router, "/engine/{tmcc_id:int}/reset", name="Engine.Reset")
@@ -1248,7 +1248,7 @@ class Engine(PyTrainEngine):
         # Apply defaults if body omitted
         if cmd is None:
             cmd = ResetCommand.model_validate({})
-        duration = cmd.duration if cmd.hold else None
+        duration = (cmd.duration if cmd.duration and cmd.duration >= 3 else 3) if cmd.hold else None
         return super().reset(tmcc_id, duration=duration)
 
     @legacy_post(router, "/engine/{tmcc_id:int}/reverse_req", name="Engine.ReverseReq")
@@ -1269,6 +1269,7 @@ class Engine(PyTrainEngine):
         return super().shutdown(tmcc_id, dialog=dialog)
 
     @legacy_post(router, "/engine/{tmcc_id:int}/smoke_level_req", name="Engine.SmokeLevelReq")
+    @legacy_post(router, "/engine/{tmcc_id:int}/smoke_req", name="Engine.SmokeReq")
     @mobile_post(router, "/engine/{tmcc_id:int}/smoke", name="Engine.Smoke")
     async def smoke(
         self,
@@ -1496,6 +1497,14 @@ class Train(PyTrainEngine):
     ):
         return TrainInfo(**super().get(tmcc_id))
 
+    @mobile_post(router, "/train/{tmcc_id:int}/aux", name="Train.Aux")
+    async def aux_cmd(
+        self,
+        tmcc_id: Annotated[int, Train.id_path()],
+        cmd: AuxCommand = Body(...),
+    ):
+        return super().aux(tmcc_id, cmd.aux_req, cmd.number, cmd.duration)
+
     @legacy_post(router, "/train/{tmcc_id:int}/bell_req", name="Train.BellReq")
     async def ring_bell_req(
         self,
@@ -1566,7 +1575,7 @@ class Train(PyTrainEngine):
         return super().front_coupler(tmcc_id)
 
     @legacy_post(router, "/train/{tmcc_id:int}/horn_req", name="Train.HornReq")
-    async def blow_horn(
+    async def blow_horn_req(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
         option: Annotated[HornOption, Query(description="Horn/whistle effect")],
@@ -1581,8 +1590,20 @@ class Train(PyTrainEngine):
     @mobile_post(router, "/train/{tmcc_id:int}/horn", name="Train.Horn")
     async def blow_horn_cmd(
         self,
-        tmcc_id: Annotated[int, Engine.id_path()],
-        cmd: Annotated[HornCommand, Body(..., discriminator="option")],
+        tmcc_id: Annotated[int, Train.id_path()],
+        cmd: Annotated[
+            HornCommand,
+            Body(
+                ...,
+                discriminator="option",
+                examples=[
+                    {"option": "quilling", "intensity": 10, "duration": 1.0},
+                    {"option": "sound", "duration": 1.0},
+                    {"option": "sound"},
+                    {"option": "grade"},
+                ],
+            ),
+        ],
     ):
         option = cmd.option
         intensity = getattr(cmd, "intensity", None)
@@ -1623,18 +1644,27 @@ class Train(PyTrainEngine):
     ):
         return super().rear_coupler(tmcc_id)
 
-    @router.post("/train/{tmcc_id:int}/reset_req")
-    async def reset(
+    @legacy_post(router, "/train/{tmcc_id:int}/reset_req", name="Train.ResetReq")
+    async def reset_req(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
         hold: Annotated[bool, Query(title="refuel", description="If true, perform refuel operation")] = False,
         duration: Annotated[int, Query(description="Refueling time (seconds)", ge=3)] = 3,
     ):
-        if hold:
-            duration = duration if duration and duration > 3 else 3
-        else:
-            duration = None
+        duration = (duration if duration and duration >= 3 else 3) if hold else None
         return super().reset(tmcc_id, duration)
+
+    @mobile_post(router, "/train/{tmcc_id:int}/reset", name="Train.Reset")
+    async def reset_cmd(
+        self,
+        tmcc_id: Annotated[int, Train.id_path()],
+        cmd: ResetCommand | None = Body(None),
+    ):
+        # Apply defaults if body omitted
+        if cmd is None:
+            cmd = ResetCommand.model_validate({})
+        duration = (cmd.duration if cmd.duration and cmd.duration >= 3 else 3) if cmd.hold else None
+        return super().reset(tmcc_id, duration=duration)
 
     @legacy_post(router, "/train/{tmcc_id:int}/reverse_req", name="Train.ReverseReq")
     @mobile_post(router, "/train/{tmcc_id:int}/reverse", name="Train.Reverse")
@@ -1654,6 +1684,7 @@ class Train(PyTrainEngine):
         return super().shutdown(tmcc_id, dialog=dialog)
 
     @legacy_post(router, "/train/{tmcc_id:int}/smoke_level_req", name="Train.SmokeLevelReq")
+    @legacy_post(router, "/train/{tmcc_id:int}/smoke_req", name="Train.SmokeReq")
     @mobile_post(router, "/train/{tmcc_id:int}/smoke", name="Train.Smoke")
     async def smoke(
         self,
@@ -1724,7 +1755,7 @@ class Train(PyTrainEngine):
     ):
         return super().volume_up(tmcc_id)
 
-    @router.post("/train/{tmcc_id:int}/{aux_req}")
+    @legacy_post(router, "/train/{tmcc_id:int}/{aux_req}", name="Train.AuxReq")
     async def aux_req(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
