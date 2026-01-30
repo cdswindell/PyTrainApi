@@ -15,7 +15,7 @@ import secrets
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
-from typing import Annotated, Any, Callable, TypeVar
+from typing import Annotated, Any, Callable, Iterable, TypeVar
 
 import jwt
 from dotenv import find_dotenv, load_dotenv
@@ -68,6 +68,7 @@ from .pytrain_info import (
     BellCommand,
     BlockInfo,
     Bpc2Command,
+    ComponentInfo,
     EngineInfo,
     HornCommand,
     NumericCommand,
@@ -79,11 +80,13 @@ from .pytrain_info import (
     SwitchInfo,
     TrainInfo,
 )
+from .response_models import ErrorResponse, StatusResponse, SuccessResponse, VersionResponse, ok_response
 
 log = logging.getLogger(__name__)
 
 E = TypeVar("E", bound=CommandDefEnum)
 F = TypeVar("F", bound=Callable[..., Any])
+C = TypeVar("C", bound=ComponentInfo)
 
 DEFAULT_API_SERVER_VALUE = "[SERVER DOMAIN/IP ADDRESS NAME YOU GAVE TO ALEXA SKILL]"
 
@@ -319,6 +322,18 @@ def get_api_token(api_key: str = Security(api_key_header)) -> bool:
 
 _CAMEL_RE = re.compile(r"(?<!^)(?=[A-Z])")
 
+BASE_ERROR_RESPONSES: dict[int, Any] = {
+    400: {"model": ErrorResponse, "description": "Bad Request"},
+    401: {"model": ErrorResponse, "description": "Unauthorized"},
+    498: {"model": ErrorResponse, "description": "Expired"},
+}
+
+OPTIONAL_ERROR_RESPONSES = {
+    403: {"model": ErrorResponse, "description": "Forbidden"},
+    404: {"model": ErrorResponse, "description": "Not Found"},
+    422: {"model": ErrorResponse, "description": "Not Supported"},
+}
+
 
 def _split_camel(word: str) -> str:
     """
@@ -361,6 +376,96 @@ def infer_category(name: str) -> str:
     return name.split(".", 1)[0] if name else "Misc"
 
 
+def _default_success_response(model: Any) -> dict[int, Any]:
+    return {
+        200: {
+            "model": model,
+            "description": "Success",
+        }
+    }
+
+
+def _error_responses_for(codes: Iterable[int] | None) -> dict[int, Any]:
+    merged: dict[int, Any] = dict(BASE_ERROR_RESPONSES)
+    if codes:
+        for code in codes:
+            spec = OPTIONAL_ERROR_RESPONSES.get(code, None)
+            if spec:
+                merged[code] = spec
+    return merged
+
+
+def _merge_responses(
+    user: dict[int, Any] | None,
+    *,
+    success_model: Any | None,
+    error_codes: Iterable[int] | None = None,
+) -> dict[int, Any]:
+    merged: dict[int, Any] = {}
+
+    if success_model is not None:
+        merged.update(_default_success_response(success_model))
+
+    # only base + selected optional errors
+    merged.update(_error_responses_for(error_codes))
+
+    if isinstance(user, dict):
+        merged.update(user)
+
+    return merged
+
+
+def _route_helper(
+    label: str,
+    api: APIRouter,
+    path: str,
+    *,
+    name: str,
+    operation_id: str | None = None,
+    summary: str | None = None,
+    category: str | None = None,
+    # IMPORTANT: default to None here
+    response_model: Any | None = None,
+    default_success_model: Any | None = SuccessResponse,
+    errors: tuple[int, ...] = (),
+    **kwargs: Any,
+) -> Callable[[F], F]:
+    operation_id = operation_id or _operation_id_from_name(name)
+    summary = summary or _summary_from_name(name)
+    category = category or infer_category(name)
+
+    # If caller didn't supply response_model, use default_success_model (if any).
+    if response_model is None and "response_model" not in kwargs:
+        if default_success_model is not None:
+            kwargs["response_model"] = default_success_model
+    else:
+        kwargs["response_model"] = response_model
+
+    # If caller didn't supply responses, add your standard error models.
+    success_model = response_model if response_model is not None else default_success_model
+
+    if "responses" not in kwargs:
+        kwargs["responses"] = _merge_responses(
+            None,
+            success_model=success_model,
+        )
+    else:
+        kwargs["responses"] = _merge_responses(
+            kwargs["responses"],
+            success_model=success_model,
+            error_codes=errors,
+        )
+
+    return api.post(
+        path,
+        tags=[f"{label}.{category}"],
+        name=name,
+        operation_id=operation_id,
+        summary=summary,
+        **kwargs,
+    )
+
+
 def mobile_post(
     api: APIRouter,
     path: str,
@@ -369,17 +474,22 @@ def mobile_post(
     operation_id: str | None = None,
     summary: str | None = None,
     category: str | None = None,
+    response_model: Any | None = None,
+    default_success_model: Any | None = SuccessResponse,
+    errors: tuple[int, ...] = (),
     **kwargs: Any,
 ) -> Callable[[F], F]:
-    operation_id = operation_id or _operation_id_from_name(name)
-    summary = summary or _summary_from_name(name)
-    category = category or infer_category(name)
-    return api.post(
+    return _route_helper(
+        "Mobile",
+        api,
         path,
-        tags=[f"Mobile.{category}"],
         name=name,
         operation_id=operation_id,
         summary=summary,
+        category=category,
+        response_model=response_model,
+        default_success_model=default_success_model,
+        errors=errors,
         **kwargs,
     )
 
@@ -392,28 +502,27 @@ def legacy_post(
     operation_id: str | None = None,
     summary: str | None = None,
     category: str | None = None,
+    response_model: Any | None = None,
+    default_success_model: Any | None = SuccessResponse,
+    errors: tuple[int, ...] = (),
     **kwargs: Any,
 ) -> Callable[[F], F]:
-    if operation_id is None:
-        operation_id = _operation_id_from_name(name)
-
-    if summary is None:
-        summary = _summary_from_name(name)
-
-    category = category or infer_category(name)
-
-    return api.post(
+    return _route_helper(
+        "Legacy",
+        api,
         path,
-        tags=[f"Legacy.{category}"],
-        operation_id=operation_id,
         name=name,
+        operation_id=operation_id,
         summary=summary,
+        category=category,
+        response_model=response_model,
+        default_success_model=default_success_model,
+        errors=errors,
         **kwargs,
     )
 
 
 router = APIRouter(prefix="/pytrain/v1", dependencies=[Depends(get_api_token)])
-# router = APIRouter(prefix="/pytrain/v1")
 
 FAVICON_PATH = None
 APPLE_ICON_PATH = None
@@ -525,11 +634,12 @@ def pytrain_doc():
     tags=["Legacy.System", "Mobile.System"],
     operation_id="system_halt",
     name="System.Halt",
+    response_model=StatusResponse,
 )
-async def halt():
+async def halt() -> StatusResponse:
     try:
         CommandReq(TMCC1HaltCommandEnum.HALT).send()
-        return {"status": "HALT command sent"}
+        return ok_response("HALT command sent")
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -548,9 +658,9 @@ async def halt():
     description=f"Enable/disable {PROGRAM_NAME} debugging mode. ",
     name="System.Debug",
 )
-async def debug(on: bool = True):
+async def debug(on: bool = True) -> StatusResponse:
     PyTrainApi.get().pytrain.queue_command(f"debug {'on' if on else 'off'}")
-    return {"status": f"Debugging {'enabled' if on else 'disabled'}"}
+    return ok_response(f"Debugging {'enabled' if on else 'disabled'}")
 
 
 @legacy_post(
@@ -567,9 +677,9 @@ async def debug(on: bool = True):
     description=f"Enable/disable echoing of {PROGRAM_NAME} commands to log file. ",
     name="System.Echo",
 )
-async def echo(on: bool = True):
+async def echo(on: bool = True) -> StatusResponse:
     PyTrainApi.get().pytrain.queue_command(f"echo {'on' if on else 'off'}")
-    return {"status": f"Echo {'enabled' if on else 'disabled'}"}
+    return ok_response(f"Echo {'enabled' if on else 'disabled'}")
 
 
 @legacy_post(
@@ -586,10 +696,10 @@ async def echo(on: bool = True):
     description=f"Reboot {PROGRAM_NAME} server and all clients.",
     name="System.Reboot",
 )
-async def reboot():
+async def reboot() -> StatusResponse:
     try:
         CommandReq(TMCC1SyncCommandEnum.REBOOT).send()
-        return {"status": "REBOOT command sent"}
+        return ok_response("REBOOT command sent")
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -608,10 +718,10 @@ async def reboot():
     description=f"Restart {PROGRAM_NAME} server and all clients.",
     name="System.Restart",
 )
-async def restart():
+async def restart() -> StatusResponse:
     try:
         CommandReq(TMCC1SyncCommandEnum.RESTART).send()
-        return {"status": "RESTART command sent"}
+        return ok_response("RESTART command sent")
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -620,20 +730,20 @@ async def restart():
     router,
     "/system/resync_req",
     summary="Resynchronize with Base 3",
-    description="Reload all state information from your Lionel Base 3.",
+    description="Reload all state information from Lionel Base 3.",
     name="System.ResyncReq",
 )
 @mobile_post(
     router,
     "/system/resync",
     summary="Resynchronize with Base 3",
-    description="Reload all state information from your Lionel Base 3.",
+    description="Reload all state information from Lionel Base 3.",
     name="System.Resync",
 )
-async def resync():
+async def resync() -> StatusResponse:
     try:
         CommandReq(TMCC1SyncCommandEnum.RESYNC).send()
-        return {"status": "RESYNC command sent"}
+        return ok_response("RESYNC command sent")
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -652,20 +762,20 @@ async def resync():
     description=f"Shutdown {PROGRAM_NAME} server and all clients.",
     name="System.Shutdown",
 )
-async def shutdown():
+async def shutdown() -> StatusResponse:
     try:
         CommandReq(TMCC1SyncCommandEnum.SHUTDOWN).send()
-        return {"status": "SHUTDOWN command sent"}
+        return ok_response("SHUTDOWN command sent")
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
 @legacy_post(router, "/system/stop_all_req", name="System.StopAllReq", summary="Stop All Engines and Trains")
 @mobile_post(router, "/system/stop_all", name="System.StopAll", summary="Stop All Engines and Trains")
-async def stop_all():
+async def stop_all() -> StatusResponse:
     CommandReq(TMCC1EngineCommandEnum.STOP_IMMEDIATE, 99).send()
     CommandReq(TMCC2EngineCommandEnum.STOP_IMMEDIATE, 99, scope=CommandScope.TRAIN).send()
-    return {"status": "Sent 'stop' command to all engines and trains..."}
+    return ok_response("Sent 'stop' command to all engines and trains...")
 
 
 @legacy_post(
@@ -682,10 +792,10 @@ async def stop_all():
     description=f"Update {API_NAME} software from PyPi or Git Hub repository.",
     name="System.Update",
 )
-async def update():
+async def update() -> StatusResponse:
     try:
         CommandReq(TMCC1SyncCommandEnum.UPDATE).send()
-        return {"status": "UPDATE command sent"}
+        return ok_response("UPDATE command sent")
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -696,6 +806,8 @@ async def update():
     summary=f"Get {API_NAME} Version",
     description=f"Get {API_NAME} software version.",
     name="System.VersionReq",
+    default_success_model=None,
+    response_model=VersionResponse,
 )
 @mobile_post(
     router,
@@ -703,15 +815,14 @@ async def update():
     summary=f"Get {API_NAME} Version",
     description=f"Get {API_NAME} software version.",
     name="System.Version",
+    default_success_model=None,
+    response_model=VersionResponse,
 )
-async def get_version():
+async def get_version() -> VersionResponse:
     try:
-        from . import get_version
+        from . import get_version as api_get_version
 
-        return {
-            "pytrain": pytrain_get_version(),
-            "pytrain_api": get_version(),
-        }
+        return VersionResponse(pytrain=pytrain_get_version(), pytrain_api=api_get_version())
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -735,7 +846,7 @@ async def send_command(
     ],
     command: Annotated[str, Query(description=f"{PROGRAM_NAME} CLI command")],
     is_tmcc: Annotated[str | None, Query(description="Send TMCC-style commands")] = None,
-):
+) -> StatusResponse:
     try:
         if component in [Component.ENGINE, Component.TRAIN]:
             tmcc = " -tmcc" if is_tmcc is not None else ""
@@ -745,7 +856,7 @@ async def send_command(
         parse_response = PyTrainApi.get().pytrain.parse_cli(cmd)
         if isinstance(parse_response, CommandReq):
             parse_response.send()
-            return {"status": f"'{cmd}' command sent"}
+            return ok_response(f"'{cmd}' command sent")
         else:
             raise HTTPException(status_code=422, detail=f"Command is invalid: {parse_response}")
     except HTTPException as he:
@@ -818,15 +929,20 @@ class Accessory(PyTrainAccessory):
         motor: Annotated[int, Query(description="Motor (1 - 2)", ge=1, le=2)],
         state: Annotated[OnOffOption | None, Query(description="On or Off")] = None,
         speed: Annotated[int | None, Query(description="Speed (0 - 100)", ge=0, le=100)] = None,
-    ):
+    ) -> StatusResponse:
         return self.amc2_motor(tmcc_id, motor, state, speed)
 
-    @mobile_post(router, "/accessory/{tmcc_id:int}/amc2_motor", name="Accessory.Amc2Motor")
+    @mobile_post(
+        router,
+        "/accessory/{tmcc_id:int}/amc2_motor",
+        name="Accessory.Amc2Motor",
+        errors=(404, 422),
+    )
     async def amc2_motor_cmd(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
         cmd: Amc2MotorCommand = Body(...),
-    ):
+    ) -> StatusResponse:
         motor = cmd.motor
         state = cmd.state if cmd.mode == "state" else None
         speed = cmd.speed if cmd.mode == "speed" else None
@@ -840,15 +956,20 @@ class Accessory(PyTrainAccessory):
         lamp: Annotated[int, Query(description="Lamp (1 - 4)", ge=1, le=4)],
         state: Annotated[OnOffOption | None, Query(description="On or Off")] = None,
         level: Annotated[int | None, Query(description="Brightness Level (0 - 100)", ge=0, le=100)] = None,
-    ):
+    ) -> StatusResponse:
         return self.amc2_lamp(tmcc_id, lamp, state, level)
 
-    @mobile_post(router, "/accessory/{tmcc_id:int}/amc2_lamp", name="Accessory.Amc2Lamp")
+    @mobile_post(
+        router,
+        "/accessory/{tmcc_id:int}/amc2_lamp",
+        name="Accessory.Amc2Lamp",
+        errors=(404, 422),
+    )
     async def amc2_lamp_cmd(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
         cmd: Amc2LampCommand = Body(...),
-    ):
+    ) -> StatusResponse:
         lamp = cmd.lamp
         state = cmd.state if cmd.mode == "state" else None
         level = cmd.level if cmd.mode == "level" else None
@@ -861,44 +982,44 @@ class Accessory(PyTrainAccessory):
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
         state: Annotated[OnOffOption | None, Query(description="On or Off")],
         duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
-    ):
+    ) -> StatusResponse:
         return super().asc2(tmcc_id, state, duration)
 
-    @mobile_post(router, "/accessory/{tmcc_id:int}/asc2", name="Accessory.Asc2")
+    @mobile_post(router, "/accessory/{tmcc_id:int}/asc2", name="Accessory.Asc2", errors=(404, 422))
     async def asc2_cmd(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
         cmd: Asc2Command = Body(...),
-    ):
+    ) -> StatusResponse:
         state = cmd.state
         duration = cmd.duration
         strict = cmd.strict
         return super().asc2(tmcc_id, state, duration, strict=strict)
 
-    @mobile_post(router, "/accessory/{tmcc_id:int}/aux", name="Accessory.Aux")
+    @mobile_post(router, "/accessory/{tmcc_id:int}/aux", name="Accessory.Aux", errors=(422,))
     async def aux_cmd(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
         cmd: AuxCommand = Body(...),
-    ):
+    ) -> StatusResponse:
         return super().aux(tmcc_id, cmd.aux_req, cmd.number, cmd.duration)
 
-    @legacy_post(router, "/accessory/{tmcc_id:int}/boost_req", name="Accessory.BoostReq")
-    @mobile_post(router, "/accessory/{tmcc_id:int}/boost", name="Accessory.Boost")
+    @legacy_post(router, "/accessory/{tmcc_id:int}/boost_req", name="Accessory.BoostReq", errors=(422,))
+    @mobile_post(router, "/accessory/{tmcc_id:int}/boost", name="Accessory.Boost", errors=(422,))
     async def boost(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
         duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
-    ):
+    ) -> StatusResponse:
         return super().boost(tmcc_id, duration)
 
-    @legacy_post(router, "/accessory/{tmcc_id:int}/brake_req", name="Accessory.BrakeReq")
-    @mobile_post(router, "/accessory/{tmcc_id:int}/brake", name="Accessory.Brake")
+    @legacy_post(router, "/accessory/{tmcc_id:int}/brake_req", name="Accessory.BrakeReq", errors=(422,))
+    @mobile_post(router, "/accessory/{tmcc_id:int}/brake", name="Accessory.Brake", errors=(422,))
     async def brake(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
         duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
-    ):
+    ) -> StatusResponse:
         return super().brake(tmcc_id, duration)
 
     @legacy_post(router, "/accessory/{tmcc_id:int}/bpc2_req", name="Accessory.Bpc2Req")
@@ -906,15 +1027,15 @@ class Accessory(PyTrainAccessory):
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
         state: Annotated[OnOffOption, Query(description="On or Off")],
-    ):
+    ) -> StatusResponse:
         return self.bpc2(tmcc_id, state)
 
-    @mobile_post(router, "/accessory/{tmcc_id:int}/bpc", name="Accessory.Bpc2")
+    @mobile_post(router, "/accessory/{tmcc_id:int}/bpc", name="Accessory.Bpc2", errors=(404, 422))
     async def bpc2_cmd(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
         cmd: Bpc2Command = Body(...),
-    ):
+    ) -> StatusResponse:
         state = cmd.state
         strict = cmd.strict
         return super().bpc2(tmcc_id, state, strict=strict)
@@ -925,24 +1046,24 @@ class Accessory(PyTrainAccessory):
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
         duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
-    ):
+    ) -> StatusResponse:
         return self.open_coupler(tmcc_id, TMCC1AuxCommandEnum.FRONT_COUPLER, duration)
 
-    @legacy_post(router, "/accessory/{tmcc_id:int}/numeric_req", name="Accessory.NumericReq")
+    @legacy_post(router, "/accessory/{tmcc_id:int}/numeric_req", name="Accessory.NumericReq", errors=(422,))
     async def numeric_req(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
         number: Annotated[int | None, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
         duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
-    ):
+    ) -> StatusResponse:
         return self.do_numeric(TMCC1AuxCommandEnum.NUMERIC, tmcc_id, number, duration)
 
-    @mobile_post(router, "/accessory/{tmcc_id:int}/numeric", name="Accessory.Numeric")
+    @mobile_post(router, "/accessory/{tmcc_id:int}/numeric", name="Accessory.Numeric", errors=(422,))
     async def numeric_cmd(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
         cmd: Annotated[NumericCommand, Body(...)],
-    ):
+    ) -> StatusResponse:
         return self.do_numeric(TMCC1AuxCommandEnum.NUMERIC, tmcc_id, cmd.number, cmd.duration)
 
     @legacy_post(router, "/accessory/{tmcc_id:int}/rear_coupler_req", name="Accessory.RearCouplerReq")
@@ -951,33 +1072,33 @@ class Accessory(PyTrainAccessory):
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
         duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
-    ):
+    ) -> StatusResponse:
         return self.open_coupler(tmcc_id, TMCC1AuxCommandEnum.REAR_COUPLER, duration)
 
-    @legacy_post(router, "/accessory/{tmcc_id:int}/speed_req/{speed}", name="Accessory.SpeedReq")
+    @legacy_post(router, "/accessory/{tmcc_id:int}/speed_req/{speed}", name="Accessory.SpeedReq", errors=(422,))
     async def speed(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
         speed: Annotated[int, Path(description="Relative speed (-5 - 5)", ge=-5, le=5)],
         duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
-    ):
+    ) -> StatusResponse:
         return self.relative_speed(tmcc_id, speed, duration)
 
-    @mobile_post(router, "/accessory/{tmcc_id:int}/speed", name="Accessory.Speed")
+    @mobile_post(router, "/accessory/{tmcc_id:int}/speed", name="Accessory.Speed", errors=(422,))
     async def speed_cmd(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
         cmd: RelativeSpeedCommand = Body(...),
-    ):
+    ) -> StatusResponse:
         return self.relative_speed(tmcc_id, cmd.speed, cmd.duration)
 
-    @legacy_post(router, "/accessory/{tmcc_id:int}/{aux_req}", name="Accessory.AuxReq")
+    @legacy_post(router, "/accessory/{tmcc_id:int}/{aux_req}", name="Accessory.AuxReq", errors=(422,))
     async def operate_accessory(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
         aux_req: Annotated[AuxOption, Path(description="Aux 1, Aux2, or Aux 3")],
         duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
-    ):
+    ) -> StatusResponse:
         return self.aux(tmcc_id, aux_req, None, duration)
 
 
@@ -1079,10 +1200,10 @@ class Engine(PyTrainEngine):
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
         cmd: AuxCommand = Body(...),
-    ):
+    ) -> StatusResponse:
         return super().aux(tmcc_id, cmd.aux_req, cmd.number, cmd.duration)
 
-    @legacy_post(router, "/engine/{tmcc_id:int}/bell_req", name="Engine.BellReq")
+    @legacy_post(router, "/engine/{tmcc_id:int}/bell_req", name="Engine.BellReq", errors=(422,))
     async def ring_bell_req(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
@@ -1094,7 +1215,7 @@ class Engine(PyTrainEngine):
             float | None,
             Query(description="Duration (seconds, only with 'once' option)", gt=0.0),
         ] = None,
-    ):
+    ) -> StatusResponse:
         return super().ring_bell(tmcc_id, option, duration)
 
     @mobile_post(router, "/engine/{tmcc_id:int}/bell", name="Engine.Bell")
@@ -1102,37 +1223,37 @@ class Engine(PyTrainEngine):
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
         cmd: Annotated[BellCommand, Body(..., discriminator="option")],
-    ):
+    ) -> StatusResponse:
         option = cmd.option
         duration = getattr(cmd, "duration", None)
         ding = getattr(cmd, "ding", None)
         return super().ring_bell(tmcc_id, option, duration, ding)
 
-    @legacy_post(router, "/engine/{tmcc_id:int}/boost_req", name="Engine.BoostReq")
-    @mobile_post(router, "/engine/{tmcc_id:int}/boost", name="Engine.Boost")
+    @legacy_post(router, "/engine/{tmcc_id:int}/boost_req", name="Engine.BoostReq", errors=(422,))
+    @mobile_post(router, "/engine/{tmcc_id:int}/boost", name="Engine.Boost", errors=(422,))
     async def boost(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
         duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
-    ):
+    ) -> StatusResponse:
         return super().boost(tmcc_id, duration)
 
-    @legacy_post(router, "/engine/{tmcc_id:int}/brake_req", name="Engine.BrakeReq")
-    @mobile_post(router, "/engine/{tmcc_id:int}/brake", name="Engine.Brake")
+    @legacy_post(router, "/engine/{tmcc_id:int}/brake_req", name="Engine.BrakeReq", errors=(422,))
+    @mobile_post(router, "/engine/{tmcc_id:int}/brake", name="Engine.Brake", errors=(422,))
     async def brake(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
         duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
-    ):
+    ) -> StatusResponse:
         return super().brake(tmcc_id, duration)
 
-    @legacy_post(router, "/engine/{tmcc_id:int}/dialog_req", name="Engine.DialogReq")
-    @mobile_post(router, "/engine/{tmcc_id:int}/dialog", name="Engine.Dialog")
+    @legacy_post(router, "/engine/{tmcc_id:int}/dialog_req", name="Engine.DialogReq", errors=(422,))
+    @mobile_post(router, "/engine/{tmcc_id:int}/dialog", name="Engine.Dialog", errors=(422,))
     async def dialog_req(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
         dialog: DialogOption = Query(..., description="Dialog effect"),
-    ):
+    ) -> StatusResponse:
         return self.dialog(tmcc_id, dialog)
 
     @legacy_post(router, "/engine/{tmcc_id:int}/forward_req", name="Engine.ForwardReq")
@@ -1140,7 +1261,7 @@ class Engine(PyTrainEngine):
     async def forward_req(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
-    ):
+    ) -> StatusResponse:
         return super().forward(tmcc_id)
 
     @legacy_post(router, "/engine/{tmcc_id:int}/front_coupler_req", name="Engine.FrontCouplerReq")
@@ -1148,10 +1269,10 @@ class Engine(PyTrainEngine):
     async def front_coupler(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
-    ):
+    ) -> StatusResponse:
         return super().front_coupler(tmcc_id)
 
-    @legacy_post(router, "/engine/{tmcc_id:int}/horn_req", name="Engine.HornReq")
+    @legacy_post(router, "/engine/{tmcc_id:int}/horn_req", name="Engine.HornReq", errors=(422,))
     async def blow_horn_req(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
@@ -1168,7 +1289,7 @@ class Engine(PyTrainEngine):
             float | None,
             Query(description="Duration (seconds)", gt=0.0),
         ] = None,
-    ):
+    ) -> StatusResponse:
         return super().blow_horn(tmcc_id, option, intensity, duration)
 
     @mobile_post(router, "/engine/{tmcc_id:int}/horn", name="Engine.Horn")
@@ -1176,7 +1297,7 @@ class Engine(PyTrainEngine):
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
         cmd: Annotated[HornCommand, Body(..., discriminator="option")],
-    ):
+    ) -> StatusResponse:
         option = cmd.option
         intensity = getattr(cmd, "intensity", None)
         duration = getattr(cmd, "duration", None)
@@ -1195,30 +1316,30 @@ class Engine(PyTrainEngine):
     ) -> ProductInfo:
         return ProductInfo(**super().get_engine_info(tmcc_id))
 
-    @legacy_post(router, "/engine/{tmcc_id:int}/momentum_req", name="Engine.MomentumReq")
-    @mobile_post(router, "/engine/{tmcc_id:int}/momentum", name="Engine.Momentum")
+    @legacy_post(router, "/engine/{tmcc_id:int}/momentum_req", name="Engine.MomentumReq", errors=(422,))
+    @mobile_post(router, "/engine/{tmcc_id:int}/momentum", name="Engine.Momentum", errors=(422,))
     async def momentum(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
         level: int = Query(..., ge=0, le=7, description="Momentum level (0 - 7)"),
-    ):
+    ) -> StatusResponse:
         return super().momentum(tmcc_id, level)
 
-    @legacy_post(router, "/engine/{tmcc_id:int}/numeric_req", name="Engine.NumericReq")
+    @legacy_post(router, "/engine/{tmcc_id:int}/numeric_req", name="Engine.NumericReq", errors=(422,))
     async def numeric_req(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
         number: Annotated[int | None, Query(description="Number (0 - 9)", ge=0, le=9)],
         duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
-    ):
+    ) -> StatusResponse:
         return super().numeric(tmcc_id, number, duration)
 
-    @mobile_post(router, "/engine/{tmcc_id:int}/numeric", name="Engine.Numeric")
+    @mobile_post(router, "/engine/{tmcc_id:int}/numeric", name="Engine.Numeric", errors=(422,))
     async def numeric_cmd(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
         cmd: Annotated[NumericCommand, Body(...)],
-    ):
+    ) -> StatusResponse:
         return super().numeric(tmcc_id, cmd.number, cmd.duration)
 
     @legacy_post(router, "/engine/{tmcc_id:int}/rear_coupler_req", name="Engine.RearCouplerReq")
@@ -1226,25 +1347,25 @@ class Engine(PyTrainEngine):
     async def rear_coupler(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
-    ):
+    ) -> StatusResponse:
         return super().rear_coupler(tmcc_id)
 
-    @legacy_post(router, "/engine/{tmcc_id:int}/reset_req", name="Engine.ResetReq")
+    @legacy_post(router, "/engine/{tmcc_id:int}/reset_req", name="Engine.ResetReq", errors=(422,))
     async def reset_req(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
         hold: Annotated[bool, Query(title="refuel", description="If true, perform refuel operation")] = False,
         duration: Annotated[int | None, Query(description="Refueling time (seconds)", ge=3)] = 3,
-    ):
+    ) -> StatusResponse:
         duration = (duration if duration and duration >= 3 else 3) if hold else None
         return super().reset(tmcc_id, duration)
 
-    @mobile_post(router, "/engine/{tmcc_id:int}/reset", name="Engine.Reset")
+    @mobile_post(router, "/engine/{tmcc_id:int}/reset", name="Engine.Reset", errors=(422,))
     async def reset_cmd(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
         cmd: ResetCommand | None = Body(None),
-    ):
+    ) -> StatusResponse:
         # Apply defaults if body omitted
         if cmd is None:
             cmd = ResetCommand.model_validate({})
@@ -1256,7 +1377,7 @@ class Engine(PyTrainEngine):
     async def reverse(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
-    ):
+    ) -> StatusResponse:
         return super().reverse(tmcc_id)
 
     @legacy_post(router, "/engine/{tmcc_id:int}/shutdown_req", name="Engine.ShutdownReq")
@@ -1265,20 +1386,28 @@ class Engine(PyTrainEngine):
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
         dialog: bool = Query(False, description="If true, include shutdown dialog"),
-    ):
+    ) -> StatusResponse:
         return super().shutdown(tmcc_id, dialog=dialog)
 
-    @legacy_post(router, "/engine/{tmcc_id:int}/smoke_level_req", name="Engine.SmokeLevelReq")
-    @legacy_post(router, "/engine/{tmcc_id:int}/smoke_req", name="Engine.SmokeReq")
-    @mobile_post(router, "/engine/{tmcc_id:int}/smoke", name="Engine.Smoke")
+    @legacy_post(
+        router,
+        "/engine/{tmcc_id:int}/smoke_level_req",
+        name="Engine.SmokeLevelReq",
+        deprecated=True,
+        summary="(Deprecated) Use Engine.SmokeReq instead",
+        description="Deprecated. Use Engine.SmokeReq instead.",
+        errors=(422,),
+    )
+    @legacy_post(router, "/engine/{tmcc_id:int}/smoke_req", name="Engine.SmokeReq", errors=(422,))
+    @mobile_post(router, "/engine/{tmcc_id:int}/smoke", name="Engine.Smoke", errors=(422,))
     async def smoke(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
-        level: SmokeOption = Query(..., description="Smoke output level"),
-    ):
+        level: SmokeOption = Query(..., description="Set smoke output level"),
+    ) -> StatusResponse:
         return super().smoke(tmcc_id, level=level)
 
-    @legacy_post(router, "/engine/{tmcc_id:int}/speed_req/{speed}", name="Engine.SpeedReq")
+    @legacy_post(router, "/engine/{tmcc_id:int}/speed_req/{speed}", name="Engine.SpeedReq", errors=(422,))
     async def speed_req(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
@@ -1288,15 +1417,15 @@ class Engine(PyTrainEngine):
         ],
         immediate: bool = None,
         dialog: bool = None,
-    ):
+    ) -> StatusResponse:
         return super().speed(tmcc_id, speed, immediate=immediate, dialog=dialog)
 
-    @mobile_post(router, "/engine/{tmcc_id:int}/speed", name="Engine.Speed")
+    @mobile_post(router, "/engine/{tmcc_id:int}/speed", name="Engine.Speed", errors=(422,))
     async def speed_cmd(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
         cmd: SpeedCommand = Body(...),
-    ):
+    ) -> StatusResponse:
         return await self._set_speed(tmcc_id, cmd.speed, cmd.immediate, cmd.dialog)
 
     @legacy_post(router, "/engine/{tmcc_id:int}/startup_req", name="Engine.StartupReq")
@@ -1305,7 +1434,7 @@ class Engine(PyTrainEngine):
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
         dialog: bool = Query(False, description="If true, include startup dialog"),
-    ):
+    ) -> StatusResponse:
         return super().startup(tmcc_id, dialog=dialog)
 
     @legacy_post(router, "/engine/{tmcc_id:int}/stop_req", name="Engine.StopReq")
@@ -1313,7 +1442,7 @@ class Engine(PyTrainEngine):
     async def stop(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
-    ):
+    ) -> StatusResponse:
         return super().stop(tmcc_id)
 
     @legacy_post(router, "/engine/{tmcc_id:int}/toggle_direction_req", name="Engine.ToggleDirectionReq")
@@ -1321,7 +1450,7 @@ class Engine(PyTrainEngine):
     async def toggle_direction(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
-    ):
+    ) -> StatusResponse:
         return super().toggle_direction(tmcc_id)
 
     @legacy_post(router, "/engine/{tmcc_id:int}/volume_down_req", name="Engine.VolumeDownReq")
@@ -1329,7 +1458,7 @@ class Engine(PyTrainEngine):
     async def volume_down(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
-    ):
+    ) -> StatusResponse:
         return super().volume_down(tmcc_id)
 
     @legacy_post(router, "/engine/{tmcc_id:int}/volume_up_req", name="Engine.VolumeUpReq")
@@ -1337,17 +1466,17 @@ class Engine(PyTrainEngine):
     async def volume_up(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
-    ):
+    ) -> StatusResponse:
         return super().volume_up(tmcc_id)
 
-    @legacy_post(router, "/engine/{tmcc_id:int}/{aux_req}", name="Engine.AuxReq")
+    @legacy_post(router, "/engine/{tmcc_id:int}/{aux_req}", name="Engine.AuxReq", errors=(422,))
     async def aux_req(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
         aux_req: Annotated[AuxOption, Path(description="Aux 1, Aux2, or Aux 3")],
         number: Annotated[int | None, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
         duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
-    ):
+    ) -> StatusResponse:
         return super().aux(tmcc_id, aux_req, number, duration)
 
 
@@ -1384,9 +1513,9 @@ class Route(PyTrainComponent):
     async def fire(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Route")],
-    ):
+    ) -> StatusResponse:
         self.do_request(TMCC1RouteCommandEnum.FIRE, tmcc_id)
-        return {"status": f"{self.scope.title} {tmcc_id:int} fired"}
+        return ok_response(f"{self.scope.title} {tmcc_id:int} fired")
 
 
 @router.get(
@@ -1420,30 +1549,56 @@ class Switch(PyTrainSwitch):
     ) -> SwitchInfo:
         return SwitchInfo(**super().get(tmcc_id))
 
-    @legacy_post(router, "/switch/{tmcc_id:int}/thru_req", name="Switch.ThruReq", summary="Throw switch thru")
+    @legacy_post(
+        router,
+        "/switch/{tmcc_id:int}/thru_req",
+        name="Switch.ThruReq",
+        deprecated=True,
+        summary="(Deprecated) Use Switch.ThrowReq instead",
+        description="Deprecated. Use Switch.ThrowReq instead.",
+    )
     async def thru(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Switch")],
-    ):
+    ) -> StatusResponse:
         return self.throw(tmcc_id, SwitchPosition.THRU)
 
-    @legacy_post(router, "/switch/{tmcc_id:int}/out_req", name="Switch.OutReq", summary="Throw switch out")
+    @legacy_post(
+        router,
+        "/switch/{tmcc_id:int}/out_req",
+        name="Switch.OutReq",
+        deprecated=True,
+        summary="(Deprecated) Use Switch.ThrowReq instead",
+        description="Deprecated. Use Switch.ThrowReq instead.",
+    )
     async def out(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Switch")],
-    ):
+    ) -> StatusResponse:
         return self.throw(tmcc_id, SwitchPosition.OUT)
 
-    @legacy_post(router, "/switch/{tmcc_id:int}/throw_req", name="Switch.ThrowReq", summary="Throw switch thru or out")
-    @mobile_post(router, "/switch/{tmcc_id:int}/throw", name="Switch.Throw", summary="Throw switch thru or out")
+    @legacy_post(
+        router,
+        "/switch/{tmcc_id:int}/throw_req",
+        name="Switch.ThrowReq",
+        summary="Throw switch thru or out",
+        errors=(422,),
+    )
+    @mobile_post(
+        router,
+        "/switch/{tmcc_id:int}/throw",
+        name="Switch.Throw",
+        summary="Throw switch thru or out",
+        errors=(422,),
+    )
     async def throw_cmd(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Switch")],
         position: Annotated[
             SwitchPosition,
-            Query(description="Desired switch position"),
+            Query(description="New switch position"),
         ],
-    ):
+    ) -> StatusResponse:
         return self.throw(tmcc_id, position)
 
 
@@ -1494,7 +1649,7 @@ class Train(PyTrainEngine):
     async def get_train(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
-    ):
+    ) -> TrainInfo:
         return TrainInfo(**super().get(tmcc_id))
 
     @mobile_post(router, "/train/{tmcc_id:int}/aux", name="Train.Aux")
@@ -1502,10 +1657,10 @@ class Train(PyTrainEngine):
         self,
         tmcc_id: Annotated[int, Train.id_path()],
         cmd: AuxCommand = Body(...),
-    ):
+    ) -> StatusResponse:
         return super().aux(tmcc_id, cmd.aux_req, cmd.number, cmd.duration)
 
-    @legacy_post(router, "/train/{tmcc_id:int}/bell_req", name="Train.BellReq")
+    @legacy_post(router, "/train/{tmcc_id:int}/bell_req", name="Train.BellReq", errors=(422,))
     async def ring_bell_req(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
@@ -1517,45 +1672,45 @@ class Train(PyTrainEngine):
             float | None,
             Query(description="Duration (seconds, only with 'once' option)", gt=0.0),
         ] = None,
-    ):
+    ) -> StatusResponse:
         return super().ring_bell(tmcc_id, option, duration)
 
-    @mobile_post(router, "/train/{tmcc_id:int}/bell", name="Train.Bell")
+    @mobile_post(router, "/train/{tmcc_id:int}/bell", name="Train.Bell", errors=(422,))
     async def ring_bell_cmd(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
         cmd: Annotated[BellCommand, Body(..., discriminator="option")],
-    ):
+    ) -> StatusResponse:
         option = cmd.option
         duration = getattr(cmd, "duration", None)
         ding = getattr(cmd, "ding", None)
         return super().ring_bell(tmcc_id, option, duration, ding)
 
-    @legacy_post(router, "/train/{tmcc_id:int}/boost_req", name="Train.BoostReq")
-    @mobile_post(router, "/train/{tmcc_id:int}/boost", name="Train.Boost")
+    @legacy_post(router, "/train/{tmcc_id:int}/boost_req", name="Train.BoostReq", errors=(422,))
+    @mobile_post(router, "/train/{tmcc_id:int}/boost", name="Train.Boost", errors=(422,))
     async def boost(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
         duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
-    ):
+    ) -> StatusResponse:
         return super().boost(tmcc_id, duration)
 
-    @legacy_post(router, "/train/{tmcc_id:int}/brake_req", name="Train.BrakeReq")
-    @mobile_post(router, "/train/{tmcc_id:int}/brake", name="Train.Brake")
+    @legacy_post(router, "/train/{tmcc_id:int}/brake_req", name="Train.BrakeReq", errors=(422,))
+    @mobile_post(router, "/train/{tmcc_id:int}/brake", name="Train.Brake", errors=(422,))
     async def brake(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
         duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
-    ):
+    ) -> StatusResponse:
         return super().brake(tmcc_id, duration)
 
-    @legacy_post(router, "/train/{tmcc_id:int}/dialog_req", name="Train.DialogReq")
-    @mobile_post(router, "/train/{tmcc_id:int}/dialog", name="Train.Dialog")
+    @legacy_post(router, "/train/{tmcc_id:int}/dialog_req", name="Train.DialogReq", errors=(422,))
+    @mobile_post(router, "/train/{tmcc_id:int}/dialog", name="Train.Dialog", errors=(422,))
     async def dialog_req(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
         option: DialogOption = Query(..., description="Dialog effect"),
-    ):
+    ) -> StatusResponse:
         return super().dialog(tmcc_id, option)
 
     @legacy_post(router, "/train/{tmcc_id:int}/forward_req", name="Train.ForwardReq")
@@ -1563,7 +1718,7 @@ class Train(PyTrainEngine):
     async def forward(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
-    ):
+    ) -> StatusResponse:
         return super().forward(tmcc_id)
 
     @legacy_post(router, "/train/{tmcc_id:int}/front_coupler_req", name="Train.FrontCouplerReq")
@@ -1571,10 +1726,10 @@ class Train(PyTrainEngine):
     async def front_coupler(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
-    ):
+    ) -> StatusResponse:
         return super().front_coupler(tmcc_id)
 
-    @legacy_post(router, "/train/{tmcc_id:int}/horn_req", name="Train.HornReq")
+    @legacy_post(router, "/train/{tmcc_id:int}/horn_req", name="Train.HornReq", errors=(422,))
     async def blow_horn_req(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
@@ -1584,10 +1739,10 @@ class Train(PyTrainEngine):
             Query(description="Quilling horn intensity (Legacy engines only)", ge=0, le=15),
         ] = 10,
         duration: Annotated[float | None, Query(description="Duration (seconds, Legacy engines only)", gt=0.0)] = None,
-    ):
+    ) -> StatusResponse:
         return super().blow_horn(tmcc_id, option, intensity, duration)
 
-    @mobile_post(router, "/train/{tmcc_id:int}/horn", name="Train.Horn")
+    @mobile_post(router, "/train/{tmcc_id:int}/horn", name="Train.Horn", errors=(422,))
     async def blow_horn_cmd(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
@@ -1604,36 +1759,36 @@ class Train(PyTrainEngine):
                 ],
             ),
         ],
-    ):
+    ) -> StatusResponse:
         option = cmd.option
         intensity = getattr(cmd, "intensity", None)
         duration = getattr(cmd, "duration", None)
         return super().blow_horn(tmcc_id, option, intensity, duration)
 
-    @legacy_post(router, "/train/{tmcc_id:int}/momentum_req", name="Train.MomentumReq")
-    @mobile_post(router, "/train/{tmcc_id:int}/momentum", name="Train.Momentum")
+    @legacy_post(router, "/train/{tmcc_id:int}/momentum_req", name="Train.MomentumReq", errors=(422,))
+    @mobile_post(router, "/train/{tmcc_id:int}/momentum", name="Train.Momentum", errors=(422,))
     async def momentum(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
         level: Annotated[int, Query(..., description="Momentum level (0 - 7)", ge=0, le=7)],
-    ):
+    ) -> StatusResponse:
         return super().momentum(tmcc_id, level)
 
-    @legacy_post(router, "/train/{tmcc_id:int}/numeric_req", name="Train.NumericReq")
+    @legacy_post(router, "/train/{tmcc_id:int}/numeric_req", name="Train.NumericReq", errors=(422,))
     async def numeric_req(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
         number: Annotated[int | None, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
         duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
-    ):
+    ) -> StatusResponse:
         return super().numeric(tmcc_id, number, duration)
 
-    @mobile_post(router, "/train/{tmcc_id:int}/numeric", name="Train.Numeric")
+    @mobile_post(router, "/train/{tmcc_id:int}/numeric", name="Train.Numeric", errors=(422,))
     async def numeric_cmd(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
         cmd: Annotated[NumericCommand, Body(...)],
-    ):
+    ) -> StatusResponse:
         return super().numeric(tmcc_id, cmd.number, cmd.duration)
 
     @legacy_post(router, "/train/{tmcc_id:int}/rear_coupler_req", name="Train.RearCouplerReq")
@@ -1641,25 +1796,25 @@ class Train(PyTrainEngine):
     async def rear_coupler(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
-    ):
+    ) -> StatusResponse:
         return super().rear_coupler(tmcc_id)
 
-    @legacy_post(router, "/train/{tmcc_id:int}/reset_req", name="Train.ResetReq")
+    @legacy_post(router, "/train/{tmcc_id:int}/reset_req", name="Train.ResetReq", errors=(422,))
     async def reset_req(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
         hold: Annotated[bool, Query(title="refuel", description="If true, perform refuel operation")] = False,
         duration: Annotated[int, Query(description="Refueling time (seconds)", ge=3)] = 3,
-    ):
+    ) -> StatusResponse:
         duration = (duration if duration and duration >= 3 else 3) if hold else None
         return super().reset(tmcc_id, duration)
 
-    @mobile_post(router, "/train/{tmcc_id:int}/reset", name="Train.Reset")
+    @mobile_post(router, "/train/{tmcc_id:int}/reset", name="Train.Reset", errors=(422,))
     async def reset_cmd(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
         cmd: ResetCommand | None = Body(None),
-    ):
+    ) -> StatusResponse:
         # Apply defaults if body omitted
         if cmd is None:
             cmd = ResetCommand.model_validate({})
@@ -1671,7 +1826,7 @@ class Train(PyTrainEngine):
     async def reverse(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
-    ):
+    ) -> StatusResponse:
         return super().reverse(tmcc_id)
 
     @legacy_post(router, "/train/{tmcc_id:int}/shutdown_req", name="Train.ShutdownReq")
@@ -1680,20 +1835,28 @@ class Train(PyTrainEngine):
         self,
         tmcc_id: Annotated[int, Train.id_path()],
         dialog: bool = False,
-    ):
+    ) -> StatusResponse:
         return super().shutdown(tmcc_id, dialog=dialog)
 
-    @legacy_post(router, "/train/{tmcc_id:int}/smoke_level_req", name="Train.SmokeLevelReq")
-    @legacy_post(router, "/train/{tmcc_id:int}/smoke_req", name="Train.SmokeReq")
-    @mobile_post(router, "/train/{tmcc_id:int}/smoke", name="Train.Smoke")
+    @legacy_post(
+        router,
+        "/train/{tmcc_id:int}/smoke_level_req",
+        name="Train.SmokeLevelReq",
+        deprecated=True,
+        summary="(Deprecated) Use Train.SmokeReq instead",
+        description="Deprecated. Use Train.SmokeReq instead.",
+        errors=(422,),
+    )
+    @legacy_post(router, "/train/{tmcc_id:int}/smoke_req", name="Train.SmokeReq", errors=(422,))
+    @mobile_post(router, "/train/{tmcc_id:int}/smoke", name="Train.Smoke", errors=(422,))
     async def smoke(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
-        level: SmokeOption,
-    ):
+        level: SmokeOption = Query(..., description="Set smoke output level"),
+    ) -> StatusResponse:
         return super().smoke(tmcc_id, level=level)
 
-    @legacy_post(router, "/train/{tmcc_id:int}/speed_req/{speed}", name="Train.SpeedReq")
+    @legacy_post(router, "/train/{tmcc_id:int}/speed_req/{speed}", name="Train.SpeedReq", errors=(422,))
     async def speed_req(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
@@ -1703,16 +1866,16 @@ class Train(PyTrainEngine):
         ],
         immediate: bool = None,
         dialog: bool = None,
-    ):
+    ) -> StatusResponse:
         return super().speed(tmcc_id, speed, immediate=immediate, dialog=dialog)
 
-    @mobile_post(router, "/train/{tmcc_id:int}/speed", name="Train.Speed")
+    @mobile_post(router, "/train/{tmcc_id:int}/speed", name="Train.Speed", errors=(422,))
     async def speed_cmd(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
         cmd: SpeedCommand = Body(...),
-    ):
-        return await self._set_speed(tmcc_id, cmd.speed, cmd.immediate, cmd.dialog)
+    ) -> StatusResponse:
+        return self.speed(tmcc_id, cmd.speed, immediate=cmd.immediate, dialog=cmd.dialog)
 
     @legacy_post(router, "/train/{tmcc_id:int}/startup_req", name="Train.StartupReq")
     @mobile_post(router, "/train/{tmcc_id:int}/startup", name="Train.Startup")
@@ -1720,7 +1883,7 @@ class Train(PyTrainEngine):
         self,
         tmcc_id: Annotated[int, Train.id_path()],
         dialog: bool = False,
-    ):
+    ) -> StatusResponse:
         return super().startup(tmcc_id, dialog=dialog)
 
     @legacy_post(router, "/train/{tmcc_id:int}/stop_req", name="Train.StopReq")
@@ -1728,7 +1891,7 @@ class Train(PyTrainEngine):
     async def stop(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
-    ):
+    ) -> StatusResponse:
         return super().stop(tmcc_id)
 
     @legacy_post(router, "/train/{tmcc_id:int}/toggle_direction_req", name="Train.ToggleDirectionReq")
@@ -1736,7 +1899,7 @@ class Train(PyTrainEngine):
     async def toggle_direction(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
-    ):
+    ) -> StatusResponse:
         return super().toggle_direction(tmcc_id)
 
     @legacy_post(router, "/train/{tmcc_id:int}/volume_down_req", name="Train.VolumeDownReq")
@@ -1744,7 +1907,7 @@ class Train(PyTrainEngine):
     async def volume_down(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
-    ):
+    ) -> StatusResponse:
         return super().volume_down(tmcc_id)
 
     @legacy_post(router, "/train/{tmcc_id:int}/volume_up_req", name="Train.VolumeUpReq")
@@ -1752,17 +1915,17 @@ class Train(PyTrainEngine):
     async def volume_up(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
-    ):
+    ) -> StatusResponse:
         return super().volume_up(tmcc_id)
 
-    @legacy_post(router, "/train/{tmcc_id:int}/{aux_req}", name="Train.AuxReq")
+    @legacy_post(router, "/train/{tmcc_id:int}/{aux_req}", name="Train.AuxReq", errors=(422,))
     async def aux_req(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
         aux_req: Annotated[AuxOption, Path(description="Aux 1, Aux2, or Aux 3")],
         number: Annotated[int | None, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
         duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
-    ):
+    ) -> StatusResponse:
         return super().aux(tmcc_id, aux_req, number, duration)
 
 
