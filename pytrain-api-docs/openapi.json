@@ -3,7 +3,7 @@
   "info": {
     "title": "PyTrain API",
     "description": "Operate and control Lionel Legacy/TMCC engines, trains, switches, accessories, routes, and LCS components",
-    "version": "1.6.9"
+    "version": "1.6.10"
   },
   "paths": {
     "/pytrain/v1/system/halt": {
@@ -716,8 +716,16 @@
             "in": "query",
             "required": false,
             "schema": {
-              "$ref": "#/components/schemas/OnOffOption",
-              "description": "On or Off"
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/OnOffOption"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "On or Off",
+              "title": "State"
             },
             "description": "On or Off"
           },
@@ -726,9 +734,16 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 0,
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 100,
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Speed (0 - 100)",
               "title": "Speed"
             },
@@ -868,8 +883,16 @@
             "in": "query",
             "required": false,
             "schema": {
-              "$ref": "#/components/schemas/OnOffOption",
-              "description": "On or Off"
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/OnOffOption"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "On or Off",
+              "title": "State"
             },
             "description": "On or Off"
           },
@@ -878,9 +901,16 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 0,
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 100,
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Brightness Level (0 - 100)",
               "title": "Level"
             },
@@ -1007,8 +1037,16 @@
             "in": "query",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/OnOffOption",
-              "description": "On or Off"
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/OnOffOption"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "On or Off",
+              "title": "State"
             },
             "description": "On or Off"
           },
@@ -1017,8 +1055,15 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "number",
-              "exclusiveMinimum": 0.0,
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Duration (seconds)",
               "title": "Duration"
             },
@@ -1196,8 +1241,15 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "number",
-              "exclusiveMinimum": 0.0,
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Duration (seconds)",
               "title": "Duration"
             },
@@ -1257,8 +1309,15 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "number",
-              "exclusiveMinimum": 0.0,
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Duration (seconds)",
               "title": "Duration"
             },
@@ -1318,8 +1377,15 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "number",
-              "exclusiveMinimum": 0.0,
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Duration (seconds)",
               "title": "Duration"
             },
@@ -1379,8 +1445,15 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "number",
-              "exclusiveMinimum": 0.0,
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Duration (seconds)",
               "title": "Duration"
             },
@@ -1558,8 +1631,15 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "number",
-              "exclusiveMinimum": 0.0,
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Duration (seconds)",
               "title": "Duration"
             },
@@ -1619,8 +1699,15 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "number",
-              "exclusiveMinimum": 0.0,
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Duration (seconds)",
               "title": "Duration"
             },
@@ -1827,8 +1914,15 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "number",
-              "exclusiveMinimum": 0.0,
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Duration (seconds)",
               "title": "Duration"
             },
@@ -1888,8 +1982,15 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "number",
-              "exclusiveMinimum": 0.0,
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Duration (seconds)",
               "title": "Duration"
             },
@@ -1962,8 +2063,15 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "number",
-              "exclusiveMinimum": 0.0,
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Duration (seconds)",
               "title": "Duration"
             },
@@ -2092,8 +2200,15 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "number",
-              "exclusiveMinimum": 0.0,
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Duration (seconds)",
               "title": "Duration"
             },
@@ -3170,8 +3285,8 @@
         "tags": [
           "Legacy.Engine"
         ],
-        "summary": "Engine Blow Horn Req",
-        "operationId": "engine_blow_horn_req",
+        "summary": "Engine Horn Req",
+        "operationId": "engine_horn_req",
         "security": [
           {
             "APIKeyHeader": []
@@ -3197,18 +3312,25 @@
             "required": true,
             "schema": {
               "$ref": "#/components/schemas/HornOption",
-              "description": "Horn effect"
+              "description": "Horn/whistle effect"
             },
-            "description": "Horn effect"
+            "description": "Horn/whistle effect"
           },
           {
             "name": "intensity",
             "in": "query",
             "required": false,
             "schema": {
-              "type": "integer",
-              "maximum": 15,
-              "minimum": 0,
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 15,
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Quilling horn intensity (Legacy engines only)",
               "default": 10,
               "title": "Intensity"
@@ -3220,8 +3342,15 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "number",
-              "exclusiveMinimum": 0.0,
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Duration (seconds)",
               "title": "Duration"
             },
@@ -3792,8 +3921,15 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "integer",
-              "minimum": 3,
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 3
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Refueling time (seconds)",
               "default": 3,
               "title": "Duration"
@@ -4116,6 +4252,65 @@
         ],
         "summary": "Engine Smoke",
         "operationId": "engine_smoke",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tmcc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 9999,
+              "minimum": 1,
+              "title": "TMCC ID",
+              "description": "Engine's TMCC ID"
+            },
+            "description": "Engine's TMCC ID"
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/SmokeOption",
+              "description": "Smoke output level"
+            },
+            "description": "Smoke output level"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pytrain/v1/engine/{tmcc_id}/smoke_req": {
+      "post": {
+        "tags": [
+          "Legacy.Engine"
+        ],
+        "summary": "Engine Smoke Req",
+        "operationId": "engine_smoke_req",
         "security": [
           {
             "APIKeyHeader": []
@@ -5582,7 +5777,7 @@
           "Mobile.Train"
         ],
         "summary": "Get train state",
-        "operationId": "train_list",
+        "operationId": "train_get",
         "security": [
           {
             "APIKeyHeader": []
@@ -5627,10 +5822,72 @@
         }
       }
     },
+    "/pytrain/v1/train/{tmcc_id}/aux": {
+      "post": {
+        "tags": [
+          "Mobile.Train"
+        ],
+        "summary": "Train Aux",
+        "operationId": "train_aux",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tmcc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 9999,
+              "minimum": 1,
+              "title": "TMCC ID",
+              "description": "Train's TMCC ID"
+            },
+            "description": "Train's TMCC ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuxCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/pytrain/v1/train/{tmcc_id}/bell_req": {
       "post": {
-        "summary": "Train.Ring Bell",
-        "operationId": "Train_ring_bell_pytrain_v1_train__tmcc_id__bell_req_post",
+        "tags": [
+          "Legacy.Train"
+        ],
+        "summary": "Train Bell Req",
+        "operationId": "train_bell_req",
         "security": [
           {
             "APIKeyHeader": []
@@ -5653,10 +5910,18 @@
           {
             "name": "option",
             "in": "query",
-            "required": true,
+            "required": false,
             "schema": {
-              "$ref": "#/components/schemas/BellOption",
-              "description": "Bell effect"
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/BellOption"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Bell effect",
+              "title": "Option"
             },
             "description": "Bell effect"
           },
@@ -5665,8 +5930,15 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "number",
-              "exclusiveMinimum": 0.0,
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Duration (seconds, only with 'once' option)",
               "title": "Duration"
             },
@@ -5695,10 +5967,99 @@
         }
       }
     },
-    "/pytrain/v1/train/{tmcc_id}/boost_req": {
+    "/pytrain/v1/train/{tmcc_id}/bell": {
       "post": {
-        "summary": "Train.Boost",
-        "operationId": "Train_boost_pytrain_v1_train__tmcc_id__boost_req_post",
+        "tags": [
+          "Mobile.Train"
+        ],
+        "summary": "Train Bell",
+        "operationId": "train_bell",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tmcc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 9999,
+              "minimum": 1,
+              "title": "TMCC ID",
+              "description": "Train's TMCC ID"
+            },
+            "description": "Train's TMCC ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/BellToggle"
+                  },
+                  {
+                    "$ref": "#/components/schemas/BellOn"
+                  },
+                  {
+                    "$ref": "#/components/schemas/BellOff"
+                  },
+                  {
+                    "$ref": "#/components/schemas/BellOnce"
+                  },
+                  {
+                    "$ref": "#/components/schemas/BellDing"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "option",
+                  "mapping": {
+                    "toggle": "#/components/schemas/BellToggle",
+                    "on": "#/components/schemas/BellOn",
+                    "off": "#/components/schemas/BellOff",
+                    "once": "#/components/schemas/BellOnce",
+                    "ding": "#/components/schemas/BellDing"
+                  }
+                },
+                "title": "Cmd"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pytrain/v1/train/{tmcc_id}/boost": {
+      "post": {
+        "tags": [
+          "Mobile.Train"
+        ],
+        "summary": "Train Boost",
+        "operationId": "train_boost",
         "security": [
           {
             "APIKeyHeader": []
@@ -5723,8 +6084,151 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "number",
-              "exclusiveMinimum": 0.0,
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Duration (seconds)",
+              "title": "Duration"
+            },
+            "description": "Duration (seconds)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pytrain/v1/train/{tmcc_id}/boost_req": {
+      "post": {
+        "tags": [
+          "Legacy.Train"
+        ],
+        "summary": "Train Boost Req",
+        "operationId": "train_boost_req",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tmcc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 9999,
+              "minimum": 1,
+              "title": "TMCC ID",
+              "description": "Train's TMCC ID"
+            },
+            "description": "Train's TMCC ID"
+          },
+          {
+            "name": "duration",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Duration (seconds)",
+              "title": "Duration"
+            },
+            "description": "Duration (seconds)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pytrain/v1/train/{tmcc_id}/brake": {
+      "post": {
+        "tags": [
+          "Mobile.Train"
+        ],
+        "summary": "Train Brake",
+        "operationId": "train_brake",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tmcc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 9999,
+              "minimum": 1,
+              "title": "TMCC ID",
+              "description": "Train's TMCC ID"
+            },
+            "description": "Train's TMCC ID"
+          },
+          {
+            "name": "duration",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Duration (seconds)",
               "title": "Duration"
             },
@@ -5755,8 +6259,11 @@
     },
     "/pytrain/v1/train/{tmcc_id}/brake_req": {
       "post": {
-        "summary": "Train.Brake",
-        "operationId": "Train_brake_pytrain_v1_train__tmcc_id__brake_req_post",
+        "tags": [
+          "Legacy.Train"
+        ],
+        "summary": "Train Brake Req",
+        "operationId": "train_brake_req",
         "security": [
           {
             "APIKeyHeader": []
@@ -5781,8 +6288,15 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "number",
-              "exclusiveMinimum": 0.0,
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Duration (seconds)",
               "title": "Duration"
             },
@@ -5811,10 +6325,72 @@
         }
       }
     },
+    "/pytrain/v1/train/{tmcc_id}/dialog": {
+      "post": {
+        "tags": [
+          "Mobile.Train"
+        ],
+        "summary": "Train Dialog",
+        "operationId": "train_dialog",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tmcc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 9999,
+              "minimum": 1,
+              "title": "TMCC ID",
+              "description": "Train's TMCC ID"
+            },
+            "description": "Train's TMCC ID"
+          },
+          {
+            "name": "option",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/DialogOption",
+              "description": "Dialog effect"
+            },
+            "description": "Dialog effect"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/pytrain/v1/train/{tmcc_id}/dialog_req": {
       "post": {
-        "summary": "Train.Do Dialog",
-        "operationId": "Train_do_dialog_pytrain_v1_train__tmcc_id__dialog_req_post",
+        "tags": [
+          "Legacy.Train"
+        ],
+        "summary": "Train Dialog Req",
+        "operationId": "train_dialog_req",
         "security": [
           {
             "APIKeyHeader": []
@@ -5967,8 +6543,11 @@
     },
     "/pytrain/v1/train/{tmcc_id}/front_coupler": {
       "post": {
-        "summary": "Train.Train.Frontcoupler",
-        "operationId": "Train_Train_FrontCoupler_pytrain_v1_train__tmcc_id__front_coupler_post",
+        "tags": [
+          "Mobile.Train"
+        ],
+        "summary": "Train Front Coupler",
+        "operationId": "train_front_coupler",
         "security": [
           {
             "APIKeyHeader": []
@@ -6060,10 +6639,207 @@
         }
       }
     },
-    "/pytrain/v1/train/{tmcc_id}/momentum_req": {
+    "/pytrain/v1/train/{tmcc_id}/horn_req": {
       "post": {
-        "summary": "Train.Momentum",
-        "operationId": "Train_momentum_pytrain_v1_train__tmcc_id__momentum_req_post",
+        "tags": [
+          "Legacy.Train"
+        ],
+        "summary": "Train Horn Req",
+        "operationId": "train_horn_req",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tmcc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 9999,
+              "minimum": 1,
+              "title": "TMCC ID",
+              "description": "Train's TMCC ID"
+            },
+            "description": "Train's TMCC ID"
+          },
+          {
+            "name": "option",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/HornOption",
+              "description": "Horn/whistle effect"
+            },
+            "description": "Horn/whistle effect"
+          },
+          {
+            "name": "intensity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 15,
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Quilling horn intensity (Legacy engines only)",
+              "default": 10,
+              "title": "Intensity"
+            },
+            "description": "Quilling horn intensity (Legacy engines only)"
+          },
+          {
+            "name": "duration",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Duration (seconds, Legacy engines only)",
+              "title": "Duration"
+            },
+            "description": "Duration (seconds, Legacy engines only)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pytrain/v1/train/{tmcc_id}/horn": {
+      "post": {
+        "tags": [
+          "Mobile.Train"
+        ],
+        "summary": "Train Horn",
+        "operationId": "train_horn",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tmcc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 9999,
+              "minimum": 1,
+              "title": "TMCC ID",
+              "description": "Train's TMCC ID"
+            },
+            "description": "Train's TMCC ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/HornSound"
+                  },
+                  {
+                    "$ref": "#/components/schemas/HornGrade"
+                  },
+                  {
+                    "$ref": "#/components/schemas/HornQuilling"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "option",
+                  "mapping": {
+                    "sound": "#/components/schemas/HornSound",
+                    "grade": "#/components/schemas/HornGrade",
+                    "quilling": "#/components/schemas/HornQuilling"
+                  }
+                },
+                "examples": [
+                  {
+                    "option": "quilling",
+                    "intensity": 10,
+                    "duration": 1.0
+                  },
+                  {
+                    "option": "sound",
+                    "duration": 1.0
+                  },
+                  {
+                    "option": "sound"
+                  },
+                  {
+                    "option": "grade"
+                  }
+                ],
+                "title": "Cmd"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pytrain/v1/train/{tmcc_id}/momentum": {
+      "post": {
+        "tags": [
+          "Mobile.Train"
+        ],
+        "summary": "Train Momentum",
+        "operationId": "train_momentum",
         "security": [
           {
             "APIKeyHeader": []
@@ -6086,7 +6862,69 @@
           {
             "name": "level",
             "in": "query",
-            "required": false,
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 7,
+              "minimum": 0,
+              "description": "Momentum level (0 - 7)",
+              "title": "Level"
+            },
+            "description": "Momentum level (0 - 7)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pytrain/v1/train/{tmcc_id}/momentum_req": {
+      "post": {
+        "tags": [
+          "Legacy.Train"
+        ],
+        "summary": "Train Momentum Req",
+        "operationId": "train_momentum_req",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tmcc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 9999,
+              "minimum": 1,
+              "title": "TMCC ID",
+              "description": "Train's TMCC ID"
+            },
+            "description": "Train's TMCC ID"
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "required": true,
             "schema": {
               "type": "integer",
               "maximum": 7,
@@ -6121,8 +6959,11 @@
     },
     "/pytrain/v1/train/{tmcc_id}/numeric_req": {
       "post": {
-        "summary": "Train.Numeric Req",
-        "operationId": "Train_numeric_req_pytrain_v1_train__tmcc_id__numeric_req_post",
+        "tags": [
+          "Legacy.Train"
+        ],
+        "summary": "Train Numeric Req",
+        "operationId": "train_numeric_req",
         "security": [
           {
             "APIKeyHeader": []
@@ -6147,9 +6988,16 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "integer",
-              "maximum": 9,
-              "minimum": 0,
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 9,
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Number (0 - 9)",
               "title": "Number"
             },
@@ -6160,8 +7008,15 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "number",
-              "exclusiveMinimum": 0.0,
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Duration (seconds)",
               "title": "Duration"
             },
@@ -6190,10 +7045,72 @@
         }
       }
     },
-    "/pytrain/v1/train/{tmcc_id}/rear_coupler_req": {
+    "/pytrain/v1/train/{tmcc_id}/numeric": {
       "post": {
-        "summary": "Train.Rear Coupler",
-        "operationId": "Train_rear_coupler_pytrain_v1_train__tmcc_id__rear_coupler_req_post",
+        "tags": [
+          "Mobile.Train"
+        ],
+        "summary": "Train Numeric",
+        "operationId": "train_numeric",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tmcc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 9999,
+              "minimum": 1,
+              "title": "TMCC ID",
+              "description": "Train's TMCC ID"
+            },
+            "description": "Train's TMCC ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NumericCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pytrain/v1/train/{tmcc_id}/rear_coupler": {
+      "post": {
+        "tags": [
+          "Mobile.Train"
+        ],
+        "summary": "Train Rear Coupler",
+        "operationId": "train_rear_coupler",
         "security": [
           {
             "APIKeyHeader": []
@@ -6236,13 +7153,13 @@
         }
       }
     },
-    "/pytrain/v1/train/{tmcc_id}/horn_req": {
+    "/pytrain/v1/train/{tmcc_id}/rear_coupler_req": {
       "post": {
         "tags": [
           "Legacy.Train"
         ],
-        "summary": "Train Blow Horn Req",
-        "operationId": "train_blow_horn_req",
+        "summary": "Train Rear Coupler Req",
+        "operationId": "train_rear_coupler_req",
         "security": [
           {
             "APIKeyHeader": []
@@ -6261,42 +7178,6 @@
               "description": "Train's TMCC ID"
             },
             "description": "Train's TMCC ID"
-          },
-          {
-            "name": "option",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/HornOption",
-              "description": "Horn effect"
-            },
-            "description": "Horn effect"
-          },
-          {
-            "name": "intensity",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 15,
-              "minimum": 0,
-              "description": "Quilling horn intensity (Legacy engines only)",
-              "default": 10,
-              "title": "Intensity"
-            },
-            "description": "Quilling horn intensity (Legacy engines only)"
-          },
-          {
-            "name": "duration",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "number",
-              "exclusiveMinimum": 0.0,
-              "description": "Duration (seconds, Legacy engines only)",
-              "title": "Duration"
-            },
-            "description": "Duration (seconds, Legacy engines only)"
           }
         ],
         "responses": {
@@ -6323,8 +7204,11 @@
     },
     "/pytrain/v1/train/{tmcc_id}/reset_req": {
       "post": {
-        "summary": "Train.Reset",
-        "operationId": "Train_reset_pytrain_v1_train__tmcc_id__reset_req_post",
+        "tags": [
+          "Legacy.Train"
+        ],
+        "summary": "Train Reset Req",
+        "operationId": "train_reset_req",
         "security": [
           {
             "APIKeyHeader": []
@@ -6392,10 +7276,79 @@
         }
       }
     },
+    "/pytrain/v1/train/{tmcc_id}/reset": {
+      "post": {
+        "tags": [
+          "Mobile.Train"
+        ],
+        "summary": "Train Reset",
+        "operationId": "train_reset",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tmcc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 9999,
+              "minimum": 1,
+              "title": "TMCC ID",
+              "description": "Train's TMCC ID"
+            },
+            "description": "Train's TMCC ID"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ResetCommand"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Cmd"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/pytrain/v1/train/{tmcc_id}/reverse": {
       "post": {
-        "summary": "Train.Train.Reverse",
-        "operationId": "Train_Train_Reverse_pytrain_v1_train__tmcc_id__reverse_post",
+        "tags": [
+          "Mobile.Train"
+        ],
+        "summary": "Train Reverse",
+        "operationId": "train_reverse",
         "security": [
           {
             "APIKeyHeader": []
@@ -6487,10 +7440,13 @@
         }
       }
     },
-    "/pytrain/v1/train/{tmcc_id}/shutdown_req": {
+    "/pytrain/v1/train/{tmcc_id}/shutdown": {
       "post": {
-        "summary": "Train.Shutdown",
-        "operationId": "Train_shutdown_pytrain_v1_train__tmcc_id__shutdown_req_post",
+        "tags": [
+          "Mobile.Train"
+        ],
+        "summary": "Train Shutdown",
+        "operationId": "train_shutdown",
         "security": [
           {
             "APIKeyHeader": []
@@ -6543,10 +7499,186 @@
         }
       }
     },
+    "/pytrain/v1/train/{tmcc_id}/shutdown_req": {
+      "post": {
+        "tags": [
+          "Legacy.Train"
+        ],
+        "summary": "Train Shutdown Req",
+        "operationId": "train_shutdown_req",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tmcc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 9999,
+              "minimum": 1,
+              "title": "TMCC ID",
+              "description": "Train's TMCC ID"
+            },
+            "description": "Train's TMCC ID"
+          },
+          {
+            "name": "dialog",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Dialog"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pytrain/v1/train/{tmcc_id}/smoke": {
+      "post": {
+        "tags": [
+          "Mobile.Train"
+        ],
+        "summary": "Train Smoke",
+        "operationId": "train_smoke",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tmcc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 9999,
+              "minimum": 1,
+              "title": "TMCC ID",
+              "description": "Train's TMCC ID"
+            },
+            "description": "Train's TMCC ID"
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/SmokeOption"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pytrain/v1/train/{tmcc_id}/smoke_req": {
+      "post": {
+        "tags": [
+          "Legacy.Train"
+        ],
+        "summary": "Train Smoke Req",
+        "operationId": "train_smoke_req",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tmcc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 9999,
+              "minimum": 1,
+              "title": "TMCC ID",
+              "description": "Train's TMCC ID"
+            },
+            "description": "Train's TMCC ID"
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/SmokeOption"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/pytrain/v1/train/{tmcc_id}/smoke_level_req": {
       "post": {
-        "summary": "Train.Smoke Level",
-        "operationId": "Train_smoke_level_pytrain_v1_train__tmcc_id__smoke_level_req_post",
+        "tags": [
+          "Legacy.Train"
+        ],
+        "summary": "Train Smoke Level Req",
+        "operationId": "train_smoke_level_req",
         "security": [
           {
             "APIKeyHeader": []
@@ -6599,8 +7731,11 @@
     },
     "/pytrain/v1/train/{tmcc_id}/speed_req/{speed}": {
       "post": {
-        "summary": "Train.Speed Req",
-        "operationId": "Train_speed_req_pytrain_v1_train__tmcc_id__speed_req__speed__post",
+        "tags": [
+          "Legacy.Train"
+        ],
+        "summary": "Train Speed Req",
+        "operationId": "train_speed_req",
         "security": [
           {
             "APIKeyHeader": []
@@ -6681,8 +7816,11 @@
     },
     "/pytrain/v1/train/{tmcc_id}/speed": {
       "post": {
-        "summary": "Train.Train.Speed",
-        "operationId": "Train_Train_Speed_pytrain_v1_train__tmcc_id__speed_post",
+        "tags": [
+          "Mobile.Train"
+        ],
+        "summary": "Train Speed",
+        "operationId": "train_speed",
         "security": [
           {
             "APIKeyHeader": []
@@ -6735,10 +7873,13 @@
         }
       }
     },
-    "/pytrain/v1/train/{tmcc_id}/startup_req": {
+    "/pytrain/v1/train/{tmcc_id}/startup": {
       "post": {
-        "summary": "Train.Startup",
-        "operationId": "Train_startup_pytrain_v1_train__tmcc_id__startup_req_post",
+        "tags": [
+          "Mobile.Train"
+        ],
+        "summary": "Train Startup",
+        "operationId": "train_startup",
         "security": [
           {
             "APIKeyHeader": []
@@ -6791,10 +7932,170 @@
         }
       }
     },
+    "/pytrain/v1/train/{tmcc_id}/startup_req": {
+      "post": {
+        "tags": [
+          "Legacy.Train"
+        ],
+        "summary": "Train Startup Req",
+        "operationId": "train_startup_req",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tmcc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 9999,
+              "minimum": 1,
+              "title": "TMCC ID",
+              "description": "Train's TMCC ID"
+            },
+            "description": "Train's TMCC ID"
+          },
+          {
+            "name": "dialog",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Dialog"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pytrain/v1/train/{tmcc_id}/stop": {
+      "post": {
+        "tags": [
+          "Mobile.Train"
+        ],
+        "summary": "Train Stop",
+        "operationId": "train_stop",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tmcc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 9999,
+              "minimum": 1,
+              "title": "TMCC ID",
+              "description": "Train's TMCC ID"
+            },
+            "description": "Train's TMCC ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/pytrain/v1/train/{tmcc_id}/stop_req": {
       "post": {
-        "summary": "Train.Stop",
-        "operationId": "Train_stop_pytrain_v1_train__tmcc_id__stop_req_post",
+        "tags": [
+          "Legacy.Train"
+        ],
+        "summary": "Train Stop Req",
+        "operationId": "train_stop_req",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tmcc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 9999,
+              "minimum": 1,
+              "title": "TMCC ID",
+              "description": "Train's TMCC ID"
+            },
+            "description": "Train's TMCC ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pytrain/v1/train/{tmcc_id}/toggle_direction": {
+      "post": {
+        "tags": [
+          "Mobile.Train"
+        ],
+        "summary": "Train Toggle Direction",
+        "operationId": "train_toggle_direction",
         "security": [
           {
             "APIKeyHeader": []
@@ -6839,8 +8140,60 @@
     },
     "/pytrain/v1/train/{tmcc_id}/toggle_direction_req": {
       "post": {
-        "summary": "Train.Toggle Direction",
-        "operationId": "Train_toggle_direction_pytrain_v1_train__tmcc_id__toggle_direction_req_post",
+        "tags": [
+          "Legacy.Train"
+        ],
+        "summary": "Train Toggle Direction Req",
+        "operationId": "train_toggle_direction_req",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tmcc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 9999,
+              "minimum": 1,
+              "title": "TMCC ID",
+              "description": "Train's TMCC ID"
+            },
+            "description": "Train's TMCC ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pytrain/v1/train/{tmcc_id}/volume_down": {
+      "post": {
+        "tags": [
+          "Mobile.Train"
+        ],
+        "summary": "Train Volume Down",
+        "operationId": "train_volume_down",
         "security": [
           {
             "APIKeyHeader": []
@@ -6885,8 +8238,60 @@
     },
     "/pytrain/v1/train/{tmcc_id}/volume_down_req": {
       "post": {
-        "summary": "Train.Volume Down",
-        "operationId": "Train_volume_down_pytrain_v1_train__tmcc_id__volume_down_req_post",
+        "tags": [
+          "Legacy.Train"
+        ],
+        "summary": "Train Volume Down Req",
+        "operationId": "train_volume_down_req",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tmcc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 9999,
+              "minimum": 1,
+              "title": "TMCC ID",
+              "description": "Train's TMCC ID"
+            },
+            "description": "Train's TMCC ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pytrain/v1/train/{tmcc_id}/volume_up": {
+      "post": {
+        "tags": [
+          "Mobile.Train"
+        ],
+        "summary": "Train Volume Up",
+        "operationId": "train_volume_up",
         "security": [
           {
             "APIKeyHeader": []
@@ -6931,8 +8336,11 @@
     },
     "/pytrain/v1/train/{tmcc_id}/volume_up_req": {
       "post": {
-        "summary": "Train.Volume Up",
-        "operationId": "Train_volume_up_pytrain_v1_train__tmcc_id__volume_up_req_post",
+        "tags": [
+          "Legacy.Train"
+        ],
+        "summary": "Train Volume Up Req",
+        "operationId": "train_volume_up_req",
         "security": [
           {
             "APIKeyHeader": []
@@ -6977,8 +8385,11 @@
     },
     "/pytrain/v1/train/{tmcc_id}/{aux_req}": {
       "post": {
-        "summary": "Train.Aux Req",
-        "operationId": "Train_aux_req_pytrain_v1_train__tmcc_id___aux_req__post",
+        "tags": [
+          "Legacy.Train"
+        ],
+        "summary": "Train Aux Req",
+        "operationId": "train_aux_req",
         "security": [
           {
             "APIKeyHeader": []
@@ -7013,9 +8424,16 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "integer",
-              "maximum": 9,
-              "minimum": 0,
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 9,
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Number (0 - 9)",
               "title": "Number"
             },
@@ -7026,8 +8444,15 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "number",
-              "exclusiveMinimum": 0.0,
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "Duration (seconds)",
               "title": "Duration"
             },
@@ -7330,10 +8755,7 @@
               }
             ],
             "title": "Duration",
-            "description": "Optional duration (seconds)",
-            "examples": [
-              null
-            ]
+            "description": "Optional duration (seconds)"
           },
           "strict": {
             "type": "boolean",
@@ -7347,7 +8769,18 @@
         "required": [
           "state"
         ],
-        "title": "Asc2Command"
+        "title": "Asc2Command",
+        "examples": [
+          {
+            "state": "on",
+            "strict": true
+          },
+          {
+            "duration": 1.0,
+            "state": "on",
+            "strict": true
+          }
+        ]
       },
       "AuxCommand": {
         "properties": {
@@ -7383,10 +8816,7 @@
               }
             ],
             "title": "Duration",
-            "description": "Optional duration (seconds)",
-            "examples": [
-              null
-            ]
+            "description": "Optional duration (seconds)"
           }
         },
         "additionalProperties": false,
@@ -7394,7 +8824,16 @@
         "required": [
           "aux_req"
         ],
-        "title": "AuxCommand"
+        "title": "AuxCommand",
+        "examples": [
+          {
+            "aux_req": "aux1",
+            "duration": 3.0
+          },
+          {
+            "aux_req": "aux3"
+          }
+        ]
       },
       "AuxOption": {
         "type": "string",
@@ -7493,7 +8932,16 @@
         "required": [
           "option"
         ],
-        "title": "BellOnce"
+        "title": "BellOnce",
+        "examples": [
+          {
+            "duration": 1.0,
+            "option": "once"
+          },
+          {
+            "option": "once"
+          }
+        ]
       },
       "BellOption": {
         "type": "string",
@@ -7960,7 +9408,12 @@
         "required": [
           "option"
         ],
-        "title": "HornGrade"
+        "title": "HornGrade",
+        "examples": [
+          {
+            "option": "grade"
+          }
+        ]
       },
       "HornOption": {
         "type": "string",
@@ -7997,10 +9450,7 @@
               }
             ],
             "title": "Duration",
-            "description": "Duration (seconds)",
-            "examples": [
-              null
-            ]
+            "description": "Duration (seconds)"
           }
         },
         "additionalProperties": false,
@@ -8008,7 +9458,21 @@
         "required": [
           "option"
         ],
-        "title": "HornQuilling"
+        "title": "HornQuilling",
+        "examples": [
+          {
+            "duration": 1.0,
+            "intensity": 10,
+            "option": "quilling"
+          },
+          {
+            "duration": 2.0,
+            "option": "quilling"
+          },
+          {
+            "option": "quilling"
+          }
+        ]
       },
       "HornSound": {
         "properties": {
@@ -8028,10 +9492,7 @@
               }
             ],
             "title": "Duration",
-            "description": "Duration (seconds)",
-            "examples": [
-              null
-            ]
+            "description": "Duration (seconds)"
           }
         },
         "additionalProperties": false,
@@ -8039,7 +9500,16 @@
         "required": [
           "option"
         ],
-        "title": "HornSound"
+        "title": "HornSound",
+        "examples": [
+          {
+            "option": "sound"
+          },
+          {
+            "duration": 1.0,
+            "option": "sound"
+          }
+        ]
       },
       "MotiveInfo": {
         "properties": {
@@ -8093,10 +9563,7 @@
               }
             ],
             "title": "Duration",
-            "description": "Optional duration (seconds)",
-            "examples": [
-              null
-            ]
+            "description": "Optional duration (seconds)"
           }
         },
         "additionalProperties": false,
@@ -8104,7 +9571,16 @@
         "required": [
           "number"
         ],
-        "title": "NumericCommand"
+        "title": "NumericCommand",
+        "examples": [
+          {
+            "number": 5
+          },
+          {
+            "duration": 3.0,
+            "number": 0
+          }
+        ]
       },
       "OnOffOption": {
         "type": "string",
@@ -8246,18 +9722,11 @@
       "RelativeSpeedCommand": {
         "properties": {
           "speed": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "string"
-              }
-            ],
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": -5.0,
             "title": "Speed",
-            "description": "New relative speed (-5 to 5)",
-            "ge": -5,
-            "le": 5
+            "description": "New relative speed (-5 to 5)"
           },
           "duration": {
             "anyOf": [
@@ -8270,17 +9739,24 @@
               }
             ],
             "title": "Duration",
-            "description": "Optional duration (seconds)",
-            "examples": [
-              null
-            ]
+            "description": "Optional duration (seconds)"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "speed"
         ],
-        "title": "RelativeSpeedCommand"
+        "title": "RelativeSpeedCommand",
+        "examples": [
+          {
+            "speed": 5
+          },
+          {
+            "duration": 1.0,
+            "speed": -2
+          }
+        ]
       },
       "ResetCommand": {
         "properties": {
@@ -8434,39 +9910,39 @@
           "speed": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "integer",
+                "maximum": 195.0,
+                "minimum": 0.0
               },
               {
-                "type": "string"
+                "type": "string",
+                "enum": [
+                  "stop",
+                  "roll",
+                  "restricted",
+                  "slow",
+                  "medium",
+                  "limited",
+                  "normal",
+                  "highball"
+                ]
               }
             ],
             "title": "Speed",
-            "description": "New speed (0 to 195, roll, restricted, slow, medium, limited, normal, highball)",
-            "ge": 0,
-            "le": 195
+            "description": "New speed (0 to 195) or one of: stop, roll, restricted, slow, medium, limited, normal, highball",
+            "examples": [
+              10,
+              "slow"
+            ]
           },
           "immediate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "boolean",
             "title": "Immediate",
             "description": "If true, apply speed change immediately (if supported)",
             "default": false
           },
           "dialog": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "boolean",
             "title": "Dialog",
             "description": "If true, include dialog sounds (if supported)",
             "default": false
