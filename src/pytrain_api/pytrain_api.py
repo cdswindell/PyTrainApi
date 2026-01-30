@@ -15,6 +15,7 @@ import socket
 import subprocess
 import sys
 import threading
+import uuid
 from datetime import datetime
 from time import sleep
 from typing import Any, cast
@@ -102,6 +103,8 @@ class PyTrainApi:
                 self.relaunch(PyTrainExitStatus.RESTART)
 
             self._service_info = self._zeroconf = self._server_ips = None
+            self._pytrain_server = self._pytrain_cmd_line = None
+
             pytrain_args = "-api"
             self._is_server = False
             self._ser2 = False
@@ -131,15 +134,16 @@ class PyTrainApi:
                 pytrain_args += " -echo"
             if args.buttons_file:
                 pytrain_args += f" -buttons_file {args.buttons_file}"
-
-            # create a PyTrain process to handle commands
-            self._pytrain_server = PyTrain(pytrain_args.split())
+            self._pytrain_cmd_line = pytrain_args
 
             self._port = args.api_port if args.api_port else DEFAULT_API_SERVER_PORT
             host = args.api_host if args.api_host else "0.0.0.0"
             log.info(f"{API_NAME} {get_version()}")
             if API_SERVER:
-                log.info(f"Starting {API_NAME} server; external access via {API_SERVER}...")
+                log.info(f"Access {API_NAME} at {API_SERVER}...")
+
+            # create PyTrain instance
+            self.initialize_pytrain()
 
             # launch the web server, this starts the API
             uvicorn.run(app, host=host, port=self._port, reload=False)
@@ -157,6 +161,10 @@ class PyTrainApi:
         except Exception as e:
             # Output anything else nicely formatted on stderr and exit code 1
             sys.exit(f"{__file__}: error: {e}\n")
+
+    def initialize_pytrain(self):
+        # create a PyTrain process to handle communication with Lionel Base 3
+        self._pytrain_server = PyTrain(self._pytrain_cmd_line.split())
 
     def __new__(cls, *args, **kwargs):
         """
@@ -236,19 +244,26 @@ class PyTrainApi:
         stat = subprocess.call("systemctl is-active --quiet pytrain_api.service".split())
         return stat == 0
 
-    def create_service(self):
+    @property
+    def service_info(self) -> ServiceInfo | None:
+        return self._service_info
+
+    def create_service(self) -> ServiceInfo:
         self._zeroconf = Zeroconf()
         self._service_info = self.register_service(
             self._ser2 is True,
             self._base_addr is not None,
             int(self._port),
         )
+        return self._service_info
 
     def register_service(self, ser2: bool, base3: str | None, port: int) -> ServiceInfo:
+        local_key = str(uuid.uuid4())
         properties = {
             "version": "1.0",
             "Ser2": "1" if ser2 is True else "0",
             "Base3": "1" if base3 is True else "0",
+            "Guid": local_key,
         }
         self._server_ips = server_ips = get_ip_address()
         hostname = socket.gethostname()

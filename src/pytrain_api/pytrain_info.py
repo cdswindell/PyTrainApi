@@ -16,6 +16,18 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from .pytrain_component import AuxOption, BellOption, Component, HornOption, OnOffOption
 
 
+def command_config(*, examples: list[dict[str, Any]] | None = None) -> ConfigDict:
+    """
+    Helper to generate a ConfigDict with examples.
+    :param examples:
+    :return: ConfigDict
+    """
+    cfg: dict[str, Any] = {"extra": "forbid"}
+    if examples:
+        cfg["json_schema_extra"] = {"examples": examples}
+    return ConfigDict(**cfg)
+
+
 class ProductInfo(BaseModel):
     # noinspection PyMethodParameters
     @model_validator(mode="before")
@@ -181,9 +193,14 @@ Amc2LampCommand = Annotated[
 
 
 class Asc2Command(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = command_config(
+        examples=[
+            {"state": "on", "duration": None, "strict": True},
+            {"state": "on", "duration": 1.0, "strict": True},
+        ]
+    )
     state: OnOffOption = Field(..., description="On or Off")
-    duration: float | None = Field(None, gt=0.0, description="Optional duration (seconds)", examples=[None])
+    duration: float | None = Field(default=None, gt=0.0, description="Optional duration (seconds)")
     strict: bool = Field(True, description=STRICT_AMC2.replace("AMC2", "ASC2"))
 
 
@@ -194,18 +211,14 @@ class Bpc2Command(BaseModel):
 
 
 class RelativeSpeedCommand(BaseModel):
-    speed: int | str = Field(
-        ...,
-        ge=-5,
-        le=5,
-        description="New relative speed (-5 to 5)",
+    model_config = command_config(
+        examples=[
+            {"speed": 5, "duration": None},
+            {"speed": -2, "duration": 1.0},
+        ]
     )
-    duration: float | None = Field(
-        None,
-        gt=0.0,
-        description="Optional duration (seconds)",
-        examples=[None],
-    )
+    speed: Annotated[int, Field(ge=-5, le=5, description="New relative speed (-5 to 5)")]
+    duration: float | None = Field(default=None, gt=0.0, description="Optional duration (seconds)")
 
 
 class EngineInfo(ComponentInfoIr):
@@ -243,16 +256,27 @@ class HornGrade(BaseModel):
 
 
 class HornSound(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = command_config(
+        examples=[
+            {"option": "sound"},
+            {"option": "sound", "duration": 1.0},
+        ]
+    )
     option: Literal[HornOption.SOUND]
-    duration: float | None = Field(None, gt=0.0, description="Duration (seconds)", examples=[None])
+    duration: float | None = Field(default=None, gt=0.0, description="Duration (seconds)")
 
 
 class HornQuilling(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = command_config(
+        examples=[
+            {"option": "quilling", "intensity": 10, "duration": 1.0},
+            {"option": "sound", "duration": 2.0},
+            {"option": "grade"},
+        ]
+    )
     option: Literal[HornOption.QUILLING]
     intensity: int = Field(10, ge=0, le=15, description="Quilling horn intensity (Legacy engines only)")
-    duration: float | None = Field(None, gt=0.0, description="Duration (seconds)", examples=[None])
+    duration: float | None = Field(default=None, gt=0.0, description="Duration (seconds)")
 
 
 HornCommand = Annotated[
@@ -277,10 +301,15 @@ class BellOff(BaseModel):
 
 
 class BellOnce(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = command_config(
+        examples=[
+            {"option": "once", "duration": 1.0},
+            {"option": "once"},
+        ]
+    )
     option: Literal[BellOption.ONCE]
     duration: float | None = Field(
-        None,
+        default=None,
         gt=0.0,
         description="Duration (seconds) for one-shot bell",
     )
@@ -299,9 +328,14 @@ BellCommand = Annotated[
 
 
 class NumericCommand(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = command_config(
+        examples=[
+            {"number": 5},
+            {"number": 0, "duration": 3.0},
+        ]
+    )
     number: int = Field(..., description="Number (0 - 9)", ge=0, le=9)
-    duration: float | None = Field(None, gt=0.0, description="Optional duration (seconds)", examples=[None])
+    duration: float | None = Field(default=None, gt=0.0, description="Optional duration (seconds)")
 
 
 class ResetCommand(BaseModel):
@@ -309,26 +343,42 @@ class ResetCommand(BaseModel):
     duration: float | None = Field(None, gt=0.0, description="Optional duration (seconds) for refuel", examples=[None])
 
 
+SpeedNumber = Annotated[int, Field(ge=0, le=195, strict=True)]
+SpeedKeyword = Literal[
+    "stop",
+    "roll",
+    "restricted",
+    "slow",
+    "medium",
+    "limited",
+    "normal",
+    "highball",
+]
+
+
 class SpeedCommand(BaseModel):
-    speed: int | str = Field(
+    speed: SpeedNumber | SpeedKeyword = Field(
         ...,
-        ge=0,
-        le=195,
-        description="New speed (0 to 195, roll, restricted, slow, medium, limited, normal, highball)",
+        description="New speed (0 to 195) or one of: stop, roll, restricted, slow, medium, limited, normal, highball",
+        examples=[10, "slow"],
     )
-    immediate: bool | None = Field(
+    immediate: bool = Field(
         False,
         description="If true, apply speed change immediately (if supported)",
     )
-    dialog: bool | None = Field(
+    dialog: bool = Field(
         False,
         description="If true, include dialog sounds (if supported)",
     )
 
 
 class AuxCommand(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
+    model_config = command_config(
+        examples=[
+            {"aux_req": "aux1", "duration": 3.0},
+            {"aux_req": "aux3"},
+        ]
+    )
     aux_req: AuxOption = Field(..., description="Aux 1, Aux2, or Aux 3")
     number: int | None = Field(None, ge=0, le=9, description="Optional number (0 - 9)", examples=[None])
-    duration: float | None = Field(None, gt=0.0, description="Optional duration (seconds)", examples=[None])
+    duration: float | None = Field(default=None, gt=0.0, description="Optional duration (seconds)")

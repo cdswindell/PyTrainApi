@@ -126,12 +126,20 @@ class Token(BaseModel):
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
+#
+# This code is run when the uvicorn web server starts.
+#
+# noinspection PyUnusedLocal
 @asynccontextmanager
 async def lifespan(fapp: FastAPI):
     api = PyTrainApi.get()
 
-    # startup
+    # register API server via zeroconf, enabling bonjour discovery
     await asyncio.to_thread(api.create_service)
+    local_key = api.service_info.properties.get("Guid".encode("utf-8"), None)
+    if local_key:
+        local_key = local_key.decode("utf-8")
+        API_KEYS[local_key] = local_key
 
     try:
         yield
@@ -791,7 +799,7 @@ class Accessory(PyTrainAccessory):
         super().__init__(CommandScope.ACC)
 
     @router.get(
-        "/accessory/{tmcc_id}",
+        "/accessory/{tmcc_id:int}",
         tags=["Legacy.Accessory", "Mobile.Accessory"],
         operation_id="accessory_get",
         name="Accessory.Get",
@@ -803,17 +811,17 @@ class Accessory(PyTrainAccessory):
     ) -> AccessoryInfo:
         return AccessoryInfo(**super().get(tmcc_id))
 
-    @legacy_post(router, "/accessory/{tmcc_id}/amc2_motor_req", name="Accessory.Amc2MotorReq")
+    @legacy_post(router, "/accessory/{tmcc_id:int}/amc2_motor_req", name="Accessory.Amc2MotorReq")
     async def amc2_motor_req(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
         motor: Annotated[int, Query(description="Motor (1 - 2)", ge=1, le=2)],
-        state: Annotated[OnOffOption, Query(description="On or Off")] = None,
-        speed: Annotated[int, Query(description="Speed (0 - 100)", ge=0, le=100)] = None,
+        state: Annotated[OnOffOption | None, Query(description="On or Off")] = None,
+        speed: Annotated[int | None, Query(description="Speed (0 - 100)", ge=0, le=100)] = None,
     ):
         return self.amc2_motor(tmcc_id, motor, state, speed)
 
-    @mobile_post(router, "/accessory/{tmcc_id}/amc2_motor", name="Accessory.Amc2Motor")
+    @mobile_post(router, "/accessory/{tmcc_id:int}/amc2_motor", name="Accessory.Amc2Motor")
     async def amc2_motor_cmd(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
@@ -825,17 +833,17 @@ class Accessory(PyTrainAccessory):
         strict = cmd.strict
         return self.amc2_motor(tmcc_id, motor, state, speed, strict=strict)
 
-    @legacy_post(router, "/accessory/{tmcc_id}/amc2_lamp_req", name="Accessory.Amc2LampReq")
+    @legacy_post(router, "/accessory/{tmcc_id:int}/amc2_lamp_req", name="Accessory.Amc2LampReq")
     async def amc2_lamp_req(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
         lamp: Annotated[int, Query(description="Lamp (1 - 4)", ge=1, le=4)],
-        state: Annotated[OnOffOption, Query(description="On or Off")] = None,
-        level: Annotated[int, Query(description="Brightness Level (0 - 100)", ge=0, le=100)] = None,
+        state: Annotated[OnOffOption | None, Query(description="On or Off")] = None,
+        level: Annotated[int | None, Query(description="Brightness Level (0 - 100)", ge=0, le=100)] = None,
     ):
         return self.amc2_lamp(tmcc_id, lamp, state, level)
 
-    @mobile_post(router, "/accessory/{tmcc_id}/amc2_lamp", name="Accessory.Amc2Lamp")
+    @mobile_post(router, "/accessory/{tmcc_id:int}/amc2_lamp", name="Accessory.Amc2Lamp")
     async def amc2_lamp_cmd(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
@@ -847,12 +855,12 @@ class Accessory(PyTrainAccessory):
         strict = cmd.strict
         return self.amc2_lamp(tmcc_id, lamp, state, level, strict=strict)
 
-    @legacy_post(router, "/accessory/{tmcc_id}/asc2_req", name="Accessory.Asc2Req")
+    @legacy_post(router, "/accessory/{tmcc_id:int}/asc2_req", name="Accessory.Asc2Req")
     async def asc2_req(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
-        state: Annotated[OnOffOption, Query(description="On or Off")],
-        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+        state: Annotated[OnOffOption | None, Query(description="On or Off")],
+        duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
         return super().asc2(tmcc_id, state, duration)
 
@@ -880,7 +888,7 @@ class Accessory(PyTrainAccessory):
     async def boost(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
-        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+        duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
         return super().boost(tmcc_id, duration)
 
@@ -889,11 +897,11 @@ class Accessory(PyTrainAccessory):
     async def brake(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
-        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+        duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
         return super().brake(tmcc_id, duration)
 
-    @legacy_post(router, "/accessory/{tmcc_id}/bpc2_req", name="Accessory.Bpc2Req")
+    @legacy_post(router, "/accessory/{tmcc_id:int}/bpc2_req", name="Accessory.Bpc2Req")
     async def bpc2_req(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
@@ -911,12 +919,12 @@ class Accessory(PyTrainAccessory):
         strict = cmd.strict
         return super().bpc2(tmcc_id, state, strict=strict)
 
-    @legacy_post(router, "/accessory/{tmcc_id}/front_coupler_req", name="Accessory.FrontCouplerReq")
+    @legacy_post(router, "/accessory/{tmcc_id:int}/front_coupler_req", name="Accessory.FrontCouplerReq")
     @mobile_post(router, "/accessory/{tmcc_id:int}/front_coupler", name="Accessory.FrontCoupler")
     async def front_coupler(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
-        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+        duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
         return self.open_coupler(tmcc_id, TMCC1AuxCommandEnum.FRONT_COUPLER, duration)
 
@@ -937,21 +945,21 @@ class Accessory(PyTrainAccessory):
     ):
         return self.do_numeric(TMCC1AuxCommandEnum.NUMERIC, tmcc_id, cmd.number, cmd.duration)
 
-    @legacy_post(router, "/accessory/{tmcc_id}/rear_coupler_req", name="Accessory.RearCouplerReq")
+    @legacy_post(router, "/accessory/{tmcc_id:int}/rear_coupler_req", name="Accessory.RearCouplerReq")
     @mobile_post(router, "/accessory/{tmcc_id:int}/rear_coupler", name="Accessory.RearCoupler")
     async def rear_coupler(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
-        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+        duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
         return self.open_coupler(tmcc_id, TMCC1AuxCommandEnum.REAR_COUPLER, duration)
 
-    @legacy_post(router, "/accessory/{tmcc_id}/speed_req/{speed}", name="Accessory.SpeedReq")
+    @legacy_post(router, "/accessory/{tmcc_id:int}/speed_req/{speed}", name="Accessory.SpeedReq")
     async def speed(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
         speed: Annotated[int, Path(description="Relative speed (-5 - 5)", ge=-5, le=5)],
-        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+        duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
         return self.relative_speed(tmcc_id, speed, duration)
 
@@ -968,7 +976,7 @@ class Accessory(PyTrainAccessory):
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
         aux_req: Annotated[AuxOption, Path(description="Aux 1, Aux2, or Aux 3")],
-        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+        duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
         return self.aux(tmcc_id, aux_req, None, duration)
 
@@ -1077,7 +1085,7 @@ class Engine(PyTrainEngine):
     @legacy_post(router, "/engine/{tmcc_id:int}/bell_req", name="Engine.BellReq")
     async def ring_bell_req(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
         option: Annotated[
             BellOption | None,
             Query(description="Bell effect (omit to toggle)"),
@@ -1092,7 +1100,7 @@ class Engine(PyTrainEngine):
     @mobile_post(router, "/engine/{tmcc_id:int}/bell", name="Engine.Bell")
     async def ring_bell_cmd(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
         cmd: Annotated[BellCommand, Body(..., discriminator="option")],
     ):
         option = cmd.option
@@ -1104,7 +1112,7 @@ class Engine(PyTrainEngine):
     @mobile_post(router, "/engine/{tmcc_id:int}/boost", name="Engine.Boost")
     async def boost(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
         duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
         return super().boost(tmcc_id, duration)
@@ -1113,7 +1121,7 @@ class Engine(PyTrainEngine):
     @mobile_post(router, "/engine/{tmcc_id:int}/brake", name="Engine.Brake")
     async def brake(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
         duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
         return super().brake(tmcc_id, duration)
@@ -1122,7 +1130,7 @@ class Engine(PyTrainEngine):
     @mobile_post(router, "/engine/{tmcc_id:int}/dialog", name="Engine.Dialog")
     async def dialog_req(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
         dialog: DialogOption = Query(..., description="Dialog effect"),
     ):
         return self.dialog(tmcc_id, dialog)
@@ -1131,7 +1139,7 @@ class Engine(PyTrainEngine):
     @mobile_post(router, "/engine/{tmcc_id:int}/forward", name="Engine.Forward")
     async def forward_req(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
     ):
         return super().forward(tmcc_id)
 
@@ -1139,24 +1147,34 @@ class Engine(PyTrainEngine):
     @mobile_post(router, "/engine/{tmcc_id:int}/front_coupler", name="Engine.FrontCoupler")
     async def front_coupler(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
     ):
         return super().front_coupler(tmcc_id)
 
-    @legacy_post(router, "/engine/{tmcc_id:int}/horn_req", name="Engine.BlowHornReq")
+    @legacy_post(router, "/engine/{tmcc_id:int}/horn_req", name="Engine.HornReq")
     async def blow_horn_req(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
-        option: Annotated[HornOption, Query(description="Horn effect")],
-        intensity: Annotated[int, Query(description="Quilling horn intensity (Legacy engines only)", ge=0, le=15)] = 10,
-        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+        tmcc_id: Annotated[int, Engine.id_path()],
+        option: Annotated[HornOption, Query(description="Horn/whistle effect")],
+        intensity: Annotated[
+            int | None,
+            Query(
+                description="Quilling horn intensity (Legacy engines only)",
+                ge=0,
+                le=15,
+            ),
+        ] = 10,
+        duration: Annotated[
+            float | None,
+            Query(description="Duration (seconds)", gt=0.0),
+        ] = None,
     ):
         return super().blow_horn(tmcc_id, option, intensity, duration)
 
     @mobile_post(router, "/engine/{tmcc_id:int}/horn", name="Engine.Horn")
     async def blow_horn_cmd(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
         cmd: Annotated[HornCommand, Body(..., discriminator="option")],
     ):
         option = cmd.option
@@ -1173,7 +1191,7 @@ class Engine(PyTrainEngine):
     )
     async def get_info(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
     ) -> ProductInfo:
         return ProductInfo(**super().get_engine_info(tmcc_id))
 
@@ -1181,7 +1199,7 @@ class Engine(PyTrainEngine):
     @mobile_post(router, "/engine/{tmcc_id:int}/momentum", name="Engine.Momentum")
     async def momentum(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
         level: int = Query(..., ge=0, le=7, description="Momentum level (0 - 7)"),
     ):
         return super().momentum(tmcc_id, level)
@@ -1189,7 +1207,7 @@ class Engine(PyTrainEngine):
     @legacy_post(router, "/engine/{tmcc_id:int}/numeric_req", name="Engine.NumericReq")
     async def numeric_req(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
         number: Annotated[int | None, Query(description="Number (0 - 9)", ge=0, le=9)],
         duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
@@ -1198,7 +1216,7 @@ class Engine(PyTrainEngine):
     @mobile_post(router, "/engine/{tmcc_id:int}/numeric", name="Engine.Numeric")
     async def numeric_cmd(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
         cmd: Annotated[NumericCommand, Body(...)],
     ):
         return super().numeric(tmcc_id, cmd.number, cmd.duration)
@@ -1207,16 +1225,16 @@ class Engine(PyTrainEngine):
     @mobile_post(router, "/engine/{tmcc_id:int}/rear_coupler", name="Engine.RearCoupler")
     async def rear_coupler(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
     ):
         return super().rear_coupler(tmcc_id)
 
     @legacy_post(router, "/engine/{tmcc_id:int}/reset_req", name="Engine.ResetReq")
     async def reset(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
         hold: Annotated[bool, Query(title="refuel", description="If true, perform refuel operation")] = False,
-        duration: Annotated[int, Query(description="Refueling time (seconds)", ge=3)] = 3,
+        duration: Annotated[int | None, Query(description="Refueling time (seconds)", ge=3)] = 3,
     ):
         duration = duration if hold else None
         return super().reset(tmcc_id, duration)
@@ -1224,7 +1242,7 @@ class Engine(PyTrainEngine):
     @mobile_post(router, "/engine/{tmcc_id:int}/reset", name="Engine.Reset")
     async def reset_cmd(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
         cmd: ResetCommand | None = Body(None),
     ):
         # Apply defaults if body omitted
@@ -1237,7 +1255,7 @@ class Engine(PyTrainEngine):
     @mobile_post(router, "/engine/{tmcc_id:int}/reverse", name="Engine.Reverse")
     async def reverse(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
     ):
         return super().reverse(tmcc_id)
 
@@ -1245,7 +1263,7 @@ class Engine(PyTrainEngine):
     @mobile_post(router, "/engine/{tmcc_id:int}/shutdown", name="Engine.Shutdown")
     async def shutdown(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
         dialog: bool = Query(False, description="If true, include shutdown dialog"),
     ):
         return super().shutdown(tmcc_id, dialog=dialog)
@@ -1254,7 +1272,7 @@ class Engine(PyTrainEngine):
     @mobile_post(router, "/engine/{tmcc_id:int}/smoke", name="Engine.Smoke")
     async def smoke(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
         level: SmokeOption = Query(..., description="Smoke output level"),
     ):
         return super().smoke(tmcc_id, level=level)
@@ -1262,7 +1280,7 @@ class Engine(PyTrainEngine):
     @legacy_post(router, "/engine/{tmcc_id:int}/speed_req/{speed}", name="Engine.SpeedReq")
     async def speed_req(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
         speed: Annotated[
             int | str,
             Path(description="New speed (0 to 195, roll, restricted, slow, medium, limited, normal, highball)"),
@@ -1275,7 +1293,7 @@ class Engine(PyTrainEngine):
     @mobile_post(router, "/engine/{tmcc_id:int}/speed", name="Engine.Speed")
     async def speed_cmd(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
         cmd: SpeedCommand = Body(...),
     ):
         return await self._set_speed(tmcc_id, cmd.speed, cmd.immediate, cmd.dialog)
@@ -1284,7 +1302,7 @@ class Engine(PyTrainEngine):
     @mobile_post(router, "/engine/{tmcc_id:int}/startup", name="Engine.Startup")
     async def startup_cmd(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
         dialog: bool = Query(False, description="If true, include startup dialog"),
     ):
         return super().startup(tmcc_id, dialog=dialog)
@@ -1293,7 +1311,7 @@ class Engine(PyTrainEngine):
     @mobile_post(router, "/engine/{tmcc_id:int}/stop", name="Engine.Stop")
     async def stop(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
     ):
         return super().stop(tmcc_id)
 
@@ -1301,7 +1319,7 @@ class Engine(PyTrainEngine):
     @mobile_post(router, "/engine/{tmcc_id:int}/toggle_direction", name="Engine.ToggleDirection")
     async def toggle_direction(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
     ):
         return super().toggle_direction(tmcc_id)
 
@@ -1309,7 +1327,7 @@ class Engine(PyTrainEngine):
     @mobile_post(router, "/engine/{tmcc_id:int}/volume_down", name="Engine.VolumeDown")
     async def volume_down(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
     ):
         return super().volume_down(tmcc_id)
 
@@ -1317,14 +1335,14 @@ class Engine(PyTrainEngine):
     @mobile_post(router, "/engine/{tmcc_id:int}/volume_up", name="Engine.VolumeUp")
     async def volume_up(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
     ):
         return super().volume_up(tmcc_id)
 
     @legacy_post(router, "/engine/{tmcc_id:int}/{aux_req}", name="Engine.AuxReq")
     async def aux_req(
         self,
-        tmcc_id: Annotated[int, Engine.id_path(label="Engine", max_val=9999)],
+        tmcc_id: Annotated[int, Engine.id_path()],
         aux_req: Annotated[AuxOption, Path(description="Aux 1, Aux2, or Aux 3")],
         number: Annotated[int | None, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
         duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
@@ -1350,7 +1368,7 @@ class Route(PyTrainComponent):
         super().__init__(CommandScope.ROUTE)
 
     @router.get(
-        "/route/{tmcc_id}",
+        "/route/{tmcc_id:int}",
         tags=["Legacy.Route", "Mobile.Route"],
         operation_id="route_get",
         name="Route.Get",
@@ -1360,14 +1378,14 @@ class Route(PyTrainComponent):
     async def get_route(self, tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Route")]):
         return RouteInfo(**super().get(tmcc_id))
 
-    @legacy_post(router, "/route/{tmcc_id}/fire_req", name="Route.FireReq")
-    @mobile_post(router, "/route/{tmcc_id}/fire", name="Route.Fire")
+    @legacy_post(router, "/route/{tmcc_id:int}/fire_req", name="Route.FireReq")
+    @mobile_post(router, "/route/{tmcc_id:int}/fire", name="Route.Fire")
     async def fire(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Route")],
     ):
         self.do_request(TMCC1RouteCommandEnum.FIRE, tmcc_id)
-        return {"status": f"{self.scope.title} {tmcc_id} fired"}
+        return {"status": f"{self.scope.title} {tmcc_id:int} fired"}
 
 
 @router.get(
@@ -1388,7 +1406,7 @@ class Switch(PyTrainSwitch):
         super().__init__(CommandScope.SWITCH)
 
     @router.get(
-        "/switch/{tmcc_id}",
+        "/switch/{tmcc_id:int}",
         tags=["Legacy.Switch", "Mobile.Switch"],
         operation_id="switch_get",
         name="Switch.Get",
@@ -1401,14 +1419,14 @@ class Switch(PyTrainSwitch):
     ) -> SwitchInfo:
         return SwitchInfo(**super().get(tmcc_id))
 
-    @legacy_post(router, "/switch/{tmcc_id}/thru_req", name="Switch.ThruReq", summary="Throw switch thru")
+    @legacy_post(router, "/switch/{tmcc_id:int}/thru_req", name="Switch.ThruReq", summary="Throw switch thru")
     async def thru(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Switch")],
     ):
         return self.throw(tmcc_id, SwitchPosition.THRU)
 
-    @legacy_post(router, "/switch/{tmcc_id}/out_req", name="Switch.OutReq", summary="Throw switch out")
+    @legacy_post(router, "/switch/{tmcc_id:int}/out_req", name="Switch.OutReq", summary="Throw switch out")
     async def out(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Switch")],
@@ -1452,7 +1470,7 @@ async def get_trains(contains: str = None, is_legacy: bool = None, is_tmcc: bool
 class Train(PyTrainEngine):
     # noinspection PyTypeHints
     @classmethod
-    def id_path(cls, label: str = None, min_val: int = 1, max_val: int = 9999) -> Path:
+    def id_path(cls, label: str = "Train", min_val: int = 1, max_val: int = 9999) -> Path:
         label = label if label else cls.__name__.replace("PyTrain", "")
         return Path(
             title="TMCC ID",
@@ -1467,46 +1485,66 @@ class Train(PyTrainEngine):
     @router.get(
         "/train/{tmcc_id:int}",
         tags=["Legacy.Train", "Mobile.Train"],
-        operation_id="train_list",
-        name="Train.List",
+        operation_id="train_get",
+        name="Train.Get",
         summary="Get train state",
         response_model=TrainInfo,
     )
     async def get_train(
         self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
+        tmcc_id: Annotated[int, Train.id_path()],
     ):
         return TrainInfo(**super().get(tmcc_id))
 
-    @router.post("/train/{tmcc_id:int}/bell_req")
-    async def ring_bell(
+    @legacy_post(router, "/train/{tmcc_id:int}/bell_req", name="Train.BellReq")
+    async def ring_bell_req(
         self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
-        option: Annotated[BellOption, Query(description="Bell effect")],
-        duration: Annotated[float, Query(description="Duration (seconds, only with 'once' option)", gt=0.0)] = None,
+        tmcc_id: Annotated[int, Train.id_path()],
+        option: Annotated[
+            BellOption | None,
+            Query(description="Bell effect"),
+        ] = None,
+        duration: Annotated[
+            float | None,
+            Query(description="Duration (seconds, only with 'once' option)", gt=0.0),
+        ] = None,
     ):
         return super().ring_bell(tmcc_id, option, duration)
 
-    @router.post("/train/{tmcc_id}/boost_req")
+    @mobile_post(router, "/train/{tmcc_id:int}/bell", name="Train.Bell")
+    async def ring_bell_cmd(
+        self,
+        tmcc_id: Annotated[int, Train.id_path()],
+        cmd: Annotated[BellCommand, Body(..., discriminator="option")],
+    ):
+        option = cmd.option
+        duration = getattr(cmd, "duration", None)
+        ding = getattr(cmd, "ding", None)
+        return super().ring_bell(tmcc_id, option, duration, ding)
+
+    @legacy_post(router, "/train/{tmcc_id:int}/boost_req", name="Train.BoostReq")
+    @mobile_post(router, "/train/{tmcc_id:int}/boost", name="Train.Boost")
     async def boost(
         self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
-        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+        tmcc_id: Annotated[int, Train.id_path()],
+        duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
         return super().boost(tmcc_id, duration)
 
-    @router.post("/train/{tmcc_id}/brake_req")
+    @legacy_post(router, "/train/{tmcc_id:int}/brake_req", name="Train.BrakeReq")
+    @mobile_post(router, "/train/{tmcc_id:int}/brake", name="Train.Brake")
     async def brake(
         self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
-        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+        tmcc_id: Annotated[int, Train.id_path()],
+        duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
         return super().brake(tmcc_id, duration)
 
-    @router.post("/train/{tmcc_id:int}/dialog_req")
-    async def do_dialog(
+    @legacy_post(router, "/train/{tmcc_id:int}/dialog_req", name="Train.DialogReq")
+    @mobile_post(router, "/train/{tmcc_id:int}/dialog", name="Train.Dialog")
+    async def dialog_req(
         self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
+        tmcc_id: Annotated[int, Train.id_path()],
         option: DialogOption = Query(..., description="Dialog effect"),
     ):
         return super().dialog(tmcc_id, option)
@@ -1515,56 +1553,80 @@ class Train(PyTrainEngine):
     @mobile_post(router, "/train/{tmcc_id:int}/forward", name="Train.Forward")
     async def forward(
         self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
+        tmcc_id: Annotated[int, Train.id_path()],
     ):
         return super().forward(tmcc_id)
 
     @legacy_post(router, "/train/{tmcc_id:int}/front_coupler_req", name="Train.FrontCouplerReq")
-    @router.post("/train/{tmcc_id:int}/front_coupler", name="Train.FrontCoupler")
+    @mobile_post(router, "/train/{tmcc_id:int}/front_coupler", name="Train.FrontCoupler")
     async def front_coupler(
         self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
+        tmcc_id: Annotated[int, Train.id_path()],
     ):
         return super().front_coupler(tmcc_id)
 
-    @router.post("/train/{tmcc_id:int}/momentum_req")
+    @legacy_post(router, "/train/{tmcc_id:int}/horn_req", name="Train.HornReq")
+    async def blow_horn(
+        self,
+        tmcc_id: Annotated[int, Train.id_path()],
+        option: Annotated[HornOption, Query(description="Horn/whistle effect")],
+        intensity: Annotated[
+            int | None,
+            Query(description="Quilling horn intensity (Legacy engines only)", ge=0, le=15),
+        ] = 10,
+        duration: Annotated[float | None, Query(description="Duration (seconds, Legacy engines only)", gt=0.0)] = None,
+    ):
+        return super().blow_horn(tmcc_id, option, intensity, duration)
+
+    @mobile_post(router, "/train/{tmcc_id:int}/horn", name="Train.Horn")
+    async def blow_horn_cmd(
+        self,
+        tmcc_id: Annotated[int, Engine.id_path()],
+        cmd: Annotated[HornCommand, Body(..., discriminator="option")],
+    ):
+        option = cmd.option
+        intensity = getattr(cmd, "intensity", None)
+        duration = getattr(cmd, "duration", None)
+        return super().blow_horn(tmcc_id, option, intensity, duration)
+
+    @legacy_post(router, "/train/{tmcc_id:int}/momentum_req", name="Train.MomentumReq")
+    @mobile_post(router, "/train/{tmcc_id:int}/momentum", name="Train.Momentum")
     async def momentum(
         self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
-        level: Annotated[int, Query(description="Momentum level (0 - 7)", ge=0, le=7)] = None,
+        tmcc_id: Annotated[int, Train.id_path()],
+        level: Annotated[int, Query(..., description="Momentum level (0 - 7)", ge=0, le=7)],
     ):
         return super().momentum(tmcc_id, level)
 
-    @router.post("/train/{tmcc_id:int}/numeric_req")
+    @legacy_post(router, "/train/{tmcc_id:int}/numeric_req", name="Train.NumericReq")
     async def numeric_req(
         self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
-        number: Annotated[int, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
-        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+        tmcc_id: Annotated[int, Train.id_path()],
+        number: Annotated[int | None, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
+        duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
         return super().numeric(tmcc_id, number, duration)
 
-    @router.post("/train/{tmcc_id:int}/rear_coupler_req")
+    @mobile_post(router, "/train/{tmcc_id:int}/numeric", name="Train.Numeric")
+    async def numeric_cmd(
+        self,
+        tmcc_id: Annotated[int, Train.id_path()],
+        cmd: Annotated[NumericCommand, Body(...)],
+    ):
+        return super().numeric(tmcc_id, cmd.number, cmd.duration)
+
+    @legacy_post(router, "/train/{tmcc_id:int}/rear_coupler_req", name="Train.RearCouplerReq")
+    @mobile_post(router, "/train/{tmcc_id:int}/rear_coupler", name="Train.RearCoupler")
     async def rear_coupler(
         self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
+        tmcc_id: Annotated[int, Train.id_path()],
     ):
         return super().rear_coupler(tmcc_id)
-
-    @legacy_post(router, "/train/{tmcc_id:int}/horn_req", name="Train.BlowHornReq")
-    async def blow_horn(
-        self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
-        option: Annotated[HornOption, Query(description="Horn effect")],
-        intensity: Annotated[int, Query(description="Quilling horn intensity (Legacy engines only)", ge=0, le=15)] = 10,
-        duration: Annotated[float, Query(description="Duration (seconds, Legacy engines only)", gt=0.0)] = None,
-    ):
-        return super().blow_horn(tmcc_id, option, intensity, duration)
 
     @router.post("/train/{tmcc_id:int}/reset_req")
     async def reset(
         self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
+        tmcc_id: Annotated[int, Train.id_path()],
         hold: Annotated[bool, Query(title="refuel", description="If true, perform refuel operation")] = False,
         duration: Annotated[int, Query(description="Refueling time (seconds)", ge=3)] = 3,
     ):
@@ -1575,33 +1637,35 @@ class Train(PyTrainEngine):
         return super().reset(tmcc_id, duration)
 
     @legacy_post(router, "/train/{tmcc_id:int}/reverse_req", name="Train.ReverseReq")
-    @router.post("/train/{tmcc_id:int}/reverse", name="Train.Reverse")
+    @mobile_post(router, "/train/{tmcc_id:int}/reverse", name="Train.Reverse")
     async def reverse(
         self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
+        tmcc_id: Annotated[int, Train.id_path()],
     ):
         return super().reverse(tmcc_id)
 
-    @router.post("/train/{tmcc_id:int}/shutdown_req")
+    @legacy_post(router, "/train/{tmcc_id:int}/shutdown_req", name="Train.ShutdownReq")
+    @mobile_post(router, "/train/{tmcc_id:int}/shutdown", name="Train.Shutdown")
     async def shutdown(
         self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
+        tmcc_id: Annotated[int, Train.id_path()],
         dialog: bool = False,
     ):
         return super().shutdown(tmcc_id, dialog=dialog)
 
-    @router.post("/train/{tmcc_id:int}/smoke_level_req")
-    async def smoke_level(
+    @legacy_post(router, "/train/{tmcc_id:int}/smoke_level_req", name="Train.SmokeLevelReq")
+    @mobile_post(router, "/train/{tmcc_id:int}/smoke", name="Train.Smoke")
+    async def smoke(
         self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
+        tmcc_id: Annotated[int, Train.id_path()],
         level: SmokeOption,
     ):
         return super().smoke(tmcc_id, level=level)
 
-    @router.post("/train/{tmcc_id:int}/speed_req/{speed}")
+    @legacy_post(router, "/train/{tmcc_id:int}/speed_req/{speed}", name="Train.SpeedReq")
     async def speed_req(
         self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
+        tmcc_id: Annotated[int, Train.id_path()],
         speed: Annotated[
             int | str,
             Path(description="New speed (0 to 195, roll, restricted, slow, medium, limited, normal, highball)"),
@@ -1611,57 +1675,62 @@ class Train(PyTrainEngine):
     ):
         return super().speed(tmcc_id, speed, immediate=immediate, dialog=dialog)
 
-    @router.post("/train/{tmcc_id:int}/speed", name="Train.Speed")
+    @mobile_post(router, "/train/{tmcc_id:int}/speed", name="Train.Speed")
     async def speed_cmd(
         self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
+        tmcc_id: Annotated[int, Train.id_path()],
         cmd: SpeedCommand = Body(...),
     ):
         return await self._set_speed(tmcc_id, cmd.speed, cmd.immediate, cmd.dialog)
 
-    @router.post("/train/{tmcc_id:int}/startup_req")
+    @legacy_post(router, "/train/{tmcc_id:int}/startup_req", name="Train.StartupReq")
+    @mobile_post(router, "/train/{tmcc_id:int}/startup", name="Train.Startup")
     async def startup(
         self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
+        tmcc_id: Annotated[int, Train.id_path()],
         dialog: bool = False,
     ):
         return super().startup(tmcc_id, dialog=dialog)
 
-    @router.post("/train/{tmcc_id:int}/stop_req")
+    @legacy_post(router, "/train/{tmcc_id:int}/stop_req", name="Train.StopReq")
+    @mobile_post(router, "/train/{tmcc_id:int}/stop", name="Train.Stop")
     async def stop(
         self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
+        tmcc_id: Annotated[int, Train.id_path()],
     ):
         return super().stop(tmcc_id)
 
-    @router.post("/train/{tmcc_id:int}/toggle_direction_req")
+    @legacy_post(router, "/train/{tmcc_id:int}/toggle_direction_req", name="Train.ToggleDirectionReq")
+    @mobile_post(router, "/train/{tmcc_id:int}/toggle_direction", name="Train.ToggleDirection")
     async def toggle_direction(
         self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
+        tmcc_id: Annotated[int, Train.id_path()],
     ):
         return super().toggle_direction(tmcc_id)
 
-    @router.post("/train/{tmcc_id:int}/volume_down_req")
+    @legacy_post(router, "/train/{tmcc_id:int}/volume_down_req", name="Train.VolumeDownReq")
+    @mobile_post(router, "/train/{tmcc_id:int}/volume_down", name="Train.VolumeDown")
     async def volume_down(
         self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
+        tmcc_id: Annotated[int, Train.id_path()],
     ):
         return super().volume_down(tmcc_id)
 
-    @router.post("/train/{tmcc_id:int}/volume_up_req")
+    @legacy_post(router, "/train/{tmcc_id:int}/volume_up_req", name="Train.VolumeUpReq")
+    @mobile_post(router, "/train/{tmcc_id:int}/volume_up", name="Train.VolumeUp")
     async def volume_up(
         self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
+        tmcc_id: Annotated[int, Train.id_path()],
     ):
         return super().volume_up(tmcc_id)
 
     @router.post("/train/{tmcc_id:int}/{aux_req}")
     async def aux_req(
         self,
-        tmcc_id: Annotated[int, PyTrainEngine.id_path(label="Train", max_val=9999)],
+        tmcc_id: Annotated[int, Train.id_path()],
         aux_req: Annotated[AuxOption, Path(description="Aux 1, Aux2, or Aux 3")],
-        number: Annotated[int, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
-        duration: Annotated[float, Query(description="Duration (seconds)", gt=0.0)] = None,
+        number: Annotated[int | None, Query(description="Number (0 - 9)", ge=0, le=9)] = None,
+        duration: Annotated[float | None, Query(description="Duration (seconds)", gt=0.0)] = None,
     ):
         return super().aux(tmcc_id, aux_req, number, duration)
 
