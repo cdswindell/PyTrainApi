@@ -375,7 +375,7 @@ class PyTrainAccessory(PyTrainComponent):
             d = f" for {duration} second(s)" if duration else ""
             return ok_response(f"Sending {aux_req.name} to {self.scope.title} {tmcc_id}{d}")
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"Aux option '{aux_req.value}' not supported on {self.scope.title} {tmcc_id}",
         )
 
@@ -445,7 +445,7 @@ class PyTrainEngine(PyTrainComponent):
             if cmd is None:
                 sc = self.scope.title
                 raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                     detail=f"TMCC {sc} speeds must be between 0 and 31 inclusive: speed step {speed} is invalid.",
                 )
         else:
@@ -462,7 +462,7 @@ class PyTrainEngine(PyTrainComponent):
             if cmd is None:
                 sc = self.scope.title
                 raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                     detail=f"TMCC {sc} speeds must be between 0 and 31 inclusive: speed step {speed} is invalid.",
                 )
         self.do_request(cmd)
@@ -482,7 +482,7 @@ class PyTrainEngine(PyTrainComponent):
             return ok_response(f"Issued dialog request '{dialog.value}' to {self.scope.title} {tmcc_id}")
         else:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=f"Dialog option '{dialog.value}' not supported on {self.scope.title} {tmcc_id}",
             )
 
@@ -653,7 +653,7 @@ class PyTrainEngine(PyTrainComponent):
             return ok_response(f"Sending {aux.name} to {self.scope.title} {tmcc_id}{d}")
         else:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=f"Aux option '{aux.value}' not supported on {self.scope.title} {tmcc_id}",
             )
 
