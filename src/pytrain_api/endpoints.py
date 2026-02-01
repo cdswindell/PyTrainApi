@@ -334,7 +334,7 @@ BASE_ERROR_RESPONSES: dict[int, Any] = {
 OPTIONAL_ERROR_RESPONSES = {
     403: {"model": ErrorResponse, "description": "Forbidden"},
     404: {"model": ErrorResponse, "description": "Not Found"},
-    422: {"model": ErrorResponse, "description": "Not Supported"},
+    422: {"model": ErrorResponse, "description": "Validation Error"},
 }
 
 
@@ -651,7 +651,7 @@ async def validation_exception_handler(request: Request, exc: ValidationError):
         detail = str(exc)
     return JSONResponse(
         content={"detail": detail},
-        status_code=status.HTTP_404_NOT_FOUND,
+        status_code=HTTP_422_UNPROCESSABLE_ENTITY,
     )
 
 
