@@ -331,46 +331,26 @@ BASE_ERROR_RESPONSES: dict[int, Any] = {
     498: {"model": ErrorResponse, "description": "Expired"},
 }
 
-OPTIONAL_ERROR_RESPONSES = {
+OPTIONAL_ERROR_RESPONSES: dict[int, Any] = {
     403: {"model": ErrorResponse, "description": "Forbidden"},
     404: {"model": ErrorResponse, "description": "Not Found"},
-    422: {"model": ErrorResponse, "description": "Validation Error"},
 }
 
 
 def _split_camel(word: str) -> str:
-    """
-    Split CamelCase words into space-separated words.
-    Examples:
-      VolumeUp -> Volume Up
-      Aux1On   -> Aux1 On
-    """
     return _CAMEL_RE.sub(" ", word)
 
 
 def _operation_id_from_name(name: str) -> str:
-    """
-    Engine.FrontCoupler -> Engine_front_coupler
-    Engine.VolumeUp     -> Engine_volume_up
-    """
     parts = name.split(".")
     op_parts = []
     for p in parts:
-        # split camel case, lowercase, join with underscores
         words = _split_camel(p).split()
         op_parts.append("_".join(w.lower() for w in words))
     return "_".join(op_parts)
 
 
 def _summary_from_name(name: str) -> str:
-    """
-    Convert dotted endpoint names into human-friendly summaries.
-
-    Examples:
-      Engine.Forward      -> Engine Forward
-      Engine.VolumeUp     -> Engine Volume Up
-      Train.FrontCoupler  -> Train Front Coupler
-    """
     parts = [p for p in name.split(".") if p]
     return " ".join(_split_camel(p) for p in parts)
 
@@ -380,37 +360,49 @@ def infer_category(name: str) -> str:
 
 
 def _default_success_response(model: Any) -> dict[int, Any]:
-    return {
-        200: {
-            "model": model,
-            "description": "Success",
-        }
-    }
+    return {200: {"model": model, "description": "Success"}}
 
 
 def _error_responses_for(codes: Iterable[int] | None) -> dict[int, Any]:
+    """
+    Start with BASE_ERROR_RESPONSES (400/401/498) and add any OPTIONAL_ERROR_RESPONSES requested.
+    """
     merged: dict[int, Any] = dict(BASE_ERROR_RESPONSES)
     if codes:
         for code in codes:
-            spec = OPTIONAL_ERROR_RESPONSES.get(code, None)
+            spec = OPTIONAL_ERROR_RESPONSES.get(code)
             if spec:
                 merged[code] = spec
     return merged
 
 
 def _merge_responses(
-    user: dict[int, Any] | None,
+    user: dict[int, Any] | None = None,
     *,
-    success_model: Any | None,
+    success_model: Any | None = None,
+    base: dict[int, Any] | None = None,
     error_codes: Iterable[int] | None = None,
 ) -> dict[int, Any]:
+    """
+    One merge function for both GET and POST.
+
+    Merge order (later wins):
+      1) success response (200) if success_model
+      2) base (route-type defaults like AUTH, or empty)
+      3) error_codes-expanded models (BASE + requested OPTIONAL)
+      4) user overrides
+    """
     merged: dict[int, Any] = {}
 
     if success_model is not None:
         merged.update(_default_success_response(success_model))
 
-    # only base + selected optional errors
-    merged.update(_error_responses_for(error_codes))
+    if base:
+        merged.update(base)
+
+    # BASE (400/401/498) + requested optional errors
+    if error_codes is not None:
+        merged.update(_error_responses_for(error_codes))
 
     if isinstance(user, dict):
         merged.update(user)
@@ -427,7 +419,6 @@ def _route_helper(
     operation_id: str | None = None,
     summary: str | None = None,
     category: str | None = None,
-    # IMPORTANT: default to None here
     response_model: Any | None = None,
     default_success_model: Any | None = SuccessResponse,
     errors: tuple[int, ...] = (),
@@ -437,27 +428,24 @@ def _route_helper(
     summary = summary or _summary_from_name(name)
     category = category or infer_category(name)
 
-    # If caller didn't supply response_model, use default_success_model (if any).
+    # Response model selection
     if response_model is None and "response_model" not in kwargs:
         if default_success_model is not None:
             kwargs["response_model"] = default_success_model
     else:
         kwargs["response_model"] = response_model
 
-    # If caller didn't supply responses, add your standard error models.
+    # POST behavior:
+    # If caller didn't supply responses, still add standard errors (+ optional ones from `errors`)
+    # and let any user-supplied responses override.
     success_model = response_model if response_model is not None else default_success_model
 
-    if "responses" not in kwargs:
-        kwargs["responses"] = _merge_responses(
-            None,
-            success_model=success_model,
-        )
-    else:
-        kwargs["responses"] = _merge_responses(
-            kwargs["responses"],
-            success_model=success_model,
-            error_codes=errors,
-        )
+    kwargs["responses"] = _merge_responses(
+        kwargs.get("responses"),
+        success_model=success_model,
+        # include BASE (400/401/498) + requested optional error models
+        error_codes=errors,
+    )
 
     return api.post(
         path,
@@ -480,6 +468,7 @@ def mobile_post(
     response_model: Any | None = None,
     default_success_model: Any | None = SuccessResponse,
     errors: tuple[int, ...] = (),
+    responses: dict[int, Any] | None = None,
     **kwargs: Any,
 ) -> Callable[[F], F]:
     return _route_helper(
@@ -493,6 +482,7 @@ def mobile_post(
         response_model=response_model,
         default_success_model=default_success_model,
         errors=errors,
+        responses=responses,
         **kwargs,
     )
 
@@ -508,6 +498,7 @@ def legacy_post(
     response_model: Any | None = None,
     default_success_model: Any | None = SuccessResponse,
     errors: tuple[int, ...] = (),
+    responses: dict[int, Any] | None = None,
     **kwargs: Any,
 ) -> Callable[[F], F]:
     return _route_helper(
@@ -521,10 +512,12 @@ def legacy_post(
         response_model=response_model,
         default_success_model=default_success_model,
         errors=errors,
+        responses=responses,
         **kwargs,
     )
 
 
+# GET-specific “base” response bundles
 AUTH_RESPONSES = {
     401: {"model": ErrorResponse, "description": "Unauthorized"},
     498: {"model": ErrorResponse, "description": "Token expired"},
@@ -537,21 +530,6 @@ COMMON_READ_ERRORS = {
 COMMON_RUNTIME_ERRORS = {
     400: {"model": ErrorResponse, "description": "Bad Request"},
 }
-
-
-def _merge_get_responses(
-    *parts: dict[int, Any],
-    user: dict[int, Any] | None = None,
-    success_model: Any | None = None,
-) -> dict[int, Any]:
-    merged: dict[int, Any] = {}
-    if success_model is not None:
-        merged.update(_default_success_response(success_model))
-    for p in parts:
-        merged.update(p)
-    if user:
-        merged.update(user)
-    return merged
 
 
 def api_get(
@@ -570,26 +548,36 @@ def api_get(
     labels: list[str] = ("Legacy", "Mobile"),
     **kwargs: Any,
 ) -> Callable[[F], F]:
-    tags = []
+    tags: list[str] = []
     operation_id = operation_id or _operation_id_from_name(name)
     summary = summary or _summary_from_name(name)
     category = category or infer_category(name)
     for label in labels:
         tags.append(f"{label}.{category}")
 
-    base = AUTH_RESPONSES
+    # Build the GET base response set
+    base: dict[int, Any] = dict(AUTH_RESPONSES)
     if include_404:
-        base = _merge_get_responses(base, COMMON_READ_ERRORS)
+        base.update(COMMON_READ_ERRORS)
     if include_400:
-        base = _merge_get_responses(base, COMMON_RUNTIME_ERRORS)
+        base.update(COMMON_RUNTIME_ERRORS)
 
-    kwargs["responses"] = _merge_get_responses(base, user=responses)
-
+    # Select success model for the 200 response
     if response_model is None and "response_model" not in kwargs:
         if default_success_model is not None:
             kwargs["response_model"] = default_success_model
     else:
         kwargs["response_model"] = response_model
+
+    success_model = response_model if response_model is not None else default_success_model
+
+    # GET behavior: success + base + user overrides.
+    # (No BASE_ERROR_RESPONSES injection here unless you want it.)
+    kwargs["responses"] = _merge_responses(
+        responses,
+        success_model=success_model,
+        base=base,
+    )
 
     return api.get(
         path,
@@ -935,7 +923,7 @@ async def send_command(
             parse_response.send()
             return ok_response(f"'{cmd}' command sent")
         else:
-            raise HTTPException(status_code=422, detail=f"Command is invalid: {parse_response}")
+            raise HTTPException(status_code=400, detail=f"Command is invalid: {parse_response}")
     except HTTPException as he:
         raise he
     except Exception as e:
@@ -1015,7 +1003,7 @@ class Accessory(PyTrainAccessory):
         router,
         "/accessory/{tmcc_id:int}/amc2_motor",
         name="Accessory.Amc2Motor",
-        errors=(404, 422),
+        errors=(404,),
     )
     async def amc2_motor_cmd(
         self,
@@ -1042,7 +1030,7 @@ class Accessory(PyTrainAccessory):
         router,
         "/accessory/{tmcc_id:int}/amc2_lamp",
         name="Accessory.Amc2Lamp",
-        errors=(404, 422),
+        errors=(404,),
     )
     async def amc2_lamp_cmd(
         self,
@@ -1064,7 +1052,7 @@ class Accessory(PyTrainAccessory):
     ) -> StatusResponse:
         return super().asc2(tmcc_id, state, duration)
 
-    @mobile_post(router, "/accessory/{tmcc_id:int}/asc2", name="Accessory.Asc2", errors=(404, 422))
+    @mobile_post(router, "/accessory/{tmcc_id:int}/asc2", name="Accessory.Asc2", errors=(404,))
     async def asc2_cmd(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
@@ -1075,7 +1063,7 @@ class Accessory(PyTrainAccessory):
         strict = cmd.strict
         return super().asc2(tmcc_id, state, duration, strict=strict)
 
-    @mobile_post(router, "/accessory/{tmcc_id:int}/aux", name="Accessory.Aux", errors=(422,))
+    @mobile_post(router, "/accessory/{tmcc_id:int}/aux", name="Accessory.Aux")
     async def aux_cmd(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
@@ -1083,8 +1071,8 @@ class Accessory(PyTrainAccessory):
     ) -> StatusResponse:
         return super().aux(tmcc_id, cmd.aux_req, cmd.number, cmd.duration)
 
-    @legacy_post(router, "/accessory/{tmcc_id:int}/boost_req", name="Accessory.BoostReq", errors=(422,))
-    @mobile_post(router, "/accessory/{tmcc_id:int}/boost", name="Accessory.Boost", errors=(422,))
+    @legacy_post(router, "/accessory/{tmcc_id:int}/boost_req", name="Accessory.BoostReq")
+    @mobile_post(router, "/accessory/{tmcc_id:int}/boost", name="Accessory.Boost")
     async def boost(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
@@ -1092,8 +1080,8 @@ class Accessory(PyTrainAccessory):
     ) -> StatusResponse:
         return super().boost(tmcc_id, duration)
 
-    @legacy_post(router, "/accessory/{tmcc_id:int}/brake_req", name="Accessory.BrakeReq", errors=(422,))
-    @mobile_post(router, "/accessory/{tmcc_id:int}/brake", name="Accessory.Brake", errors=(422,))
+    @legacy_post(router, "/accessory/{tmcc_id:int}/brake_req", name="Accessory.BrakeReq")
+    @mobile_post(router, "/accessory/{tmcc_id:int}/brake", name="Accessory.Brake")
     async def brake(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
@@ -1109,7 +1097,7 @@ class Accessory(PyTrainAccessory):
     ) -> StatusResponse:
         return self.bpc2(tmcc_id, state)
 
-    @mobile_post(router, "/accessory/{tmcc_id:int}/bpc", name="Accessory.Bpc2", errors=(404, 422))
+    @mobile_post(router, "/accessory/{tmcc_id:int}/bpc", name="Accessory.Bpc2", errors=(404,))
     async def bpc2_cmd(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
@@ -1128,7 +1116,7 @@ class Accessory(PyTrainAccessory):
     ) -> StatusResponse:
         return self.open_coupler(tmcc_id, TMCC1AuxCommandEnum.FRONT_COUPLER, duration)
 
-    @legacy_post(router, "/accessory/{tmcc_id:int}/numeric_req", name="Accessory.NumericReq", errors=(422,))
+    @legacy_post(router, "/accessory/{tmcc_id:int}/numeric_req", name="Accessory.NumericReq")
     async def numeric_req(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
@@ -1137,7 +1125,7 @@ class Accessory(PyTrainAccessory):
     ) -> StatusResponse:
         return self.do_numeric(TMCC1AuxCommandEnum.NUMERIC, tmcc_id, number, duration)
 
-    @mobile_post(router, "/accessory/{tmcc_id:int}/numeric", name="Accessory.Numeric", errors=(422,))
+    @mobile_post(router, "/accessory/{tmcc_id:int}/numeric", name="Accessory.Numeric")
     async def numeric_cmd(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
@@ -1154,7 +1142,7 @@ class Accessory(PyTrainAccessory):
     ) -> StatusResponse:
         return self.open_coupler(tmcc_id, TMCC1AuxCommandEnum.REAR_COUPLER, duration)
 
-    @legacy_post(router, "/accessory/{tmcc_id:int}/speed_req/{speed}", name="Accessory.SpeedReq", errors=(422,))
+    @legacy_post(router, "/accessory/{tmcc_id:int}/speed_req/{speed}", name="Accessory.SpeedReq")
     async def speed(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
@@ -1163,7 +1151,7 @@ class Accessory(PyTrainAccessory):
     ) -> StatusResponse:
         return self.relative_speed(tmcc_id, speed, duration)
 
-    @mobile_post(router, "/accessory/{tmcc_id:int}/speed", name="Accessory.Speed", errors=(422,))
+    @mobile_post(router, "/accessory/{tmcc_id:int}/speed", name="Accessory.Speed")
     async def speed_cmd(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
@@ -1171,7 +1159,7 @@ class Accessory(PyTrainAccessory):
     ) -> StatusResponse:
         return self.relative_speed(tmcc_id, cmd.speed, cmd.duration)
 
-    @legacy_post(router, "/accessory/{tmcc_id:int}/{aux_req}", name="Accessory.AuxReq", errors=(422,))
+    @legacy_post(router, "/accessory/{tmcc_id:int}/{aux_req}", name="Accessory.AuxReq")
     async def operate_accessory(
         self,
         tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Accessory")],
@@ -1282,7 +1270,7 @@ class Engine(PyTrainEngine):
     ) -> StatusResponse:
         return super().aux(tmcc_id, cmd.aux_req, cmd.number, cmd.duration)
 
-    @legacy_post(router, "/engine/{tmcc_id:int}/bell_req", name="Engine.BellReq", errors=(422,))
+    @legacy_post(router, "/engine/{tmcc_id:int}/bell_req", name="Engine.BellReq")
     async def ring_bell_req(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
@@ -1308,8 +1296,8 @@ class Engine(PyTrainEngine):
         ding = getattr(cmd, "ding", None)
         return super().ring_bell(tmcc_id, option, duration, ding)
 
-    @legacy_post(router, "/engine/{tmcc_id:int}/boost_req", name="Engine.BoostReq", errors=(422,))
-    @mobile_post(router, "/engine/{tmcc_id:int}/boost", name="Engine.Boost", errors=(422,))
+    @legacy_post(router, "/engine/{tmcc_id:int}/boost_req", name="Engine.BoostReq")
+    @mobile_post(router, "/engine/{tmcc_id:int}/boost", name="Engine.Boost")
     async def boost(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
@@ -1317,8 +1305,8 @@ class Engine(PyTrainEngine):
     ) -> StatusResponse:
         return super().boost(tmcc_id, duration)
 
-    @legacy_post(router, "/engine/{tmcc_id:int}/brake_req", name="Engine.BrakeReq", errors=(422,))
-    @mobile_post(router, "/engine/{tmcc_id:int}/brake", name="Engine.Brake", errors=(422,))
+    @legacy_post(router, "/engine/{tmcc_id:int}/brake_req", name="Engine.BrakeReq")
+    @mobile_post(router, "/engine/{tmcc_id:int}/brake", name="Engine.Brake")
     async def brake(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
@@ -1326,8 +1314,8 @@ class Engine(PyTrainEngine):
     ) -> StatusResponse:
         return super().brake(tmcc_id, duration)
 
-    @legacy_post(router, "/engine/{tmcc_id:int}/dialog_req", name="Engine.DialogReq", errors=(422,))
-    @mobile_post(router, "/engine/{tmcc_id:int}/dialog", name="Engine.Dialog", errors=(422,))
+    @legacy_post(router, "/engine/{tmcc_id:int}/dialog_req", name="Engine.DialogReq")
+    @mobile_post(router, "/engine/{tmcc_id:int}/dialog", name="Engine.Dialog")
     async def dialog_req(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
@@ -1351,7 +1339,7 @@ class Engine(PyTrainEngine):
     ) -> StatusResponse:
         return super().front_coupler(tmcc_id)
 
-    @legacy_post(router, "/engine/{tmcc_id:int}/horn_req", name="Engine.HornReq", errors=(422,))
+    @legacy_post(router, "/engine/{tmcc_id:int}/horn_req", name="Engine.HornReq")
     async def blow_horn_req(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
@@ -1396,8 +1384,8 @@ class Engine(PyTrainEngine):
     ) -> ProductInfo:
         return ProductInfo(**super().get_engine_info(tmcc_id))
 
-    @legacy_post(router, "/engine/{tmcc_id:int}/momentum_req", name="Engine.MomentumReq", errors=(422,))
-    @mobile_post(router, "/engine/{tmcc_id:int}/momentum", name="Engine.Momentum", errors=(422,))
+    @legacy_post(router, "/engine/{tmcc_id:int}/momentum_req", name="Engine.MomentumReq")
+    @mobile_post(router, "/engine/{tmcc_id:int}/momentum", name="Engine.Momentum")
     async def momentum(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
@@ -1405,7 +1393,7 @@ class Engine(PyTrainEngine):
     ) -> StatusResponse:
         return super().momentum(tmcc_id, level)
 
-    @legacy_post(router, "/engine/{tmcc_id:int}/numeric_req", name="Engine.NumericReq", errors=(422,))
+    @legacy_post(router, "/engine/{tmcc_id:int}/numeric_req", name="Engine.NumericReq")
     async def numeric_req(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
@@ -1414,7 +1402,7 @@ class Engine(PyTrainEngine):
     ) -> StatusResponse:
         return super().numeric(tmcc_id, number, duration)
 
-    @mobile_post(router, "/engine/{tmcc_id:int}/numeric", name="Engine.Numeric", errors=(422,))
+    @mobile_post(router, "/engine/{tmcc_id:int}/numeric", name="Engine.Numeric")
     async def numeric_cmd(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
@@ -1430,7 +1418,7 @@ class Engine(PyTrainEngine):
     ) -> StatusResponse:
         return super().rear_coupler(tmcc_id)
 
-    @legacy_post(router, "/engine/{tmcc_id:int}/reset_req", name="Engine.ResetReq", errors=(422,))
+    @legacy_post(router, "/engine/{tmcc_id:int}/reset_req", name="Engine.ResetReq")
     async def reset_req(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
@@ -1440,7 +1428,7 @@ class Engine(PyTrainEngine):
         duration = (duration if duration and duration >= 3 else 3) if hold else None
         return super().reset(tmcc_id, duration)
 
-    @mobile_post(router, "/engine/{tmcc_id:int}/reset", name="Engine.Reset", errors=(422,))
+    @mobile_post(router, "/engine/{tmcc_id:int}/reset", name="Engine.Reset")
     async def reset_cmd(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
@@ -1476,10 +1464,9 @@ class Engine(PyTrainEngine):
         deprecated=True,
         summary="(Deprecated) Use Engine.SmokeReq instead",
         description="Deprecated. Use Engine.SmokeReq instead.",
-        errors=(422,),
     )
-    @legacy_post(router, "/engine/{tmcc_id:int}/smoke_req", name="Engine.SmokeReq", errors=(422,))
-    @mobile_post(router, "/engine/{tmcc_id:int}/smoke", name="Engine.Smoke", errors=(422,))
+    @legacy_post(router, "/engine/{tmcc_id:int}/smoke_req", name="Engine.SmokeReq")
+    @mobile_post(router, "/engine/{tmcc_id:int}/smoke", name="Engine.Smoke")
     async def smoke(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
@@ -1487,7 +1474,7 @@ class Engine(PyTrainEngine):
     ) -> StatusResponse:
         return super().smoke(tmcc_id, level=level)
 
-    @legacy_post(router, "/engine/{tmcc_id:int}/speed_req/{speed}", name="Engine.SpeedReq", errors=(422,))
+    @legacy_post(router, "/engine/{tmcc_id:int}/speed_req/{speed}", name="Engine.SpeedReq")
     async def speed_req(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
@@ -1500,7 +1487,7 @@ class Engine(PyTrainEngine):
     ) -> StatusResponse:
         return super().speed(tmcc_id, speed, immediate=immediate, dialog=dialog)
 
-    @mobile_post(router, "/engine/{tmcc_id:int}/speed", name="Engine.Speed", errors=(422,))
+    @mobile_post(router, "/engine/{tmcc_id:int}/speed", name="Engine.Speed")
     async def speed_cmd(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
@@ -1549,7 +1536,7 @@ class Engine(PyTrainEngine):
     ) -> StatusResponse:
         return super().volume_up(tmcc_id)
 
-    @legacy_post(router, "/engine/{tmcc_id:int}/{aux_req}", name="Engine.AuxReq", errors=(422,))
+    @legacy_post(router, "/engine/{tmcc_id:int}/{aux_req}", name="Engine.AuxReq")
     async def aux_req(
         self,
         tmcc_id: Annotated[int, Engine.id_path()],
@@ -1662,14 +1649,12 @@ class Switch(PyTrainSwitch):
         "/switch/{tmcc_id:int}/throw_req",
         name="Switch.ThrowReq",
         summary="Throw switch thru or out",
-        errors=(422,),
     )
     @mobile_post(
         router,
         "/switch/{tmcc_id:int}/throw",
         name="Switch.Throw",
         summary="Throw switch thru or out",
-        errors=(422,),
     )
     async def throw_cmd(
         self,
@@ -1740,7 +1725,7 @@ class Train(PyTrainEngine):
     ) -> StatusResponse:
         return super().aux(tmcc_id, cmd.aux_req, cmd.number, cmd.duration)
 
-    @legacy_post(router, "/train/{tmcc_id:int}/bell_req", name="Train.BellReq", errors=(422,))
+    @legacy_post(router, "/train/{tmcc_id:int}/bell_req", name="Train.BellReq")
     async def ring_bell_req(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
@@ -1755,7 +1740,7 @@ class Train(PyTrainEngine):
     ) -> StatusResponse:
         return super().ring_bell(tmcc_id, option, duration)
 
-    @mobile_post(router, "/train/{tmcc_id:int}/bell", name="Train.Bell", errors=(422,))
+    @mobile_post(router, "/train/{tmcc_id:int}/bell", name="Train.Bell")
     async def ring_bell_cmd(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
@@ -1766,8 +1751,8 @@ class Train(PyTrainEngine):
         ding = getattr(cmd, "ding", None)
         return super().ring_bell(tmcc_id, option, duration, ding)
 
-    @legacy_post(router, "/train/{tmcc_id:int}/boost_req", name="Train.BoostReq", errors=(422,))
-    @mobile_post(router, "/train/{tmcc_id:int}/boost", name="Train.Boost", errors=(422,))
+    @legacy_post(router, "/train/{tmcc_id:int}/boost_req", name="Train.BoostReq")
+    @mobile_post(router, "/train/{tmcc_id:int}/boost", name="Train.Boost")
     async def boost(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
@@ -1775,8 +1760,8 @@ class Train(PyTrainEngine):
     ) -> StatusResponse:
         return super().boost(tmcc_id, duration)
 
-    @legacy_post(router, "/train/{tmcc_id:int}/brake_req", name="Train.BrakeReq", errors=(422,))
-    @mobile_post(router, "/train/{tmcc_id:int}/brake", name="Train.Brake", errors=(422,))
+    @legacy_post(router, "/train/{tmcc_id:int}/brake_req", name="Train.BrakeReq")
+    @mobile_post(router, "/train/{tmcc_id:int}/brake", name="Train.Brake")
     async def brake(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
@@ -1784,8 +1769,8 @@ class Train(PyTrainEngine):
     ) -> StatusResponse:
         return super().brake(tmcc_id, duration)
 
-    @legacy_post(router, "/train/{tmcc_id:int}/dialog_req", name="Train.DialogReq", errors=(422,))
-    @mobile_post(router, "/train/{tmcc_id:int}/dialog", name="Train.Dialog", errors=(422,))
+    @legacy_post(router, "/train/{tmcc_id:int}/dialog_req", name="Train.DialogReq")
+    @mobile_post(router, "/train/{tmcc_id:int}/dialog", name="Train.Dialog")
     async def dialog_req(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
@@ -1809,7 +1794,7 @@ class Train(PyTrainEngine):
     ) -> StatusResponse:
         return super().front_coupler(tmcc_id)
 
-    @legacy_post(router, "/train/{tmcc_id:int}/horn_req", name="Train.HornReq", errors=(422,))
+    @legacy_post(router, "/train/{tmcc_id:int}/horn_req", name="Train.HornReq")
     async def blow_horn_req(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
@@ -1822,7 +1807,7 @@ class Train(PyTrainEngine):
     ) -> StatusResponse:
         return super().blow_horn(tmcc_id, option, intensity, duration)
 
-    @mobile_post(router, "/train/{tmcc_id:int}/horn", name="Train.Horn", errors=(422,))
+    @mobile_post(router, "/train/{tmcc_id:int}/horn", name="Train.Horn")
     async def blow_horn_cmd(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
@@ -1845,8 +1830,8 @@ class Train(PyTrainEngine):
         duration = getattr(cmd, "duration", None)
         return super().blow_horn(tmcc_id, option, intensity, duration)
 
-    @legacy_post(router, "/train/{tmcc_id:int}/momentum_req", name="Train.MomentumReq", errors=(422,))
-    @mobile_post(router, "/train/{tmcc_id:int}/momentum", name="Train.Momentum", errors=(422,))
+    @legacy_post(router, "/train/{tmcc_id:int}/momentum_req", name="Train.MomentumReq")
+    @mobile_post(router, "/train/{tmcc_id:int}/momentum", name="Train.Momentum")
     async def momentum(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
@@ -1854,7 +1839,7 @@ class Train(PyTrainEngine):
     ) -> StatusResponse:
         return super().momentum(tmcc_id, level)
 
-    @legacy_post(router, "/train/{tmcc_id:int}/numeric_req", name="Train.NumericReq", errors=(422,))
+    @legacy_post(router, "/train/{tmcc_id:int}/numeric_req", name="Train.NumericReq")
     async def numeric_req(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
@@ -1863,7 +1848,7 @@ class Train(PyTrainEngine):
     ) -> StatusResponse:
         return super().numeric(tmcc_id, number, duration)
 
-    @mobile_post(router, "/train/{tmcc_id:int}/numeric", name="Train.Numeric", errors=(422,))
+    @mobile_post(router, "/train/{tmcc_id:int}/numeric", name="Train.Numeric")
     async def numeric_cmd(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
@@ -1879,7 +1864,7 @@ class Train(PyTrainEngine):
     ) -> StatusResponse:
         return super().rear_coupler(tmcc_id)
 
-    @legacy_post(router, "/train/{tmcc_id:int}/reset_req", name="Train.ResetReq", errors=(422,))
+    @legacy_post(router, "/train/{tmcc_id:int}/reset_req", name="Train.ResetReq")
     async def reset_req(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
@@ -1889,7 +1874,7 @@ class Train(PyTrainEngine):
         duration = (duration if duration and duration >= 3 else 3) if hold else None
         return super().reset(tmcc_id, duration)
 
-    @mobile_post(router, "/train/{tmcc_id:int}/reset", name="Train.Reset", errors=(422,))
+    @mobile_post(router, "/train/{tmcc_id:int}/reset", name="Train.Reset")
     async def reset_cmd(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
@@ -1925,10 +1910,9 @@ class Train(PyTrainEngine):
         deprecated=True,
         summary="(Deprecated) Use Train.SmokeReq instead",
         description="Deprecated. Use Train.SmokeReq instead.",
-        errors=(422,),
     )
-    @legacy_post(router, "/train/{tmcc_id:int}/smoke_req", name="Train.SmokeReq", errors=(422,))
-    @mobile_post(router, "/train/{tmcc_id:int}/smoke", name="Train.Smoke", errors=(422,))
+    @legacy_post(router, "/train/{tmcc_id:int}/smoke_req", name="Train.SmokeReq")
+    @mobile_post(router, "/train/{tmcc_id:int}/smoke", name="Train.Smoke")
     async def smoke(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
@@ -1936,7 +1920,7 @@ class Train(PyTrainEngine):
     ) -> StatusResponse:
         return super().smoke(tmcc_id, level=level)
 
-    @legacy_post(router, "/train/{tmcc_id:int}/speed_req/{speed}", name="Train.SpeedReq", errors=(422,))
+    @legacy_post(router, "/train/{tmcc_id:int}/speed_req/{speed}", name="Train.SpeedReq")
     async def speed_req(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
@@ -1949,7 +1933,7 @@ class Train(PyTrainEngine):
     ) -> StatusResponse:
         return super().speed(tmcc_id, speed, immediate=immediate, dialog=dialog)
 
-    @mobile_post(router, "/train/{tmcc_id:int}/speed", name="Train.Speed", errors=(422,))
+    @mobile_post(router, "/train/{tmcc_id:int}/speed", name="Train.Speed")
     async def speed_cmd(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
@@ -1998,7 +1982,7 @@ class Train(PyTrainEngine):
     ) -> StatusResponse:
         return super().volume_up(tmcc_id)
 
-    @legacy_post(router, "/train/{tmcc_id:int}/{aux_req}", name="Train.AuxReq", errors=(422,))
+    @legacy_post(router, "/train/{tmcc_id:int}/{aux_req}", name="Train.AuxReq")
     async def aux_req(
         self,
         tmcc_id: Annotated[int, Train.id_path()],
