@@ -1387,7 +1387,7 @@ class Engine(PyTrainEngine):
         "/engine/{tmcc_id:int}/info",
         name="Engine.Info",
         summary="Get engine product information",
-        response_model=EngineInfo,
+        response_model=ProductInfo,
         include_404=True,
     )
     async def get_info(
