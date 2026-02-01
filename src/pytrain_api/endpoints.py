@@ -328,7 +328,7 @@ _CAMEL_RE = re.compile(r"(?<!^)(?=[A-Z])")
 BASE_ERROR_RESPONSES: dict[int, Any] = {
     400: {"model": ErrorResponse, "description": "Bad Request"},
     401: {"model": ErrorResponse, "description": "Unauthorized"},
-    498: {"model": ErrorResponse, "description": "Expired"},
+    498: {"model": ErrorResponse, "description": "Token Expired"},
 }
 
 OPTIONAL_ERROR_RESPONSES: dict[int, Any] = {
@@ -520,7 +520,7 @@ def legacy_post(
 # GET-specific “base” response bundles
 AUTH_RESPONSES = {
     401: {"model": ErrorResponse, "description": "Unauthorized"},
-    498: {"model": ErrorResponse, "description": "Token expired"},
+    498: {"model": ErrorResponse, "description": "Token Expired"},
 }
 
 COMMON_READ_ERRORS = {
