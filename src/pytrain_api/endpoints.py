@@ -1382,12 +1382,13 @@ class Engine(PyTrainEngine):
         duration = getattr(cmd, "duration", None)
         return super().blow_horn(tmcc_id, option, intensity, duration)
 
-    @router.get(
+    @api_get(
+        router,
         "/engine/{tmcc_id:int}/info",
-        tags=["Legacy.Engine", "Mobile.Engine"],
         name="Engine.Info",
-        operation_id="engine_info",
         summary="Get engine product information",
+        response_model=EngineInfo,
+        include_404=True,
     )
     async def get_info(
         self,

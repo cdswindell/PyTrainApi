@@ -5523,7 +5523,47 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProductInfo"
+                  "$ref": "#/components/schemas/EngineInfo"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "498": {
+            "description": "Token expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -14353,135 +14393,6 @@
           "on"
         ],
         "title": "OnOffOption"
-      },
-      "ProductInfo": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Product ID"
-          },
-          "skuNumber": {
-            "type": "integer",
-            "title": "Sku Number",
-            "description": "SKU Number assigned by Lionel"
-          },
-          "blE_DecId": {
-            "type": "integer",
-            "title": "Bluetooth Decimal ID"
-          },
-          "blE_HexId": {
-            "type": "string",
-            "title": "Bluetooth Hexadecimal ID"
-          },
-          "productFamily": {
-            "type": "integer",
-            "title": "Product Family"
-          },
-          "engineClass": {
-            "type": "integer",
-            "title": "Engine Class"
-          },
-          "engineType": {
-            "type": "string",
-            "title": "Engine Type"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "roadName": {
-            "type": "string",
-            "title": "Road Name"
-          },
-          "roadNumber": {
-            "type": "string",
-            "title": "Road Number"
-          },
-          "gauge": {
-            "type": "string",
-            "title": "Gauge"
-          },
-          "pmid": {
-            "type": "integer",
-            "title": "Product Management ID"
-          },
-          "smoke": {
-            "type": "boolean",
-            "title": "Smoke"
-          },
-          "hasOnBoardSound": {
-            "type": "boolean",
-            "title": "Has onboard sound"
-          },
-          "appSoundFilesAvailable": {
-            "type": "boolean",
-            "title": "Supports sound files"
-          },
-          "blE_StreamingSoundsSupported": {
-            "type": "boolean",
-            "title": "Supports Bluetooth streaming sounds"
-          },
-          "appControlledLight": {
-            "type": "boolean",
-            "title": "Supports controllable lights"
-          },
-          "frontCoupler": {
-            "type": "boolean",
-            "title": "Has Front Coupler"
-          },
-          "rearCoupler": {
-            "type": "boolean",
-            "title": "Has Rear Coupler"
-          },
-          "sound": {
-            "type": "boolean",
-            "title": "Supports Legacy RailSounds"
-          },
-          "masterVolume": {
-            "type": "boolean",
-            "title": "Has Master Volume Control"
-          },
-          "customSound": {
-            "type": "boolean",
-            "title": "Supports Sound Customization"
-          },
-          "undefinedBit": {
-            "type": "boolean",
-            "title": "Undefined Bit"
-          },
-          "imageUrl": {
-            "type": "string",
-            "title": "Engine Image URL"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "skuNumber",
-          "blE_DecId",
-          "blE_HexId",
-          "productFamily",
-          "engineClass",
-          "engineType",
-          "description",
-          "roadName",
-          "roadNumber",
-          "gauge",
-          "pmid",
-          "smoke",
-          "hasOnBoardSound",
-          "appSoundFilesAvailable",
-          "blE_StreamingSoundsSupported",
-          "appControlledLight",
-          "frontCoupler",
-          "rearCoupler",
-          "sound",
-          "masterVolume",
-          "customSound",
-          "undefinedBit",
-          "imageUrl"
-        ],
-        "title": "ProductInfo"
       },
       "RelativeSpeedCommand": {
         "properties": {
