@@ -154,7 +154,10 @@ async def lifespan(fapp: FastAPI):
 app = FastAPI(
     title=f"{PROGRAM_NAME} API",
     description="Operate and control Lionel Legacy/TMCC engines, trains, switches, accessories, routes, "
-    "and LCS components",
+    "and LCS components.\n\n"
+    "This API is used by the Alexa skill and mobile apps. "
+    "It is also used by the web UI and other third-party integrations.\n\n"
+    "For more information, visit the [GitHub repository](https://github.com/cdswindell/pytrainapi).",
     version=get_version(),
     docs_url=None,
     lifespan=lifespan,
@@ -522,6 +525,82 @@ def legacy_post(
     )
 
 
+AUTH_RESPONSES = {
+    401: {"model": ErrorResponse, "description": "Unauthorized"},
+    498: {"model": ErrorResponse, "description": "Token expired"},
+}
+
+COMMON_READ_ERRORS = {
+    404: {"model": ErrorResponse, "description": "Not Found"},
+}
+
+COMMON_RUNTIME_ERRORS = {
+    400: {"model": ErrorResponse, "description": "Bad Request"},
+}
+
+
+def _merge_get_responses(
+    *parts: dict[int, Any],
+    user: dict[int, Any] | None = None,
+    success_model: Any | None = None,
+) -> dict[int, Any]:
+    merged: dict[int, Any] = {}
+    if success_model is not None:
+        merged.update(_default_success_response(success_model))
+    for p in parts:
+        merged.update(p)
+    if user:
+        merged.update(user)
+    return merged
+
+
+def api_get(
+    api: APIRouter,
+    path: str,
+    *,
+    name: str,
+    operation_id: str | None = None,
+    summary: str | None = None,
+    category: str | None = None,
+    response_model: Any | None = None,
+    default_success_model: Any | None = SuccessResponse,
+    include_404: bool = False,
+    include_400: bool = True,
+    responses: dict[int, Any] | None = None,
+    labels: list[str] = ("Legacy", "Mobile"),
+    **kwargs: Any,
+) -> Callable[[F], F]:
+    tags = []
+    operation_id = operation_id or _operation_id_from_name(name)
+    summary = summary or _summary_from_name(name)
+    category = category or infer_category(name)
+    for label in labels:
+        tags.append(f"{label}.{category}")
+
+    base = AUTH_RESPONSES
+    if include_404:
+        base = _merge_get_responses(base, COMMON_READ_ERRORS)
+    if include_400:
+        base = _merge_get_responses(base, COMMON_RUNTIME_ERRORS)
+
+    kwargs["responses"] = _merge_get_responses(base, user=responses)
+
+    if response_model is None and "response_model" not in kwargs:
+        if default_success_model is not None:
+            kwargs["response_model"] = default_success_model
+    else:
+        kwargs["response_model"] = response_model
+
+    return api.get(
+        path,
+        tags=tags,
+        name=name,
+        operation_id=operation_id,
+        summary=summary,
+        **kwargs,
+    )
+
+
 router = APIRouter(prefix="/pytrain/v1", dependencies=[Depends(get_api_token)])
 
 FAVICON_PATH = None
@@ -627,14 +706,12 @@ def pytrain_doc():
     return RedirectResponse(url="/docs", status_code=status.HTTP_301_MOVED_PERMANENTLY)
 
 
-@router.get(
+@api_get(
+    router,
     "/system/halt",
     summary="Emergency Stop",
     description="Stops all engines and trains, in their tracks; turns off all power districts.",
-    tags=["Legacy.System", "Mobile.System"],
-    operation_id="system_halt",
     name="System.Halt",
-    response_model=StatusResponse,
 )
 async def halt() -> StatusResponse:
     try:
@@ -893,12 +970,13 @@ def get_components(
         return ret
 
 
-@router.get(
+@api_get(
+    router,
     "/accessories",
-    tags=["Legacy.Accessory", "Mobile.Accessory"],
-    operation_id="accessories_list",
     name="Accessories.List",
     summary="List all accessories",
+    response_model=list[AccessoryInfo],
+    include_404=True,
 )
 async def get_accessories(contains: str = None) -> list[AccessoryInfo]:
     return [AccessoryInfo(**d) for d in get_components(CommandScope.ACC, contains=contains)]
@@ -909,12 +987,13 @@ class Accessory(PyTrainAccessory):
     def __init__(self):
         super().__init__(CommandScope.ACC)
 
-    @router.get(
+    @api_get(
+        router,
         "/accessory/{tmcc_id:int}",
-        tags=["Legacy.Accessory", "Mobile.Accessory"],
-        operation_id="accessory_get",
         name="Accessory.Get",
         summary="Get accessory state",
+        response_model=AccessoryInfo,
+        include_404=True,
     )
     async def get_accessory(
         self,
@@ -1102,13 +1181,13 @@ class Accessory(PyTrainAccessory):
         return self.aux(tmcc_id, aux_req, None, duration)
 
 
-@router.get(
+@api_get(
+    router,
     "/blocks",
-    tags=["Legacy.Block", "Mobile.Block"],
-    operation_id="blocks_list",
     name="Blocks.List",
     summary="List all blocks",
     response_model=list[BlockInfo],
+    include_404=True,
 )
 async def get_blocks(contains: str = None) -> list[BlockInfo]:
     return [BlockInfo(**d) for d in get_components(CommandScope.BLOCK, contains=contains)]
@@ -1130,13 +1209,13 @@ class Block(PyTrainComponent):
     def __init__(self):
         super().__init__(CommandScope.BLOCK)
 
-    @router.get(
+    @api_get(
+        router,
         "/block/{block_id}",
-        tags=["Legacy.Block", "Mobile.Block"],
-        operation_id="block_get",
         name="Block.Get",
         summary="Get block state",
         response_model=BlockInfo,
+        include_404=True,
     )
     async def get_block(
         self,
@@ -1145,13 +1224,13 @@ class Block(PyTrainComponent):
         return BlockInfo(**super().get(block_id))
 
 
-@router.get(
+@api_get(
+    router,
     "/engines",
-    tags=["Legacy.Engine", "Mobile.Engine"],
-    operation_id="engines_list",
     name="Engines.List",
     summary="List all engines",
     response_model=list[EngineInfo],
+    include_404=True,
 )
 async def get_engines(contains: str = None, is_legacy: bool = None, is_tmcc: bool = None) -> list[EngineInfo]:
     return [
@@ -1181,13 +1260,13 @@ class Engine(PyTrainEngine):
     def __init__(self):
         super().__init__(CommandScope.ENGINE)
 
-    @router.get(
+    @api_get(
+        router,
         "/engine/{tmcc_id:int}",
-        tags=["Legacy.Engine", "Mobile.Engine"],
-        operation_id="engine_get",
         name="Engine.Get",
         summary="Get engine state",
         response_model=EngineInfo,
+        include_404=True,
     )
     async def get_engine(
         self,
@@ -1480,13 +1559,13 @@ class Engine(PyTrainEngine):
         return super().aux(tmcc_id, aux_req, number, duration)
 
 
-@router.get(
+@api_get(
+    router,
     "/routes",
-    tags=["Legacy.Route", "Mobile.Route"],
-    operation_id="routes_list",
     name="Routes.List",
     summary="List all routes",
     response_model=list[RouteInfo],
+    include_404=True,
 )
 async def get_routes(contains: str = None):
     return [RouteInfo(**d) for d in get_components(CommandScope.ROUTE, contains=contains)]
@@ -1497,13 +1576,13 @@ class Route(PyTrainComponent):
     def __init__(self):
         super().__init__(CommandScope.ROUTE)
 
-    @router.get(
+    @api_get(
+        router,
         "/route/{tmcc_id:int}",
-        tags=["Legacy.Route", "Mobile.Route"],
-        operation_id="route_get",
         name="Route.Get",
         summary="Get route state",
         response_model=RouteInfo,
+        include_404=True,
     )
     async def get_route(self, tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Route")]):
         return RouteInfo(**super().get(tmcc_id))
@@ -1518,13 +1597,13 @@ class Route(PyTrainComponent):
         return ok_response(f"{self.scope.title} {tmcc_id:int} fired")
 
 
-@router.get(
+@api_get(
+    router,
     "/switches",
-    tags=["Legacy.Switch", "Mobile.Switch"],
-    operation_id="switches_list",
     name="Switches.List",
     summary="List all switches",
     response_model=list[SwitchInfo],
+    include_404=True,
 )
 async def get_switches(contains: str = None):
     return [SwitchInfo(**d) for d in get_components(CommandScope.SWITCH, contains=contains)]
@@ -1535,13 +1614,13 @@ class Switch(PyTrainSwitch):
     def __init__(self):
         super().__init__(CommandScope.SWITCH)
 
-    @router.get(
+    @api_get(
+        router,
         "/switch/{tmcc_id:int}",
-        tags=["Legacy.Switch", "Mobile.Switch"],
-        operation_id="switch_get",
         name="Switch.Get",
         summary="Get switch state",
         response_model=SwitchInfo,
+        include_404=True,
     )
     async def get_switch(
         self,
@@ -1602,13 +1681,13 @@ class Switch(PyTrainSwitch):
         return self.throw(tmcc_id, position)
 
 
-@router.get(
+@api_get(
+    router,
     "/trains",
-    tags=["Legacy.Train", "Mobile.Train"],
-    operation_id="trains_list",
     name="Trains.List",
     summary="List all trains",
     response_model=list[TrainInfo],
+    include_404=True,
 )
 async def get_trains(contains: str = None, is_legacy: bool = None, is_tmcc: bool = None) -> list[EngineInfo]:
     return [
@@ -1638,13 +1717,13 @@ class Train(PyTrainEngine):
     def __init__(self):
         super().__init__(CommandScope.TRAIN)
 
-    @router.get(
+    @api_get(
+        router,
         "/train/{tmcc_id:int}",
-        tags=["Legacy.Train", "Mobile.Train"],
-        operation_id="train_get",
         name="Train.Get",
         summary="Get train state",
         response_model=TrainInfo,
+        include_404=True,
     )
     async def get_train(
         self,

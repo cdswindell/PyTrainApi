@@ -29,6 +29,7 @@ from zeroconf import ServiceInfo, Zeroconf
 
 from . import is_package
 
+
 log = logging.getLogger(__name__)
 
 API_NAME = "PyTrain Api"
@@ -182,6 +183,14 @@ class PyTrainApi:
     def pytrain(self) -> PyTrain:
         return self._pytrain_server
 
+    @property
+    def base3_ip_addr(self) -> str | None:
+        if self._base_addr is not None:
+            return self._base_addr
+        elif self.pytrain:
+            return self.pytrain.base3_ip_addr
+        return None
+
     # noinspection PyUnusedLocal
     def relaunch(self, exit_status: PyTrainExitStatus) -> None:
         # if we're a client, we need to give the server time to respond, otherwise, we
@@ -258,12 +267,16 @@ class PyTrainApi:
         return self._service_info
 
     def register_service(self, ser2: bool, base3: str | None, port: int) -> ServiceInfo:
+        from .endpoints import API_SERVER, DEFAULT_API_SERVER_VALUE
+
         local_key = str(uuid.uuid4())
         properties = {
+            "alexa_url": API_SERVER if API_SERVER and API_SERVER != DEFAULT_API_SERVER_VALUE else "",
+            "base3": "1" if base3 is True else "0",
+            "base3_ip_addr": self.base3_ip_addr,
+            "ser2": "1" if ser2 is True else "0",
+            "uuid": local_key,
             "version": "1.0",
-            "Ser2": "1" if ser2 is True else "0",
-            "Base3": "1" if base3 is True else "0",
-            "Guid": local_key,
         }
         self._server_ips = server_ips = get_ip_address()
         hostname = socket.gethostname()
