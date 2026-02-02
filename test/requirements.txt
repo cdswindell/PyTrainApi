@@ -1,7 +1,7 @@
 build>=1.4.0
 fastapi-cli>=0.0.20
 pytest>=9.0.2
-ruff>=0.14.11
+ruff>=0.14.14
 tox>=4.34.1
 twine>=6.1.0
 ipython>=9.10.0; python_version>="3.11"
