@@ -233,6 +233,7 @@ class EngineInfo(ComponentInfoIr):
     labor: int | None
     max_speed: int | None
     momentum: int | None
+    record_no: int | None
     rpm: int | None
     smoke: str | None
     sound_type: str | None
