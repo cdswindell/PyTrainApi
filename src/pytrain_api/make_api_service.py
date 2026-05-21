@@ -97,9 +97,11 @@ class MakeApiService:
                 print("\nAn LCS Ser2 is not required when configuring as a client. Continuing")
 
         self._exe = "pytrain_api" if is_package() else "cli/pytrain_api.py"
+        self._no_cache_sync = args.no_cache_sync is True
         self._cmd_line = self.command_line
         self._config = {
             "___ACTIVATE___": str(self._activate_cmd),
+            "___CACHE_SYNC___": " -no_cache_sync" if self._no_cache_sync is True else "",
             "___CLIENT___": "-client" if self.is_client else "",
             "___HOME___": str(self._home),
             "___LCSSER2___": " -ser2" if self._ser2 is True else "",
@@ -253,6 +255,8 @@ class MakeApiService:
                 cmd_line += f" -base{ip}"
             if self._args.ser2 is True:
                 cmd_line += " -ser2"
+        if self._no_cache_sync is True:
+            cmd_line += " -no_cache_sync"
         return cmd_line
 
     def confirm_environment(self) -> bool:
@@ -261,6 +265,7 @@ class MakeApiService:
         if self._args.mode == "server":
             print(f"  Lionel Base IP addresses: {self._base_ip}")
             print(f"  Use Ser2: {'Yes' if self._args.ser2 is True else 'No'}")
+        print(f"  Cache file synchronization: {'Disabled' if self._no_cache_sync is True else 'Enabled'}")
         print(f"  Run as user: {self._user}")
         print(f"  User '{self._user} Home: {self._home}")
         print(f"  System type: {platform.system()}")
@@ -324,6 +329,11 @@ class MakeApiService:
             help="Send or receive TMCC commands from an LCS Ser2",
         )
         misc_opts = parser.add_argument_group("Miscellaneous options")
+        misc_opts.add_argument(
+            "-no_cache_sync",
+            action="store_true",
+            help="Disable cache file synchronization",
+        )
         misc_opts.add_argument(
             "-start",
             action="store_true",

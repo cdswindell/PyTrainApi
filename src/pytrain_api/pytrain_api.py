@@ -133,6 +133,8 @@ class PyTrainApi:
                 pytrain_args += f" -server_port {args.server_port}"
             if args.echo is True:
                 pytrain_args += " -echo"
+            if args.no_cache_sync is True:
+                pytrain_args += " -no_cache_sync"
             if args.buttons_file:
                 pytrain_args += f" -buttons_file {args.buttons_file}"
             self._pytrain_cmd_line = pytrain_args

@@ -12,6 +12,7 @@
 PYTRAIN_API_HOME="___PYTRAINAPIHOME___"
 LIONEL_BASE="___LIONELBASE___"
 LCS_SER_2="___LCSSER2___"
+CACHE_SYNC="___CACHE_SYNC___"
 
 # change direction to PYTRAIN_HOME
 cd $PYTRAIN_API_HOME
@@ -20,5 +21,4 @@ cd $PYTRAIN_API_HOME
 source ___ACTIVATE___; export PYTHONPATH=.
 
 # run the program with appropriate arguments
-___PYTRAINAPI___  ___LIONELBASE______LCSSER2___
-
+___PYTRAINAPI___  ___LIONELBASE______LCSSER2______CACHE_SYNC___
