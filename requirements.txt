@@ -1,6 +1,6 @@
 pytrain-ogr>=2.8.1
 fastapi-utils>=0.8.0
-fastapi<=0.138.0
+fastapi<0.137.0
 pyjwt>=2.13.0
 python-dotenv>=1.2.2
 python_multipart>=0.0.32
