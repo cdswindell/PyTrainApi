@@ -27,13 +27,15 @@ from fastapi_utils.cbv import cbv
 from jwt import DecodeError, ExpiredSignatureError, InvalidSignatureError, InvalidTokenError
 from pydantic import BaseModel, ValidationError
 from pytrain import (
+    PROGRAM_NAME,
     CommandReq,
     CommandScope,
-    PROGRAM_NAME,
     TMCC1AuxCommandEnum,
     TMCC1HaltCommandEnum,
     TMCC1RouteCommandEnum,
     TMCC2EngineCommandEnum,
+)
+from pytrain import (
     get_version as pytrain_get_version,
 )
 from pytrain.protocol.command_def import CommandDefEnum
@@ -223,7 +225,7 @@ def create_secret(length: int = 32) -> str:
 def get_api_token(api_key: str = Security(api_key_header)) -> bool:
     """
     Accepts either:
-      1) Raw API key (API_TOKEN, API_KEYS, etc.), OR
+      1) Raw API key (API_TOKEN, API_KEYS, etc.) OR
       2) A JWT (Authorization-style bearer token) signed with SECRET_KEY.
 
     Returns True if authorized, otherwise raises HTTPException.
@@ -619,7 +621,7 @@ async def favicon():
 # noinspection PyUnusedLocal
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
-    # allow APis that issue a legitimate 404 to send a 404 response
+    # allow APIs that issue a legitimate 404 to send a 404 response
     if exc.status_code in [404] and (not exc.headers or exc.headers.get("X-Error", None) not in {"404"}):
         return JSONResponse(content={"detail": "Forbidden"}, status_code=403)
     return JSONResponse(content={"detail": exc.detail}, status_code=exc.status_code)
@@ -891,6 +893,7 @@ async def get_version() -> VersionResponse:
         raise HTTPException(status_code=400, detail=str(e))
 
 
+# noinspection PathParameterInspection
 @router.post(
     "/{component}/{tmcc_id:int}/cli_req",
     summary=f"Send {PROGRAM_NAME} CLI command",
@@ -1184,7 +1187,7 @@ async def get_blocks(contains: str = None) -> list[BlockInfo]:
 class Block(PyTrainComponent):
     # noinspection PyTypeHints
     @classmethod
-    def id_path(cls, label: str = None, min_val: int = 1, max_val: int = 99) -> Path:
+    def id_path(cls, label: str = None, min_val: int = 1, max_val: int = 99):
         label = label if label else cls.__name__.replace("PyTrain", "")
         return Path(
             title="Block ID",
@@ -1206,7 +1209,7 @@ class Block(PyTrainComponent):
     )
     async def get_block(
         self,
-        block_id: Annotated[int, PyTrainComponent.id_path(label="Block")],
+        block_id: Annotated[int, id_path(label="Block")],
     ) -> BlockInfo:
         return BlockInfo(**super().get(block_id))
 

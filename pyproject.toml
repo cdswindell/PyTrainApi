@@ -29,7 +29,7 @@ license = { file = "LICENSE" }
 
 dependencies = [
     "pytrain-ogr >= 2.8.0",
-    "fastapi >= 0.139.0",
+    "fastapi <= 0.138.0",
     "fastapi-utils >= 0.8.0",
     "pyjwt >= 2.13.0",
     "python-dotenv >= 1.2.2",
