@@ -407,7 +407,7 @@ class PyTrainEngine(PyTrainComponent):
     def tmcc(self, tmcc_id: int) -> str:
         return " -tmcc" if self.is_tmcc(tmcc_id) else ""
 
-    async def _set_speed(
+    async def set_speed(
         self,
         tmcc_id: int,
         speed: int | str,
