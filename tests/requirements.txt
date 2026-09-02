@@ -1,7 +1,7 @@
-build>=1.5.1
-fastapi-cli>=0.0.29
+build>=1.6.0
+fastapi-cli>=0.0.32
 pytest>=9.1.1
-ruff>=0.15.21
-tox>=4.56.4
-twine>=6.1.0
+ruff>=0.16.5
+tox>=4.61.2
+twine>=7.0.0
 ipython>=9.10.0; python_version>="3.11"
