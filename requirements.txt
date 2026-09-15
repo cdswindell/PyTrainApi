@@ -1,4 +1,4 @@
-pytrain-ogr>=2.9.18
+pytrain-ogr>=2.10.0
 fastapi>=0.141.1
 pyjwt>=2.14.0
 python-dotenv>=1.2.3
