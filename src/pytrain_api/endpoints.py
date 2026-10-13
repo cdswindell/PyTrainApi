@@ -1591,7 +1591,7 @@ async def fire(
     tmcc_id: Annotated[int, PyTrainComponent.id_path(label="Route")],
 ) -> StatusResponse:
     _route.do_request(TMCC1RouteCommandEnum.FIRE, tmcc_id)
-    return ok_response(f"{_route.scope.title} {tmcc_id:int} fired")
+    return ok_response(f"{_route.scope.title} {tmcc_id} fired")
 
 
 @api_get(
@@ -1952,7 +1952,7 @@ async def train_speed_cmd(
     tmcc_id: Annotated[int, Train.id_path()],
     cmd: SpeedCommand = Body(...),
 ) -> StatusResponse:
-    return train_speed_req(tmcc_id, cmd.speed, immediate=cmd.immediate, dialog=cmd.dialog)
+    return await train_speed_req(tmcc_id, cmd.speed, immediate=cmd.immediate, dialog=cmd.dialog)
 
 
 @legacy_post(router, "/train/{tmcc_id:int}/startup_req", name="Train.StartupReq")
