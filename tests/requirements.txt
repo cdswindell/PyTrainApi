@@ -3,7 +3,7 @@ fastapi-cli>=0.0.32
 httpx>=0.28.1
 pytest>=9.1.1
 pytest-cov>=7.1.0
-ruff>=0.16.8
-tox>=4.63.0
+ruff>=0.17.4
+tox>=4.67.13
 twine>=7.0.0
 ipython>=9.10.0; python_version>="3.11"
